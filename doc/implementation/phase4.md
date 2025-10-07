@@ -12,6 +12,173 @@ This phase implements the browser-based frontend with HTML5 Canvas rendering, in
 
 ---
 
+## Architecture Decisions
+
+### Technology Stack
+
+**Language:** TypeScript (ES2020 target)
+- Full type safety throughout frontend code
+- Same language consistency as backend (Phases 2-3)
+- Better IDE support and refactoring capabilities
+- Catches errors at compile time vs runtime
+
+**Module System:** ES6 Modules (`type="module"`)
+- Native browser support (no bundler needed)
+- Clean import/export syntax
+- Enables code splitting naturally
+
+**Build Tool:** TypeScript Compiler (`tsc --watch`)
+- Simple, no webpack/vite complexity
+- Auto-compile on save during development
+- Production-ready JavaScript output
+
+**Development Server:** Live Server (by Ritwick Dey)
+- VS Code extension: `ritwickdey.LiveServer`
+- Auto-reload on file changes
+- Proper CORS handling for local API calls
+- Simple one-click launch
+
+### Project Structure
+
+```
+client/
+├── src/                    # TypeScript source files
+│   ├── api-client.ts
+│   ├── game-renderer.ts
+│   ├── game-controller.ts
+│   ├── player-app.ts
+│   └── host-panel.ts
+├── dist/                   # Compiled JavaScript (git-ignored)
+│   ├── api-client.js
+│   ├── game-renderer.js
+│   └── ...
+├── css/                    # Stylesheets
+│   ├── shared.css
+│   ├── game.css
+│   └── host.css
+├── index.html              # Player UI (references dist/)
+├── host.html               # Host panel (references dist/)
+├── package.json            # TypeScript dependency
+├── tsconfig.json           # TypeScript configuration
+└── staticwebapp.config.json # Azure deployment config
+```
+
+### Import Strategy
+
+**Shared Game Engine:** Direct imports from compiled output
+```typescript
+// In client/src/game-controller.ts
+import { moveRobot, applyMoves } from '../../dist/shared/game-engine.js';
+import type { Robots, Walls, Move } from '../../dist/shared/types.js';
+```
+
+**Why this works:**
+- Shared code already compiled to `dist/shared/` from Phase 2
+- Browser can import ES6 modules from relative paths
+- No code duplication needed (unlike Azure Functions)
+- Type definitions available via TypeScript
+
+### Development Workflow
+
+**Three-terminal setup:**
+```bash
+# Terminal 1: Backend API
+cd api
+npm start                    # Azure Functions on :7071
+
+# Terminal 2: Frontend build (auto-compile)
+cd client
+npm run build               # tsc --watch
+
+# Terminal 3: VS Code Live Server
+# Click "Go Live" in status bar → Opens :5500
+```
+
+**Why this approach:**
+- Minimal complexity (just one build step)
+- Fast feedback (auto-compile on save)
+- No bundler needed (native ES modules)
+- Easy to upgrade later if needed
+
+### CORS Configuration
+
+**Azure Functions local development:**
+```json
+// api/host.json
+{
+  "version": "2.0",
+  "extensions": {
+    "http": {
+      "routePrefix": "api"
+    }
+  },
+  "cors": {
+    "allowedOrigins": ["http://localhost:5500"],
+    "supportCredentials": false
+  }
+}
+```
+
+**Production:** Azure Static Web Apps automatically handles CORS for `/api` routes
+
+### TypeScript Configuration
+
+**File:** `client/tsconfig.json`
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "lib": ["ES2020", "DOM"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+### HTML Module Loading
+
+**Scripts loaded as ES6 modules:**
+```html
+<!-- index.html -->
+<script type="module" src="dist/player-app.js"></script>
+
+<!-- host.html -->
+<script type="module" src="dist/host-panel.js"></script>
+```
+
+**Benefits:**
+- Automatic strict mode
+- Deferred execution (DOMContentLoaded not needed)
+- Import/export support
+- No global namespace pollution
+
+### Key Design Decisions Summary
+
+1. **TypeScript over JavaScript** - Type safety worth minimal build complexity
+2. **No bundler** - Keep it simple, native ES modules work great
+3. **Direct imports** - Reuse compiled shared code, no duplication
+4. **Live Server** - Best developer experience for static files
+5. **Modern ES6+** - All target browsers support it fully
+
+### Browser Support Targets
+
+- Chrome/Edge: Latest 2 versions
+- Firefox: Latest 2 versions
+- Safari: Latest 2 versions
+- Mobile: iOS Safari 14+, Chrome Android latest
+
+All support ES2020 and ES6 modules natively.
+
+---
+
 ## Task Breakdown
 
 ### Task 1: Project Structure & Static Assets

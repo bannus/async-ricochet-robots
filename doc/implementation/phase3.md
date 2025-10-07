@@ -1205,6 +1205,41 @@ tests/
    - Fix issues before moving to next endpoint
    - Manual testing catches configuration issues automated tests miss
 
+### API Integration Testing Complete ✅
+
+**Automated Test Framework (October 7, 2025):**
+
+**Test Infrastructure:**
+- ✅ Reorganized tests into `unit/`, `integration/`, `manual/`, `helpers/` structure
+- ✅ Created reusable API test utilities in `tests/helpers/api-test-utils.ts`
+- ✅ Implemented end-to-end integration tests with Azurite and Azure Functions
+- ✅ Documented CI/CD requirements in `doc/CI-CD-REQUIREMENTS.md`
+
+**Test Results:**
+```
+Test Suites: 1 passed, 1 total
+Tests:       3 passed, 3 total
+- ✅ Game Creation Test
+- ✅ Round Lifecycle Test
+- ✅ Integration Test Info
+```
+
+**Total Test Coverage:**
+- **224 tests** total (207 unit + 14 game integration + 3 API integration)
+- All tests passing when services are running
+- API tests skipped by default (require Azurite + Azure Functions)
+
+**Key Fixes for Integration Tests:**
+1. **Authentication Method** - Fixed to use request body (not headers) for gameId/hostKey
+2. **Storage Initialization** - Added `ensureTable()` to `getActiveRound()` for new games
+3. **Response Structure** - Updated helpers to access nested `round` object in API responses
+4. **Data Models** - Fixed `RoundData` interface to match actual API response structure
+
+**Documentation Created:**
+- `tests/README.md` - Complete test organization guide
+- `doc/CI-CD-REQUIREMENTS.md` - Azure DevOps/GitHub Actions pipeline setup
+- `tests/helpers/api-test-utils.ts` - Reusable test utilities with full API coverage
+
 ### Next Steps for Phase 4
 
 **Frontend UI Implementation:**
