@@ -2,33 +2,47 @@
   "name": "async-ricochet-robots",
   "version": "0.1.0",
   "description": "Asynchronous multiplayer Ricochet Robots puzzle game with serverless Azure backend",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "type-check": "tsc --noEmit"
   },
   "keywords": [
     "ricochet-robots",
     "puzzle",
     "game",
     "azure",
-    "serverless"
+    "serverless",
+    "typescript"
   ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "jest": "^29.7.0"
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.7.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.4",
+    "typescript": "^5.9.3"
   },
   "jest": {
+    "preset": "ts-jest",
     "testEnvironment": "node",
-    "coverageDirectory": "coverage",
+    "roots": ["<rootDir>/tests", "<rootDir>/shared"],
+    "testMatch": ["**/tests/**/*.test.ts"],
+    "transform": {
+      "^.+\\.ts$": "ts-jest"
+    },
     "collectCoverageFrom": [
-      "shared/**/*.js",
-      "!shared/**/*.test.js"
+      "shared/**/*.ts",
+      "!shared/**/*.test.ts",
+      "!shared/**/*.d.ts"
     ],
-    "testMatch": [
-      "**/tests/**/*.test.js"
-    ]
+    "coverageDirectory": "coverage",
+    "moduleFileExtensions": ["ts", "js", "json"]
   }
 }

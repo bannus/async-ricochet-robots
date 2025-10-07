@@ -45,6 +45,21 @@ Players compete to solve puzzles using the fewest moves over extended time perio
 
 ### Development
 
+Build TypeScript:
+```bash
+npm run build
+```
+
+Build in watch mode (auto-recompile on changes):
+```bash
+npm run build:watch
+```
+
+Type check without emitting files:
+```bash
+npm run type-check
+```
+
 Run tests:
 ```bash
 npm test
@@ -65,15 +80,15 @@ npm run test:coverage
 ```
 async-ricochet-robots/
 ├── shared/              # Shared game logic (isomorphic - runs on client & server)
-│   ├── types.js        # Type definitions and validation
-│   ├── wall-utils.js   # Wall collision detection
-│   ├── game-engine.js  # Core movement and validation logic
-│   └── puzzle-generator.js  # Board and puzzle generation
+│   ├── types.ts        # Type definitions, enums, and validation
+│   ├── wall-utils.ts   # Wall collision detection
+│   ├── game-engine.ts  # Core movement and validation logic
+│   └── puzzle-generator.ts  # Board and puzzle generation
 ├── tests/              # Unit tests
-│   ├── types.test.js
-│   ├── wall-utils.test.js
-│   ├── game-engine.test.js
-│   └── wall-generator.test.js
+│   ├── types.test.ts
+│   ├── wall-utils.test.ts
+│   ├── game-engine.test.ts
+│   └── wall-generator.test.ts
 ├── doc/                # Design documentation
 │   ├── architecture.md
 │   ├── api-specification.md
@@ -84,6 +99,8 @@ async-ricochet-robots/
 │   ├── projectbrief.md
 │   ├── activeContext.md
 │   └── progress.md
+├── dist/               # Compiled JavaScript (git-ignored)
+├── tsconfig.json       # TypeScript configuration
 ├── package.json        # Project configuration
 └── README.md          # This file
 ```
@@ -98,11 +115,12 @@ async-ricochet-robots/
 
 ## Technology Stack
 
-- **Frontend**: Vanilla JavaScript, HTML5 Canvas
-- **Backend**: Azure Functions (Node.js)
+- **Language**: TypeScript (compiled to JavaScript)
+- **Frontend**: HTML5 Canvas (no framework)
+- **Backend**: Azure Functions (Node.js with TypeScript)
 - **Database**: Azure Table Storage
 - **Hosting**: Azure Static Web Apps
-- **Testing**: Jest
+- **Testing**: Jest with ts-jest
 
 ## Game Mechanics
 
