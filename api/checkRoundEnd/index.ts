@@ -8,7 +8,7 @@
 
 import { app, InvocationContext, Timer } from '@azure/functions';
 import { Storage } from '../shared/storage';
-import { applyMoves } from '../../dist/shared/game-engine';
+import { applyMoves } from '../lib-shared/game-engine';
 
 export async function checkRoundEnd(
   myTimer: Timer,

@@ -15,5 +15,6 @@
     "http": {
       "routePrefix": "api"
     }
-  }
+  },
+  "scriptFile": "dist/**/*.js"
 }

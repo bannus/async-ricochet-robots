@@ -3,8 +3,8 @@
  * Provides reusable validation functions for all endpoints
  */
 
-import type { Move } from '../../dist/shared/types';
-import { isValidMove, isValidRobotColor, isValidDirection } from '../../dist/shared/types';
+import type { Move } from '../lib-shared/types';
+import { isValidMove, isValidRobotColor, isValidDirection } from '../lib-shared/types';
 
 // ============================================================================
 // Validation Error Types

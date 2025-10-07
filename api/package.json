@@ -2,8 +2,15 @@
   "name": "async-ricochet-robots-api",
   "version": "1.0.0",
   "description": "Azure Functions API for Async Ricochet Robots",
-  "main": "index.js",
+  "main": "dist/**/*.js",
   "scripts": {
+    "copy:shared": "copyfiles -u 2 \"../shared/**/*.ts\" lib-shared",
+    "clean:shared": "rimraf lib-shared",
+    "prebuild": "npm run copy:shared",
+    "build": "tsc",
+    "watch": "npm run copy:shared && tsc --watch",
+    "clean": "npm run clean:shared && rimraf dist",
+    "prestart": "npm run build",
     "start": "func start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -18,6 +25,10 @@
     "@azure/functions": "^4.5.0"
   },
   "devDependencies": {
-    "azurite": "^3.31.0"
+    "@types/node": "^20.0.0",
+    "azurite": "^3.31.0",
+    "copyfiles": "^2.4.1",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.0.0"
   }
 }

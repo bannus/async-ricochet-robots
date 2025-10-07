@@ -15,7 +15,7 @@ import {
   errorResponse,
   handleError
 } from '../../shared/validation';
-import { applyMoves } from '../../../dist/shared/game-engine';
+import { applyMoves } from '../../lib-shared/game-engine';
 
 /**
  * Authenticate host using hostKey

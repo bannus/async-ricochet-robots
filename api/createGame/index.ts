@@ -13,7 +13,7 @@ import {
   successResponse,
   handleError
 } from '../shared/validation';
-import { generatePuzzle } from '../../dist/shared/game-engine';
+import { generatePuzzle } from '../lib-shared/game-engine';
 import { randomBytes } from 'crypto';
 
 /**

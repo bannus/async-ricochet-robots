@@ -13,6 +13,7 @@ local.settings.json
 __blobstorage__/
 __queuestorage__/
 __azurite_db*__.json
+AzuriteConfig
 
 # IDE
 .vscode/
@@ -29,6 +30,9 @@ Thumbs.db
 dist/
 build/
 *.tsbuildinfo
+
+# Auto-generated from shared/
+api/lib-shared/
 
 # Logs
 *.log

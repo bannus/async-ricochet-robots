@@ -10,7 +10,7 @@ import type {
   Goal, 
   Move, 
   RobotColorValue 
-} from '../../dist/shared/types';
+} from '../lib-shared/types';
 
 // ============================================================================
 // Types and Interfaces
@@ -226,6 +226,9 @@ export class GamesStorage extends BaseStorageClient {
     gameName?: string
   ): Promise<Game> {
     try {
+      // Ensure table exists before creating entity
+      await this.ensureTable();
+
       const entity: GameEntity & TableEntity = {
         partitionKey: 'GAME',
         rowKey: gameId,
@@ -352,6 +355,9 @@ export class RoundsStorage extends BaseStorageClient {
     }
   ): Promise<Round> {
     try {
+      // Ensure table exists before creating entity
+      await this.ensureTable();
+
       const entity: RoundEntity & TableEntity = {
         partitionKey: gameId,
         rowKey: roundId,
@@ -526,6 +532,9 @@ export class SolutionsStorage extends BaseStorageClient {
     }
   ): Promise<Solution> {
     try {
+      // Ensure table exists before creating entity
+      await this.ensureTable();
+
       const entity: SolutionEntity & TableEntity = {
         partitionKey: `${gameId}_${roundId}`,
         rowKey: playerName.toLowerCase().trim(),

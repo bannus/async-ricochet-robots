@@ -15,7 +15,7 @@ import {
   handleError,
   ValidationException
 } from '../shared/validation';
-import { validateSolution } from '../../dist/shared/solution-validator';
+import { validateSolution } from '../lib-shared/solution-validator';
 
 export async function submitSolution(
   request: HttpRequest,
