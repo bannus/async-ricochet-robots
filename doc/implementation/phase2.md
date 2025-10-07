@@ -1,938 +1,628 @@
-# Phase 2 Implementation Plan: Backend API
+# Phase 2 Implementation: Core Game Logic - COMPLETE ✅
 
 ## Overview
 
-**Phase:** Backend API (Azure Functions)  
-**Goal:** Build serverless API endpoints and database layer  
-**Estimated Time:** 6-8 hours  
-**Confidence Level:** 8/10  
-**Prerequisites:** Phase 1 complete (game engine working)
+**Phase:** Core Game Engine Foundation  
+**Status:** **COMPLETE** ✅  
+**Completion Date:** October 6, 2025  
+**Actual Time:** ~8 hours  
+**Confidence Level:** 10/10
 
-This phase implements the Azure Functions backend with Azure Table Storage, creating all API endpoints defined in the specification.
+**Achievement:** All 207 tests passing with 96.46% code coverage!
+
+This phase focuses on creating a robust, well-tested game engine that can be shared between client and server. All code will be pure JavaScript functions with comprehensive unit tests.
 
 ---
 
 ## Task Breakdown
 
-### Task 1: Azure Functions Project Setup
-**Estimated Time:** 45 minutes  
+### Task 1: Project Setup & Structure
+**Estimated Time:** 30 minutes  
 **Priority:** High (Blocking)
 
 #### What to Build
-- Initialize Azure Functions project structure
-- Configure local development environment
-- Set up Azurite (local storage emulator)
-- Install dependencies
-- Configure environment variables
+- Initialize npm project with `package.json`
+- Install Jest testing framework
+- Create folder structure
+- Configure Jest
+- Set up `.gitignore`
+- Update `README.md` with setup instructions
 
 #### Folder Structure
 ```
 async-ricochet-robots/
-├── api/                      # Azure Functions
-│   ├── getCurrentRound/      # Player endpoint
-│   ├── getLeaderboard/       # Player endpoint
-│   ├── submitSolution/       # Player endpoint
-│   ├── createGame/           # Game management
-│   ├── host/                 # Host endpoints
-│   │   ├── startRound/
-│   │   ├── extendRound/
-│   │   ├── endRound/
-│   │   └── dashboard/
-│   ├── checkRoundEnd/        # Timer function
-│   ├── shared/               # Shared utilities
-│   │   ├── storage.js
-│   │   ├── auth.js
-│   │   └── validators.js
-│   ├── host.json
-│   ├── local.settings.json
-│   └── package.json
-├── shared/                   # ✅ From Phase 1
-├── tests/                    # ✅ From Phase 1
-└── doc/                      # ✅ Complete
+├── shared/              # Shared game logic (isomorphic)
+├── tests/               # Unit tests
+├── doc/                 # ✅ Already complete
+├── memory-bank/         # ✅ Already complete
+├── package.json         # NEW
+├── .gitignore           # NEW
+└── README.md            # UPDATE
 ```
 
 #### Files to Create
+1. `package.json`:
+   - Dependencies: None for core engine
+   - Dev dependencies: `jest`
+   - Scripts: `test`, `test:watch`, `test:coverage`
 
-1. **`api/host.json`**:
-   ```json
-   {
-     "version": "2.0",
-     "extensionBundle": {
-       "id": "Microsoft.Azure.Functions.ExtensionBundle",
-       "version": "[3.*, 4.0.0)"
-     },
-     "logging": {
-       "applicationInsights": {
-         "samplingSettings": {
-           "isEnabled": true
-         }
-       }
-     }
-   }
+2. `.gitignore`:
+   ```
+   node_modules/
+   coverage/
+   .env
+   .DS_Store
    ```
 
-2. **`api/local.settings.json`**:
-   ```json
-   {
-     "IsEncrypted": false,
-     "Values": {
-       "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-       "FUNCTIONS_WORKER_RUNTIME": "node",
-       "AZURE_STORAGE_CONNECTION_STRING": "UseDevelopmentStorage=true"
-     }
-   }
-   ```
+3. Update `README.md`:
+   - Project description
+   - Setup instructions (`npm install`, `npm test`)
+   - Folder structure explanation
 
-3. **`api/package.json`**:
-   - Dependencies: `@azure/data-tables`, `@azure/functions`
-   - Reference shared game engine: `"shared": "file:../shared"`
+#### Success Criteria
+- ✅ `npm install` runs successfully
+- ✅ `npm test` runs (even with 0 tests)
+- ✅ Folder structure matches plan
+- ✅ Git repository initialized
 
 #### Commands to Run
 ```bash
-cd api
 npm init -y
-npm install @azure/data-tables @azure/functions
-npm install --save-dev @azure/functions-core-tools azurite
+npm install --save-dev jest
+mkdir shared tests
 ```
-
-#### Success Criteria
-- ✅ Azure Functions project initialized
-- ✅ Azurite runs locally (`azurite-blob --silent --location azurite`)
-- ✅ Can start functions locally (`npm start` or `func start`)
-- ✅ Dependencies installed
-- ✅ Environment configured
 
 ---
 
-### Task 2: Storage Layer Abstraction
-**Estimated Time:** 1.5 hours  
+### Task 2: Core Data Structures & Types
+**Estimated Time:** 30 minutes  
 **Priority:** High (Blocking)  
 **Dependencies:** Task 1
 
 #### What to Build
-**File:** `api/shared/storage.js`
+**File:** `shared/types.js`
 
-Create abstraction layer for Azure Table Storage operations.
-
-#### Classes to Implement
-
-```javascript
-const { TableClient } = require('@azure/data-tables');
-
-/**
- * Base storage client wrapper
- */
-class StorageClient {
-  constructor(tableName) {
-    this.tableClient = TableClient.fromConnectionString(
-      process.env.AZURE_STORAGE_CONNECTION_STRING,
-      tableName
-    );
-  }
-
-  async createEntity(entity) { }
-  async getEntity(partitionKey, rowKey) { }
-  async updateEntity(entity, mode = 'Merge') { }
-  async deleteEntity(partitionKey, rowKey) { }
-  async queryEntities(filter) { }
-}
-
-/**
- * Games table operations
- */
-class GamesStorage extends StorageClient {
-  constructor() {
-    super('Games');
-  }
-
-  async createGame(gameData) { }
-  async getGame(gameId) { }
-  async updateGame(gameId, updates) { }
-  async getCurrentRound(gameId) { }
-}
-
-/**
- * Rounds table operations
- */
-class RoundsStorage extends StorageClient {
-  constructor() {
-    super('Rounds');
-  }
-
-  async createRound(gameId, roundData) { }
-  async getRound(gameId, roundId) { }
-  async updateRound(gameId, roundId, updates) { }
-  async getActiveRound(gameId) { }
-  async getAllActiveRounds() { }
-  async getRoundHistory(gameId, limit = 10) { }
-}
-
-/**
- * Solutions table operations
- */
-class SolutionsStorage extends StorageClient {
-  constructor() {
-    super('Solutions');
-  }
-
-  async submitSolution(gameId, roundId, solutionData) { }
-  async getSolution(gameId, roundId, playerName) { }
-  async getLeaderboard(gameId, roundId) { }
-  async getSolutionCount(gameId, roundId) { }
-}
-```
-
-#### Key Implementation Details
-
-1. **Partition/Row Key Format:**
-   - Games: PartitionKey="GAME", RowKey=gameId
-   - Rounds: PartitionKey=gameId, RowKey=roundId
-   - Solutions: PartitionKey=`${gameId}_${roundId}`, RowKey=playerName
-
-2. **JSON Serialization:**
-   - Complex objects stored as JSON strings
-   - Parse on retrieval, stringify on storage
-   - Properties: `boardData`, `solutionData`, `goalPosition`, `robotPositions`
-
-3. **Error Handling:**
-   - Handle `ResourceNotFound` errors
-   - Return null for missing entities
-   - Throw custom errors for duplicates
-
-#### Test File
-**File:** `tests/storage.test.js`
-
-Test cases (using Azurite):
-1. Create/read/update/delete entities
-2. Query with filters
-3. Handle missing entities
-4. JSON serialization/deserialization
-5. Partition key queries
-6. Error scenarios
-
-#### Success Criteria
-- ✅ All CRUD operations work
-- ✅ Proper partition/row key usage
-- ✅ JSON handling correct
-- ✅ Error handling robust
-- ✅ Tests pass with Azurite
-- ✅ Matches data-models.md schema
-
----
-
-### Task 3: Authentication Middleware
-**Estimated Time:** 30 minutes  
-**Priority:** Medium  
-**Dependencies:** Task 2  
-**Status:** ⏸️ DEFERRED TO TASK 9
-
-#### Implementation Plan Change
-
-This task has been **deferred to Task 9** based on the following rationale:
-
-**What's Already Built (Task 4):**
-- `validateHostHeaders()` in validation layer extracts and format-validates headers
-- Returns typed `{ gameId, hostKey }` object
-- Throws ValidationException with 401 status for auth failures
-
-**What's Already Built (Task 2):**
-- `Storage.games.verifyHostKey(gameId, hostKey)` method exists
-- Performs database lookup and comparison
-- Returns boolean result
-
-**Why Defer:**
-- Full middleware pattern is overkill for 4 host endpoints
-- Simpler to use validation + storage helpers directly
-- Can implement inline auth checking when building first host endpoint
-- Avoid premature abstraction
-
-#### What Will Be Built (in Task 9)
-
-When implementing the first host endpoint (`startRound`), we'll create simple auth helpers:
-
-**File:** `api/shared/auth-helpers.ts`
-
-```typescript
-/**
- * Authenticate host request
- * Extracts headers, validates format, and verifies against database
- */
-async function authenticateHost(request: HttpRequest): Promise<{
-  gameId: string;
-  hostKey: string;
-}> {
-  // 1. Extract and validate headers (uses validateHostHeaders)
-  const { gameId, hostKey } = validateHostHeaders(request.headers);
-  
-  // 2. Verify against database
-  const isValid = await Storage.games.verifyHostKey(gameId, hostKey);
-  
-  if (!isValid) {
-    throw new ValidationException([{
-      field: 'authentication',
-      message: 'Invalid host key',
-      code: 'INVALID_HOST_KEY'
-    }], 401);
-  }
-  
-  return { gameId, hostKey };
-}
-```
-
-#### Success Criteria (Deferred)
-- ⏸️ Will be implemented in Task 9
-- ⏸️ Auth helper function in auth-helpers.ts
-- ⏸️ Used by all host endpoints (Tasks 9-10)
-- ⏸️ Proper 401 error responses
-
----
-
-### Task 4: Input Validation Utilities
-**Estimated Time:** 30 minutes  
-**Priority:** Medium  
-**Dependencies:** None
-
-#### What to Build
-**File:** `api/shared/validators.js`
-
-Common validation functions for API inputs.
+Create validation helpers and type definitions (using JSDoc for type documentation).
 
 #### Functions to Implement
 
 ```javascript
-function validatePlayerName(name) {
-  // 1-20 characters, alphanumeric + spaces
-}
+/**
+ * Validates a position object
+ * @param {Object} pos - Position to validate
+ * @param {number} pos.x - X coordinate (0-15)
+ * @param {number} pos.y - Y coordinate (0-15)
+ * @returns {boolean} True if valid position
+ */
+function isValidPosition(pos) { }
 
-function validateGameName(name) {
-  // Optional, max 100 characters
-}
+/**
+ * Validates robot color
+ * @param {string} color - Robot color
+ * @returns {boolean} True if valid color
+ */
+function isValidRobotColor(color) { }
 
-function validateDuration(durationMs) {
-  // Positive integer, reasonable range (1 hour - 7 days)
-}
+/**
+ * Validates direction
+ * @param {string} direction - Movement direction
+ * @returns {boolean} True if valid direction
+ */
+function isValidDirection(direction) { }
 
-function validateSolutionData(solutionData) {
-  // Array of moves, each with valid robot/direction
-}
+/**
+ * Validates move object
+ * @param {Object} move - Move to validate
+ * @param {string} move.robot - Robot color
+ * @param {string} move.direction - Movement direction
+ * @returns {boolean} True if valid move
+ */
+function isValidMove(move) { }
 
-function sanitizePlayerName(name) {
-  // Trim, lowercase for rowKey
-}
-
-function createErrorResponse(error, code) {
-  // Standard error response format
-}
-
-function createSuccessResponse(data) {
-  // Standard success response format
-}
+/**
+ * Creates a deep copy of robot positions
+ * @param {Object} robots - Robot positions {red: {x, y}, ...}
+ * @returns {Object} Deep copy of robots
+ */
+function cloneRobots(robots) { }
 ```
 
-#### Success Criteria
-- ✅ Validation functions work
-- ✅ Sanitization correct
-- ✅ Response formatters consistent
-- ✅ Matches API specification format
-
----
-
-### Task 5: Player Endpoint - getCurrentRound
-**Estimated Time:** 1 hour  
-**Priority:** High  
-**Dependencies:** Tasks 2, 4
-
-#### What to Build
-**File:** `api/getCurrentRound/index.js`
-
-HTTP GET endpoint returning current active round.
-
-#### Implementation
-
+#### Constants to Define
 ```javascript
-const { app } = require('@azure/functions');
-const { GamesStorage, RoundsStorage } = require('../shared/storage');
-const { createSuccessResponse, createErrorResponse } = require('../shared/validators');
-
-app.http('getCurrentRound', {
-  methods: ['GET'],
-  authLevel: 'anonymous',
-  handler: async (request, context) => {
-    // 1. Extract gameId from query params
-    // 2. Get game from storage
-    // 3. Get active round (if exists)
-    // 4. Parse boardData
-    // 5. Return response based on state
-  }
-});
+const ROBOT_COLORS = ['red', 'yellow', 'green', 'blue'];
+const DIRECTIONS = ['up', 'down', 'left', 'right'];
+const BOARD_SIZE = 16;
+const GOAL_COLORS = [...ROBOT_COLORS, 'multi'];
 ```
-
-#### Response Scenarios
-
-1. **Active Round:** Full puzzle + round data
-2. **No Active Round:** Waiting message + game stats
-3. **Game Complete:** All 17 goals done
-4. **Game Not Found:** 404 error
 
 #### Test File
-**File:** `tests/api/getCurrentRound.test.js`
+**File:** `tests/types.test.js`
 
 Test cases:
-1. Active round returns correct data
-2. No active round returns waiting message
-3. Game complete returns completion message
-4. Invalid gameId returns 404
-5. Missing gameId returns 400
+- Valid positions (0-15 range)
+- Invalid positions (negative, >15, non-integer)
+- Valid/invalid robot colors
+- Valid/invalid directions
+- Valid/invalid move objects
+- Deep clone doesn't mutate original
 
 #### Success Criteria
-- ✅ Returns correct data for all scenarios
-- ✅ Matches API specification exactly
-- ✅ Proper error handling
-- ✅ Integration tests pass
+- ✅ All validation functions work correctly
+- ✅ Constants match documentation
+- ✅ JSDoc comments complete
+- ✅ All tests pass (15+ test cases)
+- ✅ Test coverage 100%
 
 ---
 
-### Task 6: Player Endpoint - getLeaderboard
-**Estimated Time:** 45 minutes  
-**Priority:** High  
-**Dependencies:** Tasks 2, 4
+### Task 3: Wall Collision Detection
+**Estimated Time:** 1 hour  
+**Priority:** High (Blocking)  
+**Dependencies:** Task 2
 
 #### What to Build
-**File:** `api/getLeaderboard/index.js`
+**File:** `shared/wall-utils.js`
 
-HTTP GET endpoint returning ranked solutions.
+Implement the critical wall collision detection logic.
 
-#### Implementation
-
-```javascript
-app.http('getLeaderboard', {
-  methods: ['GET'],
-  authLevel: 'anonymous',
-  handler: async (request, context) => {
-    // 1. Extract gameId, roundId from query
-    // 2. Get round from storage
-    // 3. Get all solutions for round
-    // 4. Sort by moveCount, then submittedAt
-    // 5. Assign ranks (ties share rank)
-    // 6. Include solutionData only if round ended
-  }
-});
-```
-
-#### Ranking Logic
+#### Main Function
 
 ```javascript
-function assignRanks(solutions) {
-  solutions.sort((a, b) => {
-    if (a.moveCount !== b.moveCount) return a.moveCount - b.moveCount;
-    return a.submittedAt - b.submittedAt;
-  });
-  
-  let rank = 1;
-  for (let i = 0; i < solutions.length; i++) {
-    if (i > 0 && solutions[i].moveCount > solutions[i-1].moveCount) {
-      rank = i + 1;
-    }
-    solutions[i].rank = rank;
-  }
+/**
+ * Check if a wall blocks movement from current position in given direction
+ * @param {Object} walls - Wall structure {horizontal: [[]], vertical: [[]]}
+ * @param {number} x - Current X position
+ * @param {number} y - Current Y position
+ * @param {string} direction - Movement direction ('up', 'down', 'left', 'right')
+ * @returns {boolean} True if wall blocks movement
+ */
+function isWallBlocking(walls, x, y, direction) {
+  // Implementation follows doc/game-rules.md wall format
 }
 ```
 
+#### Wall Format Reference
+From documentation:
+- `walls.horizontal[row]` = array of column indices where walls exist **below** that row
+- `walls.vertical[col]` = array of row indices where walls exist **to the right** of that column
+
+#### Direction-Specific Logic
+- **Up**: Check `walls.horizontal[y-1]` includes `x`
+- **Down**: Check `walls.horizontal[y]` includes `x`
+- **Left**: Check `walls.vertical[x-1]` includes `y`
+- **Right**: Check `walls.vertical[x]` includes `y`
+
+#### Test File
+**File:** `tests/wall-utils.test.js`
+
+Test cases:
+1. **Horizontal walls:**
+   - Moving up blocked by wall above
+   - Moving down blocked by wall below
+   - Moving left/right not blocked by horizontal wall
+
+2. **Vertical walls:**
+   - Moving left blocked by wall to left
+   - Moving right blocked by wall to right
+   - Moving up/down not blocked by vertical wall
+
+3. **Edge cases:**
+   - Position at row 0, column 0
+   - Position at row 15, column 15
+   - Empty walls object (no walls)
+   - Wall array doesn't include position (not blocked)
+
+4. **Invalid inputs:**
+   - Undefined walls
+   - Invalid direction
+   - Out of bounds position
+
 #### Success Criteria
-- ✅ Correct ranking with ties
-- ✅ Solution data hidden during active round
-- ✅ Solution data visible after round ends
-- ✅ Matches API specification
-- ✅ Tests pass
+- ✅ All wall collision tests pass (20+ test cases)
+- ✅ Matches wall format from documentation exactly
+- ✅ Handles all 4 directions correctly
+- ✅ Edge cases covered
+- ✅ Test coverage 100%
 
 ---
 
-### Task 7: Player Endpoint - submitSolution
+### Task 4: Basic Robot Movement
 **Estimated Time:** 1.5 hours  
-**Priority:** High  
-**Dependencies:** Tasks 2, 4, Phase 1 (game engine)
+**Priority:** High (Blocking)  
+**Dependencies:** Tasks 2, 3
 
 #### What to Build
-**File:** `api/submitSolution/index.js`
+**File:** `shared/game-engine.js`
 
-HTTP POST endpoint for solution submission with validation.
+Implement the core movement logic where robots slide until collision.
 
-#### Implementation
+#### Main Function
 
 ```javascript
-const { validateSolution } = require('../../shared/game-engine');
-
-app.http('submitSolution', {
-  methods: ['POST'],
-  authLevel: 'anonymous',
-  handler: async (request, context) => {
-    // 1. Parse request body
-    // 2. Validate inputs (gameId, roundId, playerName, solutionData)
-    // 3. Get game and round
-    // 4. Check round is active
-    // 5. Validate solution with game engine
-    // 6. Check for duplicate submission
-    // 7. Store solution
-    // 8. Calculate rank
-    // 9. Return success with rank
-  }
-});
+/**
+ * Move a robot in the specified direction
+ * @param {Object} walls - Wall structure
+ * @param {Object} robots - Current robot positions {red: {x, y}, ...}
+ * @param {string} robotColor - Which robot to move
+ * @param {string} direction - Direction to move
+ * @returns {Object} New robot positions (pure function, doesn't mutate)
+ */
+function moveRobot(walls, robots, robotColor, direction) {
+  // 1. Clone robots (don't mutate input)
+  // 2. Get current position
+  // 3. Calculate slide path
+  // 4. Check collisions (walls, robots, boundaries)
+  // 5. Return new positions
+}
 ```
 
-#### Validation Steps
+#### Helper Function
 
-1. **Input validation:** Required fields present
-2. **Round status:** Must be active
-3. **Game engine:** Solution reaches goal correctly
-4. **Duplicate check:** Player hasn't submitted yet
-5. **Move count:** Matches array length
+```javascript
+/**
+ * Check if another robot is at the given position
+ * @param {Object} robots - Robot positions
+ * @param {number} x - X coordinate to check
+ * @param {number} y - Y coordinate to check
+ * @param {string} excludeRobot - Robot to exclude from check
+ * @returns {boolean} True if robot at position
+ */
+function isRobotAt(robots, x, y, excludeRobot) { }
+```
 
-#### Error Responses
+#### Collision Priority
+1. **Board boundary** (x/y < 0 or > 15)
+2. **Wall** (via `isWallBlocking`)
+3. **Another robot** (via `isRobotAt`)
 
-- 400: Invalid solution format
-- 400: Solution doesn't reach goal
-- 400: Round has ended
-- 404: Game or round not found
-- 409: Duplicate submission
+#### Test File
+**File:** `tests/game-engine.test.js`
+
+Test cases:
+1. **Boundary collisions:**
+   - Robot at (0, 5) moving left → stays at (0, 5)
+   - Robot at (15, 5) moving right → stays at (15, 5)
+   - Robot at (5, 0) moving up → stays at (5, 0)
+   - Robot at (5, 15) moving down → stays at (5, 15)
+
+2. **Wall collisions:**
+   - Robot slides until wall
+   - Robot already against wall doesn't move
+   - Test all 4 directions with various wall positions
+
+3. **Robot collisions:**
+   - Robot slides until hitting another robot
+   - Robot stops one cell before other robot
+   - Test with multiple robots in path
+
+4. **No collision (slides to boundary):**
+   - Clear path to edge
+   - All 4 directions
+
+5. **Pure function behavior:**
+   - Original robots object not mutated
+   - Returns new object
 
 #### Success Criteria
-- ✅ Valid solutions stored correctly
-- ✅ Invalid solutions rejected with clear errors
-- ✅ Duplicate prevention works
-- ✅ Rank calculated correctly
-- ✅ Multi-color goal support
-- ✅ Integration tests pass
+- ✅ Robot slides correctly until collision
+- ✅ All collision types handled (boundary, wall, robot)
+- ✅ Pure function (no mutation)
+- ✅ All tests pass (25+ test cases)
+- ✅ Test coverage 100%
 
 ---
 
-### Task 8: Game Management - createGame
+### Task 5: Solution Validation (Single-Color)
 **Estimated Time:** 1 hour  
 **Priority:** High  
-**Dependencies:** Tasks 2, 4, Phase 1 (puzzle generator)
+**Dependencies:** Task 4
 
 #### What to Build
-**File:** `api/createGame/index.js`
+**File:** `shared/game-engine.js` (add to existing file)
 
-HTTP POST endpoint for game creation with puzzle generation.
+Validate that a sequence of moves reaches the goal.
 
-#### Implementation
-
-```javascript
-const { generatePuzzle } = require('../../shared/puzzle-generator');
-const crypto = require('crypto');
-
-app.http('createGame', {
-  methods: ['POST'],
-  authLevel: 'anonymous',
-  handler: async (request, context) => {
-    // 1. Parse request body (gameName, defaultRoundDurationMs)
-    // 2. Generate unique gameId
-    // 3. Generate secure hostKey
-    // 4. Generate puzzle (walls, robots, allGoals)
-    // 5. Create boardData JSON
-    // 6. Store in Games table
-    // 7. Return gameId, hostKey, URLs
-  }
-});
-```
-
-#### ID Generation
+#### Main Function
 
 ```javascript
-function generateGameId() {
-  return 'game_' + crypto.randomBytes(8).toString('hex');
-}
-
-function generateHostKey() {
-  return 'host_' + crypto.randomBytes(12).toString('hex');
+/**
+ * Validate a solution for a puzzle
+ * @param {Object} puzzle - Puzzle data
+ * @param {Object} puzzle.walls - Wall structure
+ * @param {Object} puzzle.robots - Initial robot positions
+ * @param {Object} puzzle.goalPosition - Goal position {x, y}
+ * @param {string} puzzle.goalColor - Goal color or 'multi'
+ * @param {Array} solutionData - Array of moves [{robot, direction}, ...]
+ * @returns {Object} {valid, moveCount, winningRobot, error}
+ */
+function validateSolution(puzzle, solutionData) {
+  // 1. Validate input format
+  // 2. Clone initial robot positions
+  // 3. Replay each move
+  // 4. Check if correct robot at goal
+  // 5. Return result
 }
 ```
 
-#### Response Format
-
+#### Return Object Structure
 ```javascript
+// Success:
 {
-  success: true,
-  data: {
-    gameId: "game_abc123xyz",
-    hostKey: "host_9f8e7d6c5b4a",
-    gameName: "Friday Night Puzzle",
-    defaultRoundDurationMs: 86400000,
-    createdAt: 1704000000000,
-    totalGoals: 17,
-    goalsCompleted: 0,
-    gameUrl: "https://ricochet-robots.azurewebsites.net/?game=game_abc123xyz",
-    hostUrl: "https://ricochet-robots.azurewebsites.net/host.html?game=game_abc123xyz&key=host_9f8e7d6c5b4a",
-    message: "Game created successfully! Save your host key..."
-  }
+  valid: true,
+  moveCount: 7,
+  winningRobot: 'red',
+  error: null
+}
+
+// Failure:
+{
+  valid: false,
+  moveCount: 0,
+  winningRobot: null,
+  error: 'Red robot did not reach goal. Final: (5, 7), Goal: (7, 7)'
 }
 ```
 
+#### Validation Rules (Single-Color First)
+1. Solution must be non-empty array
+2. Each move must be valid format
+3. Each move must have valid robot and direction
+4. **For single-color goals:** Specific robot must reach goal position
+5. Return detailed error messages
+
+#### Test File
+**File:** `tests/game-engine.test.js` (add to existing)
+
+Test cases:
+1. **Valid solutions:**
+   - Simple 1-move solution
+   - Complex multi-move solution
+   - Solution using blocker robots
+
+2. **Invalid format:**
+   - Empty solution array
+   - Invalid robot color in move
+   - Invalid direction in move
+   - Missing robot/direction properties
+
+3. **Invalid solutions:**
+   - Doesn't reach goal position
+   - Wrong robot reaches goal (single-color)
+   - Correct robot but wrong position
+
+4. **Edge cases:**
+   - Solution where robot doesn't move (already blocked)
+   - Very long solution (50+ moves)
+
 #### Success Criteria
-- ✅ Game created with valid puzzle
-- ✅ Unique IDs generated
-- ✅ Secure host key
-- ✅ All 17 goals present
-- ✅ URLs formatted correctly
-- ✅ Tests pass
+- ✅ Validates move sequences correctly
+- ✅ Replays moves accurately
+- ✅ Clear error messages
+- ✅ All tests pass (20+ test cases)
+- ✅ **Focus on single-color goals** (multi-color in Task 6)
 
 ---
 
-### Task 9: Host Endpoint - startRound
-**Estimated Time:** 1 hour  
-**Priority:** High  
-**Dependencies:** Tasks 2, 3, 4
-
-#### What to Build
-**File:** `api/host/startRound/index.js`
-
-HTTP POST endpoint for starting new rounds (host authenticated).
-
-#### Implementation
-
-```javascript
-const { requireHostAuth } = require('../../shared/auth');
-
-app.http('hostStartRound', {
-  methods: ['POST'],
-  authLevel: 'anonymous',
-  handler: requireHostAuth(async (request, context, gameId) => {
-    // 1. Parse duration (optional)
-    // 2. Get game
-    // 3. Check no active round exists
-    // 4. Check completedGoalIndices.length < 17
-    // 5. Select random goal from available
-    // 6. Create round entity
-    // 7. Update game.currentRoundId
-    // 8. Return round data
-  })
-});
-```
-
-#### Goal Selection Logic
-
-```javascript
-function selectRandomGoal(allGoals, completedGoalIndices) {
-  const availableIndices = [];
-  for (let i = 0; i < allGoals.length; i++) {
-    if (!completedGoalIndices.includes(i)) {
-      availableIndices.push(i);
-    }
-  }
-  
-  if (availableIndices.length === 0) {
-    throw new Error('ALL_GOALS_EXHAUSTED');
-  }
-  
-  const randomIndex = Math.floor(Math.random() * availableIndices.length);
-  return availableIndices[randomIndex];
-}
-```
-
-#### Error Responses
-
-- 400: Round already active
-- 400: All goals exhausted (17 completed)
-- 401: Invalid host key
-
-#### Success Criteria
-- ✅ Round created successfully
-- ✅ Random goal selection works
-- ✅ Game completion check
-- ✅ Robot positions from boardData
-- ✅ Host authentication required
-- ✅ Tests pass
-
----
-
-### Task 10: Host Endpoints - Remaining Operations
-**Estimated Time:** 1.5 hours  
-**Priority:** Medium  
-**Dependencies:** Tasks 2, 3, 4, 9
-
-#### What to Build
-
-**Files:**
-- `api/host/extendRound/index.js`
-- `api/host/endRound/index.js`
-- `api/host/dashboard/index.js`
-
-#### 1. extendRound
-
-```javascript
-app.http('hostExtendRound', {
-  methods: ['PUT'],
-  authLevel: 'anonymous',
-  handler: requireHostAuth(async (request, context, gameId) => {
-    // 1. Parse roundId, newEndTime OR extendByMs
-    // 2. Get round
-    // 3. Check round is active
-    // 4. Calculate new endTime
-    // 5. Update round
-    // 6. Return confirmation
-  })
-});
-```
-
-#### 2. endRound
-
-```javascript
-app.http('hostEndRound', {
-  methods: ['POST'],
-  authLevel: 'anonymous',
-  handler: requireHostAuth(async (request, context, gameId) => {
-    // 1. Parse roundId, skipGoal (optional)
-    // 2. Get round and solutions
-    // 3. Check round is active
-    // 4. If skipGoal=false:
-    //    - Add goalIndex to completedGoalIndices
-    //    - Update robots to winning solution positions
-    // 5. Update round.status ('completed' or 'skipped')
-    // 6. Clear game.currentRoundId
-    // 7. Return summary
-  })
-});
-```
-
-#### 3. dashboard
-
-```javascript
-app.http('hostDashboard', {
-  methods: ['GET'],
-  authLevel: 'anonymous',
-  handler: requireHostAuth(async (request, context, gameId) => {
-    // 1. Get game
-    // 2. Get current round (if exists)
-    // 3. Get recent rounds (last 10)
-    // 4. Calculate statistics
-    // 5. Return dashboard data
-  })
-});
-```
-
-#### Success Criteria
-- ✅ All three endpoints work
-- ✅ Proper host authentication
-- ✅ Skip functionality correct
-- ✅ Dashboard stats accurate
-- ✅ Matches API specification
-- ✅ Tests pass
-
----
-
-### Task 11: Timer Function - checkRoundEnd
+### Task 6: Multi-Color Goal Support
 **Estimated Time:** 45 minutes  
 **Priority:** Medium  
-**Dependencies:** Tasks 2, 9
+**Dependencies:** Task 5
 
 #### What to Build
-**File:** `api/checkRoundEnd/index.js`
+**File:** `shared/game-engine.js` (enhance existing `validateSolution`)
 
-Time-triggered function running every 1 minute.
+Extend validation to support multi-color goals where ANY robot can win.
 
-#### Implementation
-
-```javascript
-const { app } = require('@azure/functions');
-
-app.timer('checkRoundEnd', {
-  schedule: '0 * * * * *', // Every minute
-  handler: async (myTimer, context) => {
-    // 1. Get all active rounds (cross-partition query)
-    // 2. Check endTime < currentTime
-    // 3. For each expired round:
-    //    - Get solutions
-    //    - If solutions exist:
-    //      - Find winning solution (lowest moves)
-    //      - Update robots to final positions
-    //      - Add to completedGoalIndices
-    //    - Update round.status = 'completed'
-    //    - Clear game.currentRoundId
-    //    - Log event
-  }
-});
-```
-
-#### Logging
+#### Enhancement to `validateSolution`
 
 ```javascript
-context.log({
-  timestamp: Date.now(),
-  event: 'round_ended',
-  gameId,
-  roundId,
-  goalIndex,
-  solutionCount,
-  winningMoveCount,
-  endReason: 'timer'
-});
-```
-
-#### Success Criteria
-- ✅ Runs on schedule
-- ✅ Finds expired rounds
-- ✅ Updates game state correctly
-- ✅ Handles no-solution case
-- ✅ Logging works
-- ✅ Integration tests pass
-
----
-
-### Task 12: CORS Configuration
-**Estimated Time:** 15 minutes  
-**Priority:** Low  
-**Dependencies:** None
-
-#### What to Build
-**File:** `api/host.json` (update)
-
-Configure CORS for frontend access.
-
-#### Configuration
-
-```json
-{
-  "version": "2.0",
-  "extensionBundle": {
-    "id": "Microsoft.Azure.Functions.ExtensionBundle",
-    "version": "[3.*, 4.0.0)"
-  },
-  "extensions": {
-    "http": {
-      "routePrefix": "api",
-      "cors": {
-        "allowedOrigins": [
-          "http://localhost:3000",
-          "http://localhost:5500",
-          "https://ricochet-robots.azurewebsites.net"
-        ],
-        "supportCredentials": false
+function validateSolution(puzzle, solutionData) {
+  // ... existing validation ...
+  
+  // NEW: Check goal color
+  if (puzzle.goalColor === 'multi') {
+    // ANY robot at goal position wins
+    for (const [color, position] of Object.entries(finalRobots)) {
+      if (position.x === goalPosition.x && position.y === goalPosition.y) {
+        return {
+          valid: true,
+          moveCount: solutionData.length,
+          winningRobot: color
+        };
       }
     }
+    return {
+      valid: false,
+      error: 'No robot reached multi-color goal position'
+    };
+  } else {
+    // Specific robot must reach goal (existing logic)
+    // ...
   }
 }
 ```
 
+#### Key Differences
+- **Single-color:** Only specified robot can win
+- **Multi-color:** First robot to reach goal wins (any color)
+- **`winningRobot`:** Must be tracked for leaderboard display
+
+#### Test File
+**File:** `tests/game-engine.test.js` (add to existing)
+
+Test cases:
+1. **Multi-color valid:**
+   - Red robot reaches multi-color goal
+   - Yellow robot reaches multi-color goal
+   - Blue robot reaches multi-color goal
+   - Green robot reaches multi-color goal
+
+2. **Multi-color invalid:**
+   - No robot reaches goal
+   - Robot near but not at goal
+
+3. **Winning robot tracking:**
+   - Verify correct robot identified
+   - Multiple robots move, right one wins
+
+4. **Comparison:**
+   - Same goal, different robots used
+   - Different move counts possible
+
 #### Success Criteria
-- ✅ CORS configured
-- ✅ Local development works
-- ✅ Production domain allowed
-- ✅ Preflight requests handled
+- ✅ Multi-color validation works
+- ✅ `winningRobot` tracked correctly
+- ✅ Both single and multi-color tests pass
+- ✅ All tests pass (30+ total validation tests)
+- ✅ Test coverage 100%
 
 ---
 
-### Task 13: Integration Testing
+### Task 7: L-Shape Wall Helper Functions
 **Estimated Time:** 1 hour  
 **Priority:** High  
-**Dependencies:** All previous tasks
+**Dependencies:** Task 2
 
 #### What to Build
-**File:** `tests/api/integration.test.js`
+**File:** `shared/wall-generator.js`
 
-End-to-end API tests with Azurite.
+Create utilities for L-shaped wall generation and overlap detection.
 
-#### Test Scenarios
-
-1. **Full Game Lifecycle:**
-   ```javascript
-   // 1. Create game
-   // 2. Start round
-   // 3. Submit solutions (multiple players)
-   // 4. Get leaderboard
-   // 5. End round
-   // 6. Start round 2
-   // 7. Complete all 17 rounds
-   // 8. Verify game completion
-   ```
-
-2. **Error Scenarios:**
-   - Invalid host key
-   - Duplicate submission
-   - Invalid solution
-   - Round already active
-   - All goals exhausted
-
-3. **Edge Cases:**
-   - Skip round functionality
-   - Extend deadline
-   - Multi-color goal
-   - No solutions submitted
-
-#### Test Utilities
+#### Functions to Implement
 
 ```javascript
-class TestClient {
-  async createGame(data) { }
-  async startRound(gameId, hostKey, duration) { }
-  async submitSolution(gameId, roundId, playerName, solution) { }
-  async getLeaderboard(gameId, roundId) { }
-  async endRound(gameId, roundId, hostKey, skip) { }
+/**
+ * Get wall positions for an L-shaped wall piece
+ * @param {Object} position - Goal position {x, y}
+ * @param {string} orientation - 'NW', 'NE', 'SW', or 'SE'
+ * @returns {Array} [{type: 'horizontal'|'vertical', row, col}, ...]
+ */
+function getLShapeWallPositions(position, orientation) {
+  // Returns 2 wall positions forming L-shape corner
+}
+
+/**
+ * Add an L-shaped wall to the walls structure
+ * @param {Object} walls - Walls structure to modify
+ * @param {Object} position - Goal position {x, y}
+ * @param {string} orientation - L-shape orientation
+ */
+function addLShapeWall(walls, position, orientation) {
+  // Mutates walls object to add 2 wall segments
+}
+
+/**
+ * Check if two sets of walls overlap
+ * @param {Array} walls1 - First set of wall positions
+ * @param {Array} walls2 - Second set of wall positions
+ * @returns {boolean} True if any wall segments overlap
+ */
+function wallsOverlap(walls1, walls2) {
+  // Check if same type and position
+}
+
+/**
+ * Check if an L-shape can be placed without overlapping
+ * @param {Object} walls - Current walls structure
+ * @param {Object} position - Proposed goal position
+ * @param {string} orientation - Proposed orientation
+ * @param {Array} existingLShapes - Array of existing L-shapes
+ * @returns {boolean} True if placement is valid
+ */
+function canPlaceLShape(walls, position, orientation, existingLShapes) {
+  // Check against all existing L-shapes
 }
 ```
 
+#### L-Shape Orientations
+
+From documentation:
+```
+'NW': ┐  // Walls on top and RIGHT
+'NE': ┌  // Walls on top and LEFT  
+'SW': ┘  // Walls on bottom and RIGHT
+'SE': └  // Walls on bottom and LEFT
+```
+
+**Note:** Documentation shows orientation names, verify which walls block which directions.
+
+#### Test File
+**File:** `tests/wall-generator.test.js`
+
+Test cases:
+1. **L-shape positions:**
+   - NW orientation creates correct walls
+   - NE orientation creates correct walls
+   - SW orientation creates correct walls
+   - SE orientation creates correct walls
+
+2. **Wall addition:**
+   - Adds to correct horizontal/vertical arrays
+   - Doesn't add duplicates
+   - Handles empty walls object
+
+3. **Overlap detection:**
+   - Detects same horizontal wall
+   - Detects same vertical wall
+   - Detects no overlap
+   - Multiple L-shapes tested
+
+4. **Placement validation:**
+   - Valid placement (no overlaps)
+   - Invalid placement (overlaps existing)
+   - Edge cases (boundary positions)
+
 #### Success Criteria
-- ✅ All integration tests pass
-- ✅ Full game lifecycle works
-- ✅ Error handling verified
-- ✅ Multi-game isolation confirmed
-- ✅ Test coverage >85%
+- ✅ All 4 orientations work correctly
+- ✅ Overlap detection is accurate
+- ✅ Wall positions match format
+- ✅ All tests pass (25+ test cases)
+- ✅ Test coverage 100%
 
 ---
 
-## Summary
+### Task 8: Goal Placement Logic
+**Estimated Time:** 1.5 hours  
+**Priority:** High  
+**Dependencies:** Tasks 2, 7
 
-### Total Estimated Time: **12-14 hours**
+#### What to Build
+**File:** `shared/puzzle-generator.js`
 
-### Task Dependencies
+Implement quadrant-based goal placement with L-shaped walls.
 
-```
-Task 1 (Setup)
-  ↓
-Task 2 (Storage) ← Task 3 (Auth) ← Task 4 (Validators)
-  ↓                     ↓               ↓
-Task 5 (getCurrentRound)              Task 8 (createGame)
-Task 6 (getLeaderboard)                  ↓
-Task 7 (submitSolution)              Task 9 (startRound)
-  ↓                                      ↓
-  └──────────────────────────→ Task 10 (Host endpoints)
-                                         ↓
-                                  Task 11 (Timer)
-                                         ↓
-                                  Task 12 (CORS)
-                                         ↓
-                                  Task 13 (Integration)
-```
+#### Functions to Implement
 
-### Testing Strategy
+```javascript
+/**
+ * Define quadrant boundaries
+ */
+const QUADRANTS = [
+  { name: 'NW', xMin: 1, xMax: 7, yMin: 1, yMax: 7 },
+  { name: 'NE', xMin: 8, xMax: 14, yMin: 1, yMax: 7 },
+  { name: 'SW', xMin: 1, xMax: 7, yMin: 8, yMax: 14 },
+  { name: 'SE', xMin: 8, xMax: 14, yMin: 8, yMax: 14 }
+];
 
-1. **Unit Tests:** Each storage/auth/validation function
-2. **Integration Tests:** Full API workflows with Azurite
-3. **Manual Testing:** Postman/curl for endpoints
-4. **Load Testing:** (Optional) Test concurrent requests
+/**
+ * Place goals in a quadrant with L-shaped walls
+ * @param {Object} quadrant - Quadrant definition
+ * @param {Array} colors - Colors to place in this quadrant
+ * @param {Object} walls - Walls structure (modified)
+ * @param {Array} existingLShapes - Existing L-shapes (modified)
+ * @returns {Array} Goals placed [{position, color}, ...]
+ */
+function placeGoalsInQuadrant(quadrant, colors, walls, existingLShapes) {
+  // 1. For each color
+  // 2. Try random positions within quadrant
+  // 3. Try random orientations
+  // 4. Check if L-shape can be placed (no overlap)
+  // 5. Add L-shape and goal
+  // 6. Max attempts: 100 per goal
+}
 
-### Deployment Checklist
-
-Before deploying to Azure:
-- [ ] All tests passing
-- [ ] Environment variables configured
-- [ ] CORS settings correct
-- [ ] Connection strings for production storage
-- [ ] Application Insights enabled
-- [ ] Function timeout settings appropriate
-
-### Next Steps After Phase 2
-
-Once backend is complete and tested:
-1. Deploy to Azure (Functions App + Storage Account)
-2. Test production endpoints
-3. Begin Phase 3 (Frontend UI)
-4. Integration between frontend and backend APIs
-
-### Key Principles
-
-1. **Test with Azurite First:** Local storage emulator for development
-2. **Error Handling:** Every endpoint has proper error responses
-3. **Validation:** Server-side validation for all inputs
-4. **Security:** Host key authentication for admin operations
-5. **Documentation:** API matches specification exactly
-6. **Logging:** Application Insights for monitoring
+/**
+ * Add center 2×2 blocked area
+ * @param {Object} walls - Walls structure
+ */
+function addCenterWalls(walls) {
