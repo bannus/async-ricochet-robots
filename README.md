@@ -1,240 +1,169 @@
 # Async Ricochet Robots
 
-An asynchronous multiplayer online implementation of the classic Ricochet Robots puzzle game, built on Azure serverless architecture.
+An asynchronous multiplayer implementation of the classic Ricochet Robots puzzle game, built with a serverless Azure architecture.
 
-## 🎮 About
+## Overview
 
-Async Ricochet Robots is a web-based puzzle game where players compete to solve robot movement puzzles using the fewest moves possible. Unlike traditional real-time games, this implementation allows players to submit their solutions anytime during a configurable time period (default: 24 hours), making it perfect for casual competition with friends across different time zones.
+Players compete to solve puzzles using the fewest moves over extended time periods (configurable, default 24 hours). The game features:
 
-### Key Features
+- **Asynchronous gameplay**: Submit solutions anytime during the round
+- **Multi-game system**: Independent game instances with dedicated hosts
+- **Local practice**: Try solutions locally before submitting
+- **Transparent competition**: Move counts visible, solutions hidden until round ends
+- **Host control**: Game hosts manage rounds, deadlines, and timing
 
-- 🌐 **Multiplayer Asynchronous Gameplay** - Compete on your own schedule
-- 🎯 **Multi-Game System** - Create private games for your friend group
-- 🔧 **Host Controls** - Manage rounds, extend deadlines, and control game flow
-- 📊 **Live Leaderboards** - See rankings update in real-time (move counts visible, solutions hidden until round ends)
-- 🎲 **Random Puzzle Generation** - Every round is a unique challenge
-- 💾 **Local Practice Mode** - Test your solution before submitting
-- 📱 **Responsive Design** - Play on desktop, tablet, or mobile
-- ☁️ **Serverless Architecture** - Built on Azure for minimal operational overhead
+## Project Status
 
-## 🏗️ Architecture
+🔨 **In Development** - Phase 1: Core Game Engine
 
-- **Frontend**: HTML5, CSS3, Vanilla JavaScript with Canvas rendering
-- **Backend**: Azure Functions (Node.js)
-- **Database**: Azure Table Storage
-- **Hosting**: Azure Static Web Apps
-- **Communication**: HTTP polling (20-second intervals)
+- ✅ Design & Documentation Complete
+- 🔄 Core Game Engine (In Progress)
+- ⏳ Backend API (Planned)
+- ⏳ Frontend UI (Planned)
+- ⏳ Deployment (Planned)
 
-## 📋 Game Rules
-
-### Objective
-Move the goal robot to the goal position using the fewest moves possible.
-
-### Mechanics
-- **Grid**: 16×16 board with walls and four colored robots (Red, Yellow, Green, Blue)
-- **Movement**: Robots slide in straight lines until hitting a wall, boundary, or another robot
-- **Strategy**: Use non-goal robots as blockers to position the goal robot precisely
-- **Scoring**: Fewest moves wins
-
-See [doc/game-rules.md](doc/game-rules.md) for complete rules and strategies.
-
-## 🚀 Getting Started
-
-### For Players
-
-1. **Receive game link** from your host (e.g., `https://app.com/?game=game_abc123`)
-2. **Open the link** in your browser
-3. **Enter your name** when prompted
-4. **Solve the puzzle** by moving robots (click robot + arrow keys or direction buttons)
-5. **Submit your solution** when you reach the goal
-6. **Check the leaderboard** to see your ranking
-
-### For Hosts
-
-1. **Create a new game** on the homepage
-2. **Save your host credentials** (Game ID and Host Key)
-3. **Start a round** from your host panel
-4. **Share the player link** with your friends
-5. **Monitor submissions** and manage round timing
-6. **End the round** manually or let it expire automatically
-7. **Start new rounds** whenever you're ready
-
-## 📁 Project Structure
-
-```
-async-ricochet-robots/
-├── client/              # Frontend files
-│   ├── index.html      # Player UI
-│   ├── host.html       # Host panel
-│   ├── style.css       # Styling
-│   ├── game.js         # Canvas rendering & game logic
-│   └── api-client.js   # API communication
-├── api/                # Azure Functions
-│   ├── getCurrentRound/
-│   ├── getLeaderboard/
-│   ├── submitSolution/
-│   ├── createGame/
-│   └── host/          # Host-only endpoints
-├── shared/            # Shared game logic
-│   ├── game-engine.js      # Core movement & validation
-│   ├── puzzle-generator.js # Random puzzle creation
-│   └── constants.js        # Shared constants
-├── doc/               # Documentation
-│   ├── architecture.md     # System architecture
-│   ├── api-specification.md # API documentation
-│   ├── data-models.md      # Database schemas
-│   ├── game-rules.md       # Game mechanics
-│   └── user-flows.md       # User experience flows
-├── memory-bank/       # Project context (for Cline AI)
-│   ├── projectbrief.md
-│   ├── activeContext.md
-│   └── progress.md
-└── tests/             # Unit and integration tests
-```
-
-## 🛠️ Development Setup
+## Setup
 
 ### Prerequisites
 
-- Node.js 18+ and npm
-- Git
-- Azure account (for deployment only)
+- **Node.js** 18+ (required for Azure Functions)
+- **npm** (comes with Node.js)
+- **Git** (for version control)
 
-### Local Development
+### Installation
 
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd async-ricochet-robots
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### Development
+
+Run tests:
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/async-ricochet-robots.git
-cd async-ricochet-robots
-
-# Install dependencies
-npm install
-
-# Run tests
 npm test
-
-# Start local development server
-npm run dev
 ```
 
-### Azure Functions Local Development
-
+Run tests in watch mode (auto-rerun on file changes):
 ```bash
-# Install Azure Functions Core Tools
-npm install -g azure-functions-core-tools@4
-
-# Install Azurite (local storage emulator)
-npm install -g azurite
-
-# Start Azurite
-azurite
-
-# Start Azure Functions locally
-cd api
-func start
-```
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run tests in watch mode
 npm run test:watch
 ```
 
-## 📚 Documentation
+Generate test coverage report:
+```bash
+npm run test:coverage
+```
 
-Comprehensive documentation is available in the `/doc` folder:
+## Project Structure
 
-- **[Architecture](doc/architecture.md)** - System design and component overview
-- **[API Specification](doc/api-specification.md)** - Complete REST API documentation
-- **[Data Models](doc/data-models.md)** - Database schemas and query patterns
-- **[Game Rules](doc/game-rules.md)** - Ricochet Robots mechanics and algorithms
-- **[User Flows](doc/user-flows.md)** - Detailed UX workflows
+```
+async-ricochet-robots/
+├── shared/              # Shared game logic (isomorphic - runs on client & server)
+│   ├── types.js        # Type definitions and validation
+│   ├── wall-utils.js   # Wall collision detection
+│   ├── game-engine.js  # Core movement and validation logic
+│   └── puzzle-generator.js  # Board and puzzle generation
+├── tests/              # Unit tests
+│   ├── types.test.js
+│   ├── wall-utils.test.js
+│   ├── game-engine.test.js
+│   └── wall-generator.test.js
+├── doc/                # Design documentation
+│   ├── architecture.md
+│   ├── api-specification.md
+│   ├── data-models.md
+│   ├── game-rules.md
+│   └── user-flows.md
+├── memory-bank/        # Project context for AI assistant
+│   ├── projectbrief.md
+│   ├── activeContext.md
+│   └── progress.md
+├── package.json        # Project configuration
+└── README.md          # This file
+```
 
-## 🚢 Deployment
+## Documentation
 
-### Azure Static Web Apps (Automated)
+- **[Game Rules](doc/game-rules.md)** - How the game works, movement mechanics, puzzle generation
+- **[Architecture](doc/architecture.md)** - System design and technology choices
+- **[API Specification](doc/api-specification.md)** - REST API endpoints
+- **[Data Models](doc/data-models.md)** - Database schemas
+- **[User Flows](doc/user-flows.md)** - User experience workflows
 
-1. Fork/clone this repository
-2. Connect to Azure Static Web Apps
-3. Configure GitHub Actions (auto-generated)
-4. Push to main branch
-5. Automatic deployment
+## Technology Stack
 
-See [Deployment Guide](doc/deployment.md) for detailed instructions.
+- **Frontend**: Vanilla JavaScript, HTML5 Canvas
+- **Backend**: Azure Functions (Node.js)
+- **Database**: Azure Table Storage
+- **Hosting**: Azure Static Web Apps
+- **Testing**: Jest
 
-## 🎯 Roadmap
+## Game Mechanics
 
-### Phase 1: Design & Planning ✅
-- [x] Architecture design
-- [x] API specification
-- [x] Data models
-- [x] Documentation
+### Core Concept
 
-### Phase 2: Core Engine (In Progress)
-- [ ] Game engine implementation
-- [ ] Puzzle generator
-- [ ] Solution validator
-- [ ] Unit tests
+Ricochet Robots is a puzzle game where players move colored robots on a 16×16 grid to reach goal positions. The key mechanic: **robots slide until they hit an obstacle** (wall, another robot, or board edge).
 
-### Phase 3: Backend API
+### Key Features
+
+- **4 Robots**: Red, Yellow, Green, Blue
+- **L-Shaped Walls**: 17 wall pieces, one per goal, forming corners
+- **17 Goals per Board**: 16 single-color + 1 multi-color goal
+- **Board Persistence**: Robot positions carry forward between rounds
+- **Multi-Color Goals**: Any robot can win
+
+### Example Game Flow
+
+1. **Host creates game** → Generates board with walls, robots, 17 goals
+2. **Host starts round** → Selects random unused goal
+3. **Players solve puzzle** → Practice locally, submit solution
+4. **Round ends** → Solutions revealed, leaderboard updated, robots stay in place
+5. **Repeat** → Host starts new round with next goal
+6. **Game complete** → After all 17 goals solved
+
+## Development Roadmap
+
+### Phase 1: Core Game Engine ✅ (Current)
+- [x] Project setup
+- [ ] Core data structures
+- [ ] Wall collision detection
+- [ ] Robot movement logic
+- [ ] Solution validation
+- [ ] Puzzle generation
+
+### Phase 2: Backend API ⏳
 - [ ] Azure Functions setup
 - [ ] Database layer
-- [ ] REST endpoints
+- [ ] API endpoints
 - [ ] Host authentication
+- [ ] Timer function
 
-### Phase 4: Frontend UI
+### Phase 3: Frontend UI ⏳
 - [ ] Canvas rendering
 - [ ] Player interface
 - [ ] Host panel
 - [ ] Polling client
 
-### Phase 5: Polish
+### Phase 4: Polish & Deploy ⏳
 - [ ] Error handling
 - [ ] Performance optimization
-- [ ] Mobile responsiveness
-- [ ] Accessibility
-
-### Phase 6: Launch
 - [ ] Azure deployment
-- [ ] User testing
-- [ ] Bug fixes
-- [ ] Public release
+- [ ] Testing with users
 
-## 🤝 Contributing
+## Contributing
 
-This is currently a personal project, but suggestions and feedback are welcome! Please open an issue to discuss proposed changes.
+This is currently a solo project for learning purposes. Feedback and suggestions are welcome via issues.
 
-## 📝 License
+## License
 
-MIT License - feel free to use this project for learning or as a base for your own implementations.
+MIT
 
-## 🙏 Acknowledgments
+## Credits
 
-- **Original Game**: Ricochet Robots by Alex Randolph
-- **Publisher**: Rio Grande Games
-- **Inspiration**: Classic board game design and puzzle mechanics
-
-## 📧 Contact
-
-For questions or feedback, please open an issue on GitHub.
-
----
-
-## Quick Links
-
-- **Play Game**: [Coming Soon]
-- **Create Game**: [Coming Soon]
-- **Documentation**: [/doc](doc/)
-- **API Docs**: [/doc/api-specification.md](doc/api-specification.md)
-
----
-
-**Status**: 🚧 In Development (Phase 2/6)  
-**Last Updated**: October 5, 2025
+Based on the original Ricochet Robots board game by Alex Randolph, published by Rio Grande Games.

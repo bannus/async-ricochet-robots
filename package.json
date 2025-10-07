@@ -1,0 +1,34 @@
+{
+  "name": "async-ricochet-robots",
+  "version": "0.1.0",
+  "description": "Asynchronous multiplayer Ricochet Robots puzzle game with serverless Azure backend",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "keywords": [
+    "ricochet-robots",
+    "puzzle",
+    "game",
+    "azure",
+    "serverless"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "shared/**/*.js",
+      "!shared/**/*.test.js"
+    ],
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ]
+  }
+}
