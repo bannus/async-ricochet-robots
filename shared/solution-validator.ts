@@ -95,11 +95,22 @@ export function validateSolution(
     }
   }
 
-  // Multi-color goals handled separately (should not reach here in this function)
-  return {
-    valid: false,
-    reason: 'Multi-color goals not supported by this function'
-  };
+  // For multi-color goals, check if ANY robot reached the goal
+  const winningRobot = findRobotAtGoal(finalPositions, goal.position);
+  
+  if (winningRobot) {
+    return {
+      valid: true,
+      finalPositions,
+      winningRobot
+    };
+  } else {
+    return {
+      valid: false,
+      reason: `No robot reached goal position (${goal.position.x}, ${goal.position.y})`,
+      finalPositions
+    };
+  }
 }
 
 /**

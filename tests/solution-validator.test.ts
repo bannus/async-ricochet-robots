@@ -231,7 +231,10 @@ describe('validateSolution', () => {
       expect(result.reason).toContain('must have position and color');
     });
 
-    test('rejects multi-color goal (not supported by this function)', () => {
+  });
+
+  describe('Multi-color goals', () => {
+    test('validates solution with red robot reaching multi-color goal', () => {
       const goal: Goal = {
         position: { x: 5, y: 0 },
         color: 'multi'
@@ -243,8 +246,113 @@ describe('validateSolution', () => {
 
       const result = validateSolution(initialRobots, emptyWalls, moves, goal);
 
+      expect(result.valid).toBe(true);
+      expect(result.winningRobot).toBe('red');
+      expect(result.finalPositions?.red).toEqual({ x: 5, y: 0 });
+    });
+
+    test('validates solution with yellow robot reaching multi-color goal', () => {
+      const goal: Goal = {
+        position: { x: 0, y: 10 },
+        color: 'multi'
+      };
+
+      const moves: Move[] = [
+        { robot: 'yellow', direction: Direction.Left }
+      ];
+
+      const result = validateSolution(initialRobots, emptyWalls, moves, goal);
+
+      expect(result.valid).toBe(true);
+      expect(result.winningRobot).toBe('yellow');
+    });
+
+    test('validates solution with any robot (green) reaching multi-color goal', () => {
+      const goal: Goal = {
+        position: { x: 0, y: 2 },
+        color: 'multi'
+      };
+
+      const moves: Move[] = [
+        { robot: 'green', direction: Direction.Left }
+      ];
+
+      const result = validateSolution(initialRobots, emptyWalls, moves, goal);
+
+      expect(result.valid).toBe(true);
+      expect(result.winningRobot).toBe('green');
+    });
+
+    test('validates solution with blue robot reaching multi-color goal', () => {
+      const goal: Goal = {
+        position: { x: 15, y: 13 },
+        color: 'multi'
+      };
+
+      const moves: Move[] = [
+        { robot: 'blue', direction: Direction.Right }
+      ];
+
+      const result = validateSolution(initialRobots, emptyWalls, moves, goal);
+
+      expect(result.valid).toBe(true);
+      expect(result.winningRobot).toBe('blue');
+    });
+
+    test('validates multi-move solution to reach multi-color goal', () => {
+      const goal: Goal = {
+        position: { x: 15, y: 15 },
+        color: 'multi'
+      };
+
+      const moves: Move[] = [
+        { robot: 'red', direction: Direction.Down },
+        { robot: 'red', direction: Direction.Right }
+      ];
+
+      const result = validateSolution(initialRobots, emptyWalls, moves, goal);
+
+      expect(result.valid).toBe(true);
+      expect(result.winningRobot).toBe('red');
+    });
+
+    test('rejects solution where no robot reaches multi-color goal', () => {
+      const goal: Goal = {
+        position: { x: 7, y: 7 },  // No robot will be here
+        color: 'multi'
+      };
+
+      const moves: Move[] = [
+        { robot: 'red', direction: Direction.Up }  // Red goes to (5,0)
+      ];
+
+      const result = validateSolution(initialRobots, emptyWalls, moves, goal);
+
       expect(result.valid).toBe(false);
-      expect(result.reason).toContain('Multi-color goals not supported');
+      expect(result.reason).toContain('No robot reached goal position');
+    });
+
+    test('accepts first robot that reaches multi-color goal', () => {
+      const robots: Robots = {
+        red: { x: 8, y: 8 },
+        yellow: { x: 8, y: 10 },
+        green: { x: 2, y: 2 },
+        blue: { x: 13, y: 13 }
+      };
+
+      const goal: Goal = {
+        position: { x: 8, y: 0 },
+        color: 'multi'
+      };
+
+      const moves: Move[] = [
+        { robot: 'red', direction: Direction.Up }  // Red reaches goal
+      ];
+
+      const result = validateSolution(robots, emptyWalls, moves, goal);
+
+      expect(result.valid).toBe(true);
+      expect(result.winningRobot).toBe('red');
     });
   });
 
