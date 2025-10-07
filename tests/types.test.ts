@@ -18,7 +18,7 @@ import {
   isValidMove,
   cloneRobots,
   cloneWalls,
-  type Position,
+  type Position as _Position,
   type Robots,
   type Walls
 } from '../shared/types';

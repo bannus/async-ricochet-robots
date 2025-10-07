@@ -63,7 +63,7 @@ export function randomPositionInQuadrant(quadrant: Quadrant): Position {
  */
 export function placeGoalInQuadrant(
   quadrant: Quadrant,
-  color: GoalColorValue,
+  _color: GoalColorValue,
   existingLShapes: LShape[],
   maxAttempts: number = 100
 ): { position: Position; orientation: LShapeOrientation } | null {

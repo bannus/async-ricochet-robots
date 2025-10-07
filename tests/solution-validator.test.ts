@@ -8,7 +8,7 @@ import {
   getMoveCount,
   isRobotAtGoal,
   findRobotAtGoal,
-  type ValidationResult
+  type ValidationResult as _ValidationResult
 } from '../shared/solution-validator';
 import { Direction, type Robots, type Walls, type Move, type Goal } from '../shared/types';
 

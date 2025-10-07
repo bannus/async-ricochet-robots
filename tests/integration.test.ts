@@ -5,7 +5,7 @@
 
 import { Direction, type Robots, type Walls, type Goal, type Move } from '../shared/types';
 import { generateAllGoals, validateGoals } from '../shared/goal-placement';
-import { applyMoves, moveRobot } from '../shared/game-engine';
+import { applyMoves, moveRobot as _moveRobot } from '../shared/game-engine';
 import { validateSolution, getMoveCount } from '../shared/solution-validator';
 import { isWallBlocking } from '../shared/wall-utils';
 
@@ -128,10 +128,7 @@ describe('Integration Tests - Phase 1', () => {
         { robot: 'red', direction: Direction.Down }
       ];
       
-      // 5. Apply moves
-      const finalRobots = applyMoves(robots, walls, moves);
-      
-      // 6. Validate solution
+      // 5. Validate solution (apply moves happens inside validateSolution)
       const result = validateSolution(robots, walls, moves, redGoal);
       
       // Result should have proper structure
@@ -329,8 +326,6 @@ describe('Integration Tests - Phase 1', () => {
       
       // Simulate 3 rounds
       for (let round = 0; round < 3; round++) {
-        const goal = goals[round];
-        
         // Simple move sequence
         const moves: Move[] = [
           { robot: 'red', direction: Direction.Right }
