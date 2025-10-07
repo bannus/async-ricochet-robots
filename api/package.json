@@ -1,0 +1,23 @@
+{
+  "name": "async-ricochet-robots-api",
+  "version": "1.0.0",
+  "description": "Azure Functions API for Async Ricochet Robots",
+  "main": "index.js",
+  "scripts": {
+    "start": "func start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "azure-functions",
+    "ricochet-robots"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@azure/data-tables": "^13.2.2",
+    "@azure/functions": "^4.5.0"
+  },
+  "devDependencies": {
+    "azurite": "^3.31.0"
+  }
+}
