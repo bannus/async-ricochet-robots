@@ -1,0 +1,341 @@
+/**
+ * Player UI specific styles
+ * Styles for index.html (game board and player interface)
+ */
+
+/* Container */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+}
+
+/* Header */
+header {
+  background: var(--color-card);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 4px var(--color-shadow);
+}
+
+header h1 {
+  margin-bottom: var(--spacing-sm);
+}
+
+#game-info {
+  display: flex;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+  font-size: var(--font-size-sm);
+  color: #7F8C8D;
+}
+
+#game-info span {
+  display: inline-block;
+}
+
+/* Main content layout */
+.main-content {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+.game-section {
+  flex: 2;
+  background: var(--color-card);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 4px var(--color-shadow);
+}
+
+.leaderboard-section {
+  flex: 1;
+  background: var(--color-card);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 4px var(--color-shadow);
+  min-width: 300px;
+}
+
+/* Goal info */
+.goal-info {
+  margin-bottom: var(--spacing-lg);
+  text-align: center;
+}
+
+#goal-description {
+  color: var(--color-blue);
+  font-weight: 600;
+}
+
+#goal-status {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-weight: 500;
+}
+
+#goal-status.success {
+  background: #D4EDDA;
+  color: #155724;
+}
+
+/* Canvas */
+#game-board {
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  display: block;
+  margin: 0 auto var(--spacing-lg);
+  background: white;
+  box-shadow: 0 2px 8px var(--color-shadow);
+}
+
+/* Controls */
+.controls {
+  margin-bottom: var(--spacing-lg);
+}
+
+.robot-selectors {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.robot-selector {
+  flex: 1;
+  padding: var(--spacing-md);
+  border: 2px solid transparent;
+  border-radius: var(--border-radius-sm);
+  font-weight: 600;
+  color: white;
+  transition: all var(--transition-speed);
+}
+
+.robot-selector[data-robot="red"] {
+  background: var(--color-red);
+}
+
+.robot-selector[data-robot="yellow"] {
+  background: var(--color-yellow);
+}
+
+.robot-selector[data-robot="green"] {
+  background: var(--color-green);
+}
+
+.robot-selector[data-robot="blue"] {
+  background: var(--color-blue);
+}
+
+.robot-selector.selected {
+  border-color: var(--color-text);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px var(--color-shadow);
+}
+
+.robot-selector:hover {
+  transform: scale(1.02);
+}
+
+.move-controls {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.move-controls button {
+  flex: 1;
+  background: var(--color-card);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.move-controls button:hover:not(:disabled) {
+  background: #ECF0F1;
+}
+
+/* Solution info */
+.solution-info {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--spacing-lg);
+}
+
+.solution-info h3 {
+  margin-bottom: var(--spacing-md);
+}
+
+.move-count {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-blue);
+  margin-bottom: var(--spacing-md);
+}
+
+#move-history {
+  list-style: none;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: #F8F9FA;
+  border-radius: var(--border-radius-sm);
+}
+
+#move-history li {
+  padding: var(--spacing-xs) 0;
+  font-family: 'Courier New', monospace;
+  font-size: var(--font-size-sm);
+}
+
+.submit-section {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.submit-section input {
+  flex: 1;
+}
+
+.submit-section button {
+  background: var(--color-green);
+  color: white;
+  font-weight: 600;
+  padding: var(--spacing-sm) var(--spacing-lg);
+}
+
+.submit-section button:hover:not(:disabled) {
+  background: #229954;
+}
+
+/* Leaderboard */
+.leaderboard-section h2 {
+  margin-bottom: var(--spacing-md);
+}
+
+#leaderboard-container {
+  overflow-x: auto;
+}
+
+#leaderboard {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#leaderboard th,
+#leaderboard td {
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+#leaderboard th {
+  background: #F8F9FA;
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  color: #7F8C8D;
+}
+
+#leaderboard tbody tr:hover {
+  background: #F8F9FA;
+}
+
+.current-player {
+  background: #FFF9C4 !important;
+  font-weight: 600;
+}
+
+.robot-red { color: var(--color-red); font-weight: 600; }
+.robot-yellow { color: var(--color-yellow); font-weight: 600; }
+.robot-green { color: var(--color-green); font-weight: 600; }
+.robot-blue { color: var(--color-blue); font-weight: 600; }
+
+/* No round / Game complete messages */
+#no-round-message,
+#game-complete-message {
+  background: var(--color-card);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-xl);
+  text-align: center;
+  max-width: 600px;
+  margin: var(--spacing-xl) auto;
+}
+
+#game-complete-message h2 {
+  font-size: var(--font-size-xxl);
+  margin-bottom: var(--spacing-lg);
+}
+
+#game-stats {
+  margin-top: var(--spacing-lg);
+  font-size: var(--font-size-lg);
+}
+
+#game-stats p {
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+  .main-content {
+    flex-direction: column;
+  }
+  
+  .leaderboard-section {
+    min-width: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-md);
+  }
+  
+  header {
+    padding: var(--spacing-md);
+  }
+  
+  #game-info {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  
+  .game-section,
+  .leaderboard-section {
+    padding: var(--spacing-md);
+  }
+  
+  #game-board {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  .robot-selectors {
+    flex-wrap: wrap;
+  }
+  
+  .robot-selector {
+    flex: 1 1 calc(50% - var(--spacing-sm));
+  }
+  
+  .submit-section {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: var(--spacing-sm);
+  }
+  
+  .robot-selector {
+    flex: 1 1 100%;
+    font-size: var(--font-size-sm);
+  }
+  
+  #leaderboard th,
+  #leaderboard td {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-sm);
+  }
+}
