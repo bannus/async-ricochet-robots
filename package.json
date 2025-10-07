@@ -25,15 +25,22 @@
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^24.7.0",
+    "@types/node-fetch": "^2.6.13",
     "jest": "^29.7.0",
+    "node-fetch": "^2.7.0",
     "ts-jest": "^29.4.4",
     "typescript": "^5.9.3"
   },
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "roots": ["<rootDir>/tests", "<rootDir>/shared"],
-    "testMatch": ["**/tests/**/*.test.ts"],
+    "roots": [
+      "<rootDir>/tests",
+      "<rootDir>/shared"
+    ],
+    "testMatch": [
+      "**/tests/**/*.test.ts"
+    ],
     "transform": {
       "^.+\\.ts$": "ts-jest"
     },
@@ -43,6 +50,10 @@
       "!shared/**/*.d.ts"
     ],
     "coverageDirectory": "coverage",
-    "moduleFileExtensions": ["ts", "js", "json"]
+    "moduleFileExtensions": [
+      "ts",
+      "js",
+      "json"
+    ]
   }
 }

@@ -1,0 +1,499 @@
+###############################################################################
+# Async Ricochet Robots - Manual API Testing
+# 
+# INSTRUCTIONS:
+# 1. Start Azurite: azurite-blob --silent --location azurite
+# 2. Start Functions: cd api && func start
+# 3. Click "Send Request" above each section to test endpoints
+# 4. Copy values from responses into @variables below as needed
+# 5. Run tests in order for full game flow
+#
+# PREREQUISITES:
+# - VS Code REST Client extension installed
+# - Azurite running (local Azure Storage emulator)
+# - Azure Functions running locally (default port 7071)
+###############################################################################
+
+### CONFIGURATION
+@baseUrl = http://localhost:7076/api
+
+# These will be populated from responses - update as you test
+@gameId = 
+@hostKey = 
+@roundId = 
+@roundId2 = 
+
+###############################################################################
+# 1. CREATE GAME
+# Expected: 201 Created with gameId and hostKey
+###############################################################################
+
+POST {{baseUrl}}/createGame
+Content-Type: application/json
+
+{
+  "gameName": "Manual Test Game",
+  "defaultRoundDurationMs": 86400000
+}
+
+###
+# ✅ SUCCESS: Copy gameId and hostKey from response to @variables above
+# 📋 Response should include: gameId, hostKey, gameName, totalGoals: 17, gameUrl, hostUrl
+
+
+###############################################################################
+# 2. GET CURRENT ROUND (No Active Round)
+# Expected: 200 OK with status "no_active_round"
+###############################################################################
+
+GET {{baseUrl}}/getCurrentRound?gameId={{gameId}}
+
+###
+# ✅ SUCCESS: Should return status: "no_active_round", message about waiting for host
+# 📋 Response includes: goalsCompleted: 0, totalGoals: 17
+
+
+###############################################################################
+# 3. START ROUND 1
+# Expected: 200 OK with round data including puzzle
+###############################################################################
+
+POST {{baseUrl}}/host/startRound
+Content-Type: application/json
+x-game-id: {{gameId}}
+x-host-key: {{hostKey}}
+
+{
+  "durationMs": 3600000
+}
+
+###
+# ✅ SUCCESS: Copy roundId from response to @roundId variable above
+# 📋 Response includes: roundId, goalPosition, goalColor, robots (4), walls, endTime
+# 📋 Note the goalColor - could be "red", "yellow", "green", "blue", or "multi"
+
+
+###############################################################################
+# 4. GET CURRENT ROUND (Active Round)
+# Expected: 200 OK with full puzzle data
+###############################################################################
+
+GET {{baseUrl}}/getCurrentRound?gameId={{gameId}}
+
+###
+# ✅ SUCCESS: Should return status: "active", full puzzle data
+# 📋 Verify: Same puzzle data as startRound response
+# 📋 Check: robots positions, walls structure, goal position and color
+
+
+###############################################################################
+# 5. SUBMIT SOLUTION - Player 1 (Alice)
+# Expected: 200 OK with rank assigned
+# NOTE: Update solutionData to actually reach the goal shown in current round!
+###############################################################################
+
+POST {{baseUrl}}/submitSolution
+Content-Type: application/json
+
+{
+  "gameId": "{{gameId}}",
+  "roundId": "{{roundId}}",
+  "playerName": "Alice",
+  "solutionData": [
+    {"robot": "red", "direction": "up"},
+    {"robot": "red", "direction": "right"},
+    {"robot": "red", "direction": "down"}
+  ]
+}
+
+###
+# ✅ SUCCESS: Should return rank: 1, moveCount: 3
+# ❌ EXPECTED FAILURE: If solution doesn't reach goal, returns 400 with validation error
+# 📋 Note: You'll need to craft a valid solution based on the puzzle from step 3
+
+
+###############################################################################
+# 6. SUBMIT SOLUTION - Player 2 (Bob) - Better Solution
+# Expected: 200 OK with rank 1 (Alice moves to rank 2)
+###############################################################################
+
+POST {{baseUrl}}/submitSolution
+Content-Type: application/json
+
+{
+  "gameId": "{{gameId}}",
+  "roundId": "{{roundId}}",
+  "playerName": "Bob",
+  "solutionData": [
+    {"robot": "red", "direction": "up"},
+    {"robot": "red", "direction": "right"}
+  ]
+}
+
+###
+# ✅ SUCCESS: Bob gets rank 1 (2 moves), Alice drops to rank 2 (3 moves)
+
+
+###############################################################################
+# 7. SUBMIT SOLUTION - Player 3 (Charlie) - Same as Bob
+# Expected: 200 OK with rank 1 (tied with Bob)
+###############################################################################
+
+POST {{baseUrl}}/submitSolution
+Content-Type: application/json
+
+{
+  "gameId": "{{gameId}}",
+  "roundId": "{{roundId}}",
+  "playerName": "Charlie",
+  "solutionData": [
+    {"robot": "blue", "direction": "left"},
+    {"robot": "blue", "direction": "up"}
+  ]
+}
+
+###
+# ✅ SUCCESS: Charlie gets rank 1 (tied - same move count as Bob)
+# 📋 Note: If goal is multi-color, any robot can win. Otherwise, must match goalColor
+
+
+###############################################################################
+# 8. GET LEADERBOARD (During Active Round)
+# Expected: 200 OK with rankings, NO solution data visible
+###############################################################################
+
+GET {{baseUrl}}/getLeaderboard?gameId={{gameId}}&roundId={{roundId}}
+
+###
+# ✅ SUCCESS: Shows 3 players ranked by moveCount
+# 📋 Verify: rank, playerName, moveCount, submittedAt visible
+# 📋 Verify: solutionData is NULL (hidden during active round)
+# 📋 Expected order: Bob/Charlie (rank 1, 2 moves), Alice (rank 2, 3 moves)
+
+
+###############################################################################
+# 9. DUPLICATE SUBMISSION TEST
+# Expected: 409 Conflict
+###############################################################################
+
+POST {{baseUrl}}/submitSolution
+Content-Type: application/json
+
+{
+  "gameId": "{{gameId}}",
+  "roundId": "{{roundId}}",
+  "playerName": "Alice",
+  "solutionData": [
+    {"robot": "red", "direction": "left"}
+  ]
+}
+
+###
+# ❌ EXPECTED FAILURE: 409 Conflict - Alice already submitted
+# 📋 Error should say: "You have already submitted a solution for this round"
+
+
+###############################################################################
+# 10. END ROUND (Complete - Don't Skip)
+# Expected: 200 OK with round summary
+###############################################################################
+
+POST {{baseUrl}}/host/endRound
+Content-Type: application/json
+x-game-id: {{gameId}}
+x-host-key: {{hostKey}}
+
+{
+  "roundId": "{{roundId}}",
+  "skipGoal": false
+}
+
+###
+# ✅ SUCCESS: Round marked completed, goal added to completedGoalIndices
+# 📋 Response includes: status: "completed", winner info, solution counts
+# 📋 IMPORTANT: Robot positions updated to winning solution's final state
+
+
+###############################################################################
+# 11. GET LEADERBOARD (After Round Ended)
+# Expected: 200 OK with rankings AND solution data visible
+###############################################################################
+
+GET {{baseUrl}}/getLeaderboard?gameId={{gameId}}&roundId={{roundId}}
+
+###
+# ✅ SUCCESS: Shows 3 players with FULL solution data now visible
+# 📋 Verify: solutionData is now populated (moves array visible)
+# 📋 Verify: Can see exactly what moves each player used
+
+
+###############################################################################
+# 12. GET CURRENT ROUND (After Round 1 Ended)
+# Expected: 200 OK with status "no_active_round"
+###############################################################################
+
+GET {{baseUrl}}/getCurrentRound?gameId={{gameId}}
+
+###
+# ✅ SUCCESS: Shows no active round, goalsCompleted: 1 (out of 17)
+
+
+###############################################################################
+# 13. START ROUND 2
+# Expected: 200 OK with NEW puzzle, but UPDATED robot positions
+###############################################################################
+
+POST {{baseUrl}}/host/startRound
+Content-Type: application/json
+x-game-id: {{gameId}}
+x-host-key: {{hostKey}}
+
+{
+  "durationMs": 3600000
+}
+
+###
+# ✅ SUCCESS: Copy new roundId to @roundId2 variable above
+# 📋 CRITICAL CHECK: Robot positions should match END state from Round 1
+# 📋 Verify: New goal selected (different from Round 1)
+# 📋 Verify: goalIndex NOT in completedGoalIndices
+
+
+###############################################################################
+# 14. SUBMIT SOLUTION - Round 2
+# Expected: 200 OK
+# NOTE: Craft solution based on UPDATED robot positions from Round 1 end state!
+###############################################################################
+
+POST {{baseUrl}}/submitSolution
+Content-Type: application/json
+
+{
+  "gameId": "{{gameId}}",
+  "roundId": "{{roundId2}}",
+  "playerName": "Alice",
+  "solutionData": [
+    {"robot": "yellow", "direction": "down"},
+    {"robot": "yellow", "direction": "left"}
+  ]
+}
+
+###
+# ✅ SUCCESS: Solution accepted for Round 2
+# 📋 Note: Starting positions are different from Round 1!
+
+
+###############################################################################
+# 15. END ROUND 2 (Skip Goal)
+# Expected: 200 OK with status "skipped"
+###############################################################################
+
+POST {{baseUrl}}/host/endRound
+Content-Type: application/json
+x-game-id: {{gameId}}
+x-host-key: {{hostKey}}
+
+{
+  "roundId": "{{roundId2}}",
+  "skipGoal": true
+}
+
+###
+# ✅ SUCCESS: Round marked skipped
+# 📋 CRITICAL: Goal NOT added to completedGoalIndices (returns to pool)
+# 📋 CRITICAL: Robot positions NOT updated (stay at Round 1 end state)
+# 📋 Verify: goalsCompleted still = 1 (not 2)
+
+
+###############################################################################
+# 16. HOST DASHBOARD
+# Expected: 200 OK with game statistics
+###############################################################################
+
+GET {{baseUrl}}/host/dashboard
+x-game-id: {{gameId}}
+x-host-key: {{hostKey}}
+
+###
+# ✅ SUCCESS: Shows game overview and round history
+# 📋 Verify: totalGoals: 17, goalsCompleted: 1
+# 📋 Verify: Shows both rounds (one completed, one skipped)
+# 📋 Verify: Player participation stats
+
+
+###############################################################################
+# 17. EXTEND ROUND (Create Round 3 First)
+# Expected: 200 OK
+###############################################################################
+
+POST {{baseUrl}}/host/startRound
+Content-Type: application/json
+x-game-id: {{gameId}}
+x-host-key: {{hostKey}}
+
+{}
+
+###
+# ✅ Copy the roundId from this response for next test
+
+###
+
+PUT {{baseUrl}}/host/extendRound
+Content-Type: application/json
+x-game-id: {{gameId}}
+x-host-key: {{hostKey}}
+
+{
+  "roundId": "{{roundId2}}",
+  "extendByMs": 3600000
+}
+
+###
+# ✅ SUCCESS: Round deadline extended by 1 hour
+# 📋 Verify: New endTime = old endTime + 3600000ms
+
+
+###############################################################################
+# ERROR TESTS
+###############################################################################
+
+### 18. INVALID HOST KEY
+# Expected: 401 Unauthorized
+
+POST {{baseUrl}}/host/startRound
+Content-Type: application/json
+x-game-id: {{gameId}}
+x-host-key: invalid_key_12345
+
+{}
+
+###
+# ❌ EXPECTED FAILURE: 401 Unauthorized
+# 📋 Error: "Invalid host key"
+
+
+### 19. INVALID GAME ID
+# Expected: 404 Not Found
+
+GET {{baseUrl}}/getCurrentRound?gameId=nonexistent_game
+
+###
+# ❌ EXPECTED FAILURE: 404 Not Found
+# 📋 Error: "Game not found"
+
+
+### 20. INVALID SOLUTION FORMAT
+# Expected: 400 Bad Request
+
+POST {{baseUrl}}/submitSolution
+Content-Type: application/json
+
+{
+  "gameId": "{{gameId}}",
+  "roundId": "{{roundId}}",
+  "playerName": "Dave",
+  "solutionData": [
+    {"robot": "red", "direction": "invalid_direction"}
+  ]
+}
+
+###
+# ❌ EXPECTED FAILURE: 400 Bad Request
+# 📋 Error: Validation error for invalid direction
+
+
+### 21. SOLUTION DOESN'T REACH GOAL
+# Expected: 400 Bad Request
+
+POST {{baseUrl}}/submitSolution
+Content-Type: application/json
+
+{
+  "gameId": "{{gameId}}",
+  "roundId": "{{roundId}}",
+  "playerName": "Eve",
+  "solutionData": [
+    {"robot": "red", "direction": "up"}
+  ]
+}
+
+###
+# ❌ EXPECTED FAILURE: 400 Bad Request
+# 📋 Error: "Solution does not reach the goal position"
+
+
+### 22. START ROUND WHEN ONE ALREADY ACTIVE
+# Expected: 400 Bad Request
+
+POST {{baseUrl}}/host/startRound
+Content-Type: application/json
+x-game-id: {{gameId}}
+x-host-key: {{hostKey}}
+
+{}
+
+###
+# ❌ EXPECTED FAILURE: 400 Bad Request (if round 3 still active)
+# 📋 Error: "A round is already active"
+
+
+###############################################################################
+# TESTING CHECKLIST
+###############################################################################
+
+# Phase A Manual Testing Checklist:
+# [ ] 1. Created game successfully (got gameId and hostKey)
+# [ ] 2. Verified no active round initially
+# [ ] 3. Started round 1 (got puzzle with goal, robots, walls)
+# [ ] 4. Verified current round returns puzzle
+# [ ] 5. Submitted solution from Alice (rank 1)
+# [ ] 6. Submitted better solution from Bob (became rank 1)
+# [ ] 7. Submitted tied solution from Charlie (rank 1 with Bob)
+# [ ] 8. Verified leaderboard shows rankings WITHOUT solutions (active round)
+# [ ] 9. Verified duplicate submission rejected (409)
+# [ ] 10. Ended round 1 (completed, not skipped)
+# [ ] 11. Verified leaderboard shows solutions AFTER round ended
+# [ ] 12. Verified no active round after ending
+# [ ] 13. Started round 2 with UPDATED robot positions
+# [ ] 14. Submitted solution for round 2
+# [ ] 15. Ended round 2 with SKIP (goal returns to pool)
+# [ ] 16. Viewed host dashboard (stats and history)
+# [ ] 17. Extended round deadline
+# [ ] 18. Tested invalid host key (401)
+# [ ] 19. Tested invalid game ID (404)
+# [ ] 20. Tested invalid solution format (400)
+# [ ] 21. Tested solution that doesn't reach goal (400)
+# [ ] 22. Tested duplicate round start (400)
+
+# KEY VERIFICATIONS:
+# [ ] Multi-color goal support (any robot can win)
+# [ ] Robot position persistence across rounds
+# [ ] Goal skip returns goal to pool (not counted as completed)
+# [ ] Leaderboard ranking with ties handled correctly
+# [ ] Solution data hidden during active round, visible after
+# [ ] Host authentication working
+# [ ] Game lifecycle: 17 goals total, tracks completion
+
+###############################################################################
+# TROUBLESHOOTING
+###############################################################################
+
+# If requests fail:
+# 1. Check Azurite is running: azurite-blob --silent --location azurite
+# 2. Check Functions are running: cd api && func start
+# 3. Verify port 7071 is correct (check func start output)
+# 4. Check @variables are populated with actual values from responses
+# 5. Ensure solutionData actually reaches the goal from the current puzzle
+
+# Common Issues:
+# - "Game not found": Check gameId is correct in @variables
+# - "Invalid host key": Check hostKey is correct in @variables  
+# - "Solution doesn't reach goal": Need to craft valid solution based on puzzle
+# - "Round not found": Check roundId is correct in @variables
+# - CORS errors: Functions should allow localhost (check host.json)
+
+# Storage Explorer:
+# - Install Azure Storage Explorer to view tables directly
+# - Connect to local storage (Azurite)
+# - View Games, Rounds, Solutions tables
+# - Verify data is being stored correctly
