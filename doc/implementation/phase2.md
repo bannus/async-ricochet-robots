@@ -223,61 +223,67 @@ Test cases (using Azurite):
 ### Task 3: Authentication Middleware
 **Estimated Time:** 30 minutes  
 **Priority:** Medium  
-**Dependencies:** Task 2
+**Dependencies:** Task 2  
+**Status:** ⏸️ DEFERRED TO TASK 9
 
-#### What to Build
-**File:** `api/shared/auth.js`
+#### Implementation Plan Change
 
-Implement host key validation middleware.
+This task has been **deferred to Task 9** based on the following rationale:
 
-#### Function to Implement
+**What's Already Built (Task 4):**
+- `validateHostHeaders()` in validation layer extracts and format-validates headers
+- Returns typed `{ gameId, hostKey }` object
+- Throws ValidationException with 401 status for auth failures
 
-```javascript
+**What's Already Built (Task 2):**
+- `Storage.games.verifyHostKey(gameId, hostKey)` method exists
+- Performs database lookup and comparison
+- Returns boolean result
+
+**Why Defer:**
+- Full middleware pattern is overkill for 4 host endpoints
+- Simpler to use validation + storage helpers directly
+- Can implement inline auth checking when building first host endpoint
+- Avoid premature abstraction
+
+#### What Will Be Built (in Task 9)
+
+When implementing the first host endpoint (`startRound`), we'll create simple auth helpers:
+
+**File:** `api/shared/auth-helpers.ts`
+
+```typescript
 /**
- * Validate host authentication headers
- * @param {Object} request - HTTP request
- * @returns {Object} {valid: boolean, gameId?: string, error?: string}
+ * Authenticate host request
+ * Extracts headers, validates format, and verifies against database
  */
-async function validateHostAuth(request) {
-  // 1. Extract headers: X-Game-Id, X-Host-Key
-  // 2. Validate presence
-  // 3. Query Games table
-  // 4. Compare hostKey
-  // 5. Return validation result
-}
-
-/**
- * HTTP middleware wrapper
- */
-function requireHostAuth(handler) {
-  return async (request, context) => {
-    const auth = await validateHostAuth(request);
-    if (!auth.valid) {
-      return {
-        status: 401,
-        body: { success: false, error: auth.error, code: 'INVALID_HOST_KEY' }
-      };
-    }
-    return handler(request, context, auth.gameId);
-  };
+async function authenticateHost(request: HttpRequest): Promise<{
+  gameId: string;
+  hostKey: string;
+}> {
+  // 1. Extract and validate headers (uses validateHostHeaders)
+  const { gameId, hostKey } = validateHostHeaders(request.headers);
+  
+  // 2. Verify against database
+  const isValid = await Storage.games.verifyHostKey(gameId, hostKey);
+  
+  if (!isValid) {
+    throw new ValidationException([{
+      field: 'authentication',
+      message: 'Invalid host key',
+      code: 'INVALID_HOST_KEY'
+    }], 401);
+  }
+  
+  return { gameId, hostKey };
 }
 ```
 
-#### Test File
-**File:** `tests/auth.test.js`
-
-Test cases:
-1. Valid host key → authenticated
-2. Invalid host key → 401
-3. Missing headers → 401
-4. Game not found → 401
-5. Malformed headers → 401
-
-#### Success Criteria
-- ✅ Host authentication works
-- ✅ Proper error responses
-- ✅ Middleware pattern correct
-- ✅ All tests pass
+#### Success Criteria (Deferred)
+- ⏸️ Will be implemented in Task 9
+- ⏸️ Auth helper function in auth-helpers.ts
+- ⏸️ Used by all host endpoints (Tasks 9-10)
+- ⏸️ Proper 401 error responses
 
 ---
 
