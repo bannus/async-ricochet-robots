@@ -253,3 +253,57 @@ export function isValidLShapePosition(
     position.y <= yMax
   );
 }
+
+/**
+ * Generates 17 random L-shaped wall pieces for a new game
+ * Places them randomly on the board without overlaps
+ * 
+ * @returns Walls structure with 17 L-shapes
+ */
+export function generateWalls(): Walls {
+  const walls: Walls = {
+    horizontal: [] as number[][],
+    vertical: [] as number[][]
+  };
+  
+  const lShapes: LShape[] = [];
+  const maxAttempts = 1000;
+  
+  // Generate 17 L-shapes
+  while (lShapes.length < 17) {
+    let attempts = 0;
+    let placed = false;
+    
+    while (!placed && attempts < maxAttempts) {
+      // Random position (not on outer boundary)
+      const x = Math.floor(Math.random() * 14) + 1; // 1-14
+      const y = Math.floor(Math.random() * 14) + 1; // 1-14
+      const position: Position = { x, y };
+      
+      // Random orientation
+      const orientation = getRandomOrientation();
+      
+      // Check if can place
+      if (canPlaceLShape(position, orientation, lShapes)) {
+        // Add to tracking
+        lShapes.push({ position, orientation });
+        
+        // Add walls to structure
+        addLShapeWall(walls, position, orientation);
+        
+        placed = true;
+      }
+      
+      attempts++;
+    }
+    
+    if (!placed) {
+      // This should rarely happen, but if it does, restart
+      walls.horizontal = [] as number[][];
+      walls.vertical = [] as number[][];
+      lShapes.length = 0;
+    }
+  }
+  
+  return walls;
+}

@@ -175,3 +175,43 @@ export function getRobotPosition(
 ): Position {
   return { ...robots[robotColor] };
 }
+
+/**
+ * Complete puzzle with walls, robots, and goals
+ */
+export interface Puzzle {
+  walls: Walls;
+  robots: Robots;
+  goals: import('./types').Goal[];
+}
+
+/**
+ * Generates a complete puzzle for a new game
+ * Creates 17 L-shaped wall pieces, places 4 robots, and generates 17 goals
+ * 
+ * @returns Complete puzzle ready for gameplay
+ */
+export function generatePuzzle(): Puzzle {
+  const { generateWalls } = require('./l-shape-utils');
+  const { generateAllGoals } = require('./goal-placement');
+  
+  // Generate 17 L-shaped wall pieces
+  const walls = generateWalls();
+  
+  // Place robots in starting positions (center area, not overlapping)
+  const robots: Robots = {
+    red: { x: 7, y: 7 },
+    yellow: { x: 8, y: 7 },
+    green: { x: 7, y: 8 },
+    blue: { x: 8, y: 8 }
+  };
+  
+  // Generate 17 goals (4 per color + 1 multi)
+  const goalResult = generateAllGoals(walls);
+  
+  return {
+    walls,
+    robots,
+    goals: goalResult.goals
+  };
+}
