@@ -425,6 +425,9 @@ export class RoundsStorage extends BaseStorageClient {
    */
   async getActiveRound(gameId: string): Promise<Round | null> {
     try {
+      // Ensure table exists before querying
+      await this.ensureTable();
+      
       const filter = odata`PartitionKey eq ${gameId} and status eq 'active'`;
       const entities = this.tableClient.listEntities<RoundEntity & TableEntity>({
         queryOptions: { filter }
