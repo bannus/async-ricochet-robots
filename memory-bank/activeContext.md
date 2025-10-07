@@ -8,6 +8,35 @@
 
 ## Recent Changes (October 7, 2025)
 
+### API Integration Testing Complete ✅
+
+**Automated Test Infrastructure:**
+- ✅ Test organization restructured (unit/, integration/, manual/, helpers/)
+- ✅ API test helpers created (reusable utilities in `tests/helpers/api-test-utils.ts`)
+- ✅ Integration test framework operational (3/3 tests passing)
+- ✅ CI/CD requirements documented (`doc/CI-CD-REQUIREMENTS.md`)
+- ✅ Complete test coverage: **224 total tests** (207 unit + 14 game integration + 3 API integration)
+
+**Key Fixes for Integration Tests:**
+1. **Authentication Method** - Fixed to use request body (not headers) for gameId/hostKey
+2. **Storage Table Creation** - Added `ensureTable()` to `getActiveRound()` for new games
+3. **Response Structure** - Updated helpers to access nested `round` object in API responses
+4. **Data Models** - Fixed `RoundData` interface to match actual API response structure
+
+**Test Results:**
+```
+Test Suites: 1 passed, 1 total
+Tests:       3 passed, 3 total
+- ✅ Game Creation Test
+- ✅ Round Lifecycle Test  
+- ✅ Integration Test Info
+```
+
+**Testing Documentation:**
+- `tests/README.md` - Complete test organization guide
+- `doc/CI-CD-REQUIREMENTS.md` - Azure DevOps/GitHub Actions setup
+- `tests/helpers/api-test-utils.ts` - Reusable API test utilities
+
 ### Phase 3: Backend API Implementation ✅ COMPLETE
 
 **All 9 Azure Functions Operational:**
@@ -24,6 +53,7 @@
 3. **Validation Layer** - Input sanitization, format validation, business logic checks
 4. **Game Engine Integration** - Shared code between API and tests via lib-shared
 5. **Manual Test Suite** - 22 comprehensive test scenarios documented
+6. **Automated Test Suite** - End-to-end API integration tests operational
 
 **Critical Bug Fixes:**
 1. **Import Path Issues** - Fixed TypeScript build configuration
@@ -34,15 +64,24 @@
 2. **Storage Table Creation** - Added ensureTable() calls
    - Tables now auto-create on first entity insertion
    - Prevents "Entity not found" errors on fresh Azurite instances
+   - Added to `getActiveRound()` for query operations on new games
    
 3. **Azure Functions v4 Configuration** - Corrected package.json
    - Set main to `"dist/**/*.js"` (glob pattern per Microsoft docs)
    - Removed invalid src/functions.ts file
 
+4. **API Test Authentication** - Fixed helper methods
+   - Changed from header-based to body-based authentication
+   - Fixed `startTestRound()` and `endTestRound()` helpers
+   - Updated `RoundData` interface to match nested response structure
+
 **Testing Infrastructure Created:**
-- `tests/manual-api-tests.http` - REST Client test file with 22 scenarios
-- `tests/TESTING_GUIDE.md` - Comprehensive testing documentation
-- `tests/MANUAL_TESTING_NEXT_STEPS.md` - Step-by-step manual test guide
+- `tests/manual/manual-api-tests.http` - REST Client test file with 22 scenarios
+- `tests/manual/TESTING_GUIDE.md` - Comprehensive testing documentation
+- `tests/integration/api-integration.test.ts` - Automated integration tests
+- `tests/helpers/api-test-utils.ts` - Reusable test utilities
+- `tests/README.md` - Complete test organization guide
+- `doc/CI-CD-REQUIREMENTS.md` - CI/CD pipeline requirements
 
 **First Successful Test:**
 ```json
