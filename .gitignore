@@ -33,6 +33,7 @@ build/
 
 # Auto-generated from shared/
 api/lib-shared/
+client/lib-shared/
 
 # Logs
 *.log

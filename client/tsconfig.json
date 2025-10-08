@@ -13,11 +13,11 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "baseUrl": "..",
+    "baseUrl": ".",
     "paths": {
-      "../../shared/*": ["../shared/*"]
+      "../../shared/*": ["./lib-shared/*"]
     }
   },
-  "include": ["src/**/*", "../shared/**/*"],
+  "include": ["src/**/*", "lib-shared/**/*"],
   "exclude": ["node_modules", "dist"]
 }

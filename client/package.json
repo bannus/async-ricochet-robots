@@ -3,8 +3,12 @@
   "version": "1.0.0",
   "description": "Frontend for Async Ricochet Robots game",
   "scripts": {
+    "prebuild": "npm run copy:shared",
     "build": "tsc --watch",
-    "build:once": "tsc"
+    "build:once": "npm run copy:shared && tsc",
+    "copy:shared": "copyfiles -u 2 \"../shared/**/*.ts\" lib-shared",
+    "clean": "npm run clean:shared && rimraf dist",
+    "clean:shared": "rimraf lib-shared"
   },
   "keywords": [
     "ricochet-robots",
@@ -14,6 +18,8 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "copyfiles": "^2.4.1",
+    "rimraf": "^5.0.5",
     "typescript": "^5.3.3"
   }
 }
