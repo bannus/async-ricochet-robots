@@ -54,8 +54,8 @@ export const ValidationRules = {
   ROUND_ID: {
     minLength: 5,
     maxLength: 100,
-    pattern: /^round_[a-zA-Z0-9_-]+$/,
-    message: 'Round ID must start with "round_" and contain only alphanumeric characters, hyphens, and underscores'
+    pattern: /^game_[a-zA-Z0-9_-]+_round\d+$/,
+    message: 'Round ID must be "{gameId}_round{number}" format'
   },
   HOST_KEY: {
     minLength: 5,

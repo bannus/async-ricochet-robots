@@ -68,7 +68,7 @@ GET /api/getCurrentRound?gameId=game_abc123xyz
   "data": {
     "gameId": "game_abc123xyz",
     "gameName": "Friday Night Puzzle",
-    "roundId": "round_1704067200000",
+    "roundId": "game_abc123xyz_round5",
     "roundNumber": 5,
     "puzzle": {
       "walls": {
@@ -122,7 +122,7 @@ GET /api/getCurrentRound?gameId=game_abc123xyz
     "gameName": "Friday Night Puzzle",
     "hasActiveRound": false,
     "message": "No active round. Waiting for host to start next round.",
-    "lastRoundId": "round_1703980800000",
+    "lastRoundId": "game_abc123xyz_round4",
     "goalsCompleted": 4,
     "goalsRemaining": 13
   }
@@ -184,20 +184,36 @@ Get the ranked leaderboard for a specific round.
 
 ### Query Parameters
 - `gameId` (required): Game identifier
-- `roundId` (required): Round identifier
+- `roundId` (required): Round identifier (format: `{gameId}_round{number}`)
 
 ### Request Example
 ```http
-GET /api/getLeaderboard?gameId=game_abc123xyz&roundId=round_1704067200000
+GET /api/getLeaderboard?gameId=game_abc123xyz&roundId=game_abc123xyz_round1
 ```
 
-### Response 200 (Active Round)
+### Response 200 (No Solutions Yet)
 ```json
 {
   "success": true,
   "data": {
     "gameId": "game_abc123xyz",
-    "roundId": "round_1704067200000",
+    "roundId": "game_abc123xyz_round1",
+    "roundNumber": 5,
+    "roundStatus": "active",
+    "solutions": [],
+    "totalSolutions": 0,
+    "message": "No solutions submitted yet"
+  }
+}
+```
+
+### Response 200 (Active Round with Solutions)
+```json
+{
+  "success": true,
+  "data": {
+    "gameId": "game_abc123xyz",
+    "roundId": "game_abc123xyz_round1",
     "roundNumber": 5,
     "goalColor": "multi",
     "roundStatus": "active",
@@ -237,7 +253,7 @@ When round has ended, solution data is included:
   "success": true,
   "data": {
     "gameId": "game_abc123xyz",
-    "roundId": "round_1704067200000",
+    "roundId": "game_abc123xyz_round5",
     "roundNumber": 5,
     "goalColor": "multi",
     "roundStatus": "completed",
@@ -282,7 +298,7 @@ Submit a solution for the current round.
 ```json
 {
   "gameId": "game_abc123xyz",
-  "roundId": "round_1704067200000",
+  "roundId": "game_abc123xyz_round1",
   "playerName": "Alice",
   "solutionData": [
     { "robot": "blue", "direction": "up" },
@@ -456,7 +472,7 @@ X-Host-Key: host_9f8e7d6c5b4a
 {
   "success": true,
   "data": {
-    "roundId": "round_1704067200000",
+    "roundId": "game_abc123xyz_round1",
     "roundNumber": 1,
     "goalIndex": 5,
     "goalColor": "red",
@@ -483,7 +499,7 @@ X-Host-Key: host_9f8e7d6c5b4a
 {
   "success": true,
   "data": {
-    "roundId": "round_1704067200000",
+    "roundId": "game_abc123xyz_round8",
     "roundNumber": 8,
     "goalIndex": 16,
     "goalColor": "multi",
@@ -506,7 +522,7 @@ X-Host-Key: host_9f8e7d6c5b4a
   "success": false,
   "error": "A round is already active. End it before starting a new one.",
   "code": "ROUND_ALREADY_ACTIVE",
-  "currentRoundId": "round_1704067200000"
+  "currentRoundId": "game_abc123xyz_round1"
 }
 ```
 
@@ -551,7 +567,7 @@ X-Host-Key: host_9f8e7d6c5b4a
 ### Request Body (Option 1: Absolute Time)
 ```json
 {
-  "roundId": "round_1704067200000",
+  "roundId": "game_abc123xyz_round1",
   "newEndTime": 1704160000000
 }
 ```
@@ -559,7 +575,7 @@ X-Host-Key: host_9f8e7d6c5b4a
 ### Request Body (Option 2: Relative Extension)
 ```json
 {
-  "roundId": "round_1704067200000",
+  "roundId": "game_abc123xyz_round1",
   "extendByMs": 7200000
 }
 ```
@@ -575,7 +591,7 @@ X-Host-Key: host_9f8e7d6c5b4a
 {
   "success": true,
   "data": {
-    "roundId": "round_1704067200000",
+    "roundId": "game_abc123xyz_round1",
     "oldEndTime": 1704153600000,
     "newEndTime": 1704160000000,
     "extensionMs": 7200000,
@@ -608,7 +624,7 @@ X-Host-Key: host_9f8e7d6c5b4a
 ### Request Body
 ```json
 {
-  "roundId": "round_1704067200000",
+  "roundId": "game_abc123xyz_round1",
   "skipGoal": false
 }
 ```
@@ -622,7 +638,7 @@ X-Host-Key: host_9f8e7d6c5b4a
 {
   "success": true,
   "data": {
-    "roundId": "round_1704067200000",
+    "roundId": "game_abc123xyz_round1",
     "endTime": 1704100000000,
     "status": "completed",
     "solutionCount": 12,
@@ -639,7 +655,7 @@ X-Host-Key: host_9f8e7d6c5b4a
 {
   "success": true,
   "data": {
-    "roundId": "round_1704067200000",
+    "roundId": "game_abc123xyz_round1",
     "endTime": 1704100000000,
     "status": "skipped",
     "solutionCount": 0,
@@ -695,7 +711,7 @@ None
     "goalsRemaining": 10,
     "gameComplete": false,
     "currentRound": {
-      "roundId": "round_1704067200000",
+      "roundId": "game_abc123xyz_round8",
       "roundNumber": 8,
       "goalIndex": 12,
       "goalColor": "green",
@@ -713,7 +729,7 @@ None
     },
     "previousRounds": [
       {
-        "roundId": "round_1703980800000",
+        "roundId": "game_abc123xyz_round7",
         "roundNumber": 7,
         "goalIndex": 8,
         "goalColor": "red",
@@ -729,7 +745,7 @@ None
         }
       },
       {
-        "roundId": "round_1703894400000",
+        "roundId": "game_abc123xyz_round6",
         "roundNumber": 6,
         "goalIndex": 5,
         "goalColor": "multi",
@@ -740,7 +756,7 @@ None
         "skippedReason": "No submissions"
       },
       {
-        "roundId": "round_1703808000000",
+        "roundId": "game_abc123xyz_round5",
         "roundNumber": 5,
         "goalIndex": 14,
         "goalColor": "blue",
@@ -852,7 +868,7 @@ None
   "timestamp": 1704153600000,
   "event": "round_ended",
   "gameId": "game_abc123xyz",
-  "roundId": "round_1704067200000",
+  "roundId": "game_abc123xyz_round5",
   "goalIndex": 5,
   "solutionCount": 12,
   "winningMoveCount": 7,
