@@ -41,7 +41,6 @@ No authentication required. Players are identified by username only.
 - `INVALID_HOST_KEY`: Host authentication failed
 - `ROUND_ENDED`: Cannot submit solution to ended round
 - `INVALID_SOLUTION`: Solution does not reach goal
-- `DUPLICATE_SUBMISSION`: Player already submitted for this round
 - `VALIDATION_ERROR`: Input validation failed
 - `ALL_GOALS_EXHAUSTED`: All 17 goals completed, game is finished
 
@@ -221,13 +220,23 @@ GET /api/getLeaderboard?gameId=game_abc123xyz&roundId=game_abc123xyz_round1
     "solutions": [
       {
         "playerName": "Alice",
+        "submissionNumber": 1,
         "moveCount": 7,
         "winningRobot": "red",
         "submittedAt": 1704070000000,
         "rank": 1
       },
       {
+        "playerName": "Alice",
+        "submissionNumber": 2,
+        "moveCount": 9,
+        "winningRobot": "blue",
+        "submittedAt": 1704071000000,
+        "rank": 4
+      },
+      {
         "playerName": "Bob",
+        "submissionNumber": 1,
         "moveCount": 8,
         "winningRobot": "blue",
         "submittedAt": 1704072000000,
@@ -235,6 +244,7 @@ GET /api/getLeaderboard?gameId=game_abc123xyz&roundId=game_abc123xyz_round1
       },
       {
         "playerName": "Charlie",
+        "submissionNumber": 1,
         "moveCount": 8,
         "winningRobot": "red",
         "submittedAt": 1704073000000,
@@ -262,6 +272,7 @@ When round has ended, solution data is included:
     "solutions": [
       {
         "playerName": "Alice",
+        "submissionNumber": 1,
         "moveCount": 7,
         "winningRobot": "red",
         "submittedAt": 1704070000000,
@@ -275,6 +286,19 @@ When round has ended, solution data is included:
           { "robot": "yellow", "direction": "left" },
           { "robot": "red", "direction": "up" }
         ]
+      },
+      {
+        "playerName": "Alice",
+        "submissionNumber": 2,
+        "moveCount": 9,
+        "winningRobot": "blue",
+        "submittedAt": 1704071000000,
+        "rank": 4,
+        "solutionData": [
+          { "robot": "blue", "direction": "down" },
+          { "robot": "blue", "direction": "right" },
+          // ... 7 more moves
+        ]
       }
       // ... other solutions with solutionData
     ]
@@ -283,10 +307,12 @@ When round has ended, solution data is included:
 ```
 
 ### Ranking Rules
-- Solutions ranked by move count (ascending)
-- Ties: Players with same move count share the same rank
+- ALL submissions ranked by move count (ascending)
+- Same player can appear multiple times with different submissions
+- Ties: Submissions with same move count share the same rank
 - Submission time is tiebreaker for display order only
 - For multi-color goals: `winningRobot` shows which robot reached goal
+- `submissionNumber`: Sequential number (1, 2, 3...) indicating which attempt this represents for that player
 
 ---
 
@@ -326,28 +352,55 @@ Submit a solution for the current round.
 - For single-color goals: Specific robot must reach goal
 - For multi-color goals: ANY robot reaching goal is valid
 
-### Response 200 (Success)
+### Response 200 (Success - First Submission)
 ```json
 {
   "success": true,
   "data": {
-    "moveCount": 7,
-    "winningRobot": "red",
-    "rank": 1,
-    "message": "Solution submitted successfully!"
+    "message": "Solution #1 submitted successfully!",
+    "solution": {
+      "playerName": "Alice",
+      "moveCount": 7,
+      "winningRobot": "red",
+      "submittedAt": 1704070000000,
+      "submissionNumber": 1,
+      "rank": 1,
+      "totalSolutions": 1
+    },
+    "leaderboard": {
+      "yourRank": 1,
+      "totalSubmissions": 1,
+      "topScore": 7,
+      "yourScore": 7,
+      "yourSubmissionCount": 1,
+      "achievement": "Current leader! 🏆"
+    }
   }
 }
 ```
 
-### Response 200 (Success - Multi-Color Goal)
+### Response 200 (Success - Subsequent Submission)
 ```json
 {
   "success": true,
   "data": {
-    "moveCount": 8,
-    "winningRobot": "blue",
-    "rank": 2,
-    "message": "Solution submitted successfully! Blue robot reached the multi-color goal."
+    "message": "Solution #2 submitted successfully!",
+    "solution": {
+      "playerName": "Alice",
+      "moveCount": 9,
+      "winningRobot": "blue",
+      "submittedAt": 1704071000000,
+      "submissionNumber": 2,
+      "rank": 4,
+      "totalSolutions": 5
+    },
+    "leaderboard": {
+      "yourRank": 4,
+      "totalSubmissions": 5,
+      "topScore": 7,
+      "yourScore": 9,
+      "yourSubmissionCount": 2
+    }
   }
 }
 ```
@@ -379,19 +432,12 @@ Submit a solution for the current round.
 }
 ```
 
-### Response 409 (Duplicate Submission)
-```json
-{
-  "success": false,
-  "error": "You have already submitted a solution for this round",
-  "code": "DUPLICATE_SUBMISSION",
-  "existingSolution": {
-    "moveCount": 8,
-    "winningRobot": "red",
-    "submittedAt": 1704070000000
-  }
-}
-```
+### Multiple Submissions Allowed
+Players can submit multiple solutions per round. Each submission:
+- Gets a unique sequential number (1st, 2nd, 3rd attempt)
+- Is independently ranked on the leaderboard
+- Can improve or worsen the player's standing
+- All submissions remain visible on the leaderboard
 
 ---
 
@@ -885,7 +931,7 @@ Azure Functions applies default rate limiting:
 - **Per Subscription:** Varies by plan
 
 Custom rate limiting can be added per player:
-- Submit solution: Max 1 per round (enforced by unique constraint)
+- Submit solution: Unlimited per round (players can resubmit to improve)
 - Get leaderboard: Recommended client-side throttling (20s polling)
 
 ---
@@ -905,6 +951,13 @@ Allowed headers:
 ---
 
 # Changelog
+
+## v1.1.0 (Multiple Submissions)
+- **Multiple submissions per player**: Players can submit unlimited solutions per round
+- **Submission numbering**: Each submission gets a sequential number (1st, 2nd, 3rd attempt)
+- **Enhanced leaderboard**: Shows all submissions with attempt numbers
+- **Removed duplicate check**: No more `DUPLICATE_SUBMISSION` error
+- **Improved competition**: Same player can occupy multiple leaderboard positions
 
 ## v1.0.0 (Initial Release)
 - Player endpoints for gameplay

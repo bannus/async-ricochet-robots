@@ -18,6 +18,7 @@ import {
 interface RankedSolution {
   rank: number;
   playerName: string;
+  submissionNumber: number;
   moveCount: number;
   winningRobot: string;
   submittedAt: number;
@@ -68,7 +69,19 @@ export async function getLeaderboard(
       return a.submittedAt - b.submittedAt;
     });
 
-    // Assign ranks (players with same move count share the same rank)
+    // Calculate submission numbers per player
+    const playerSubmissionCounts = new Map<string, number>();
+    const submissionNumbers = new Map<number, number>(); // submittedAt -> submission number
+
+    // First pass: count submissions per player in chronological order
+    const chronologicalSolutions = [...solutions].sort((a, b) => a.submittedAt - b.submittedAt);
+    for (const solution of chronologicalSolutions) {
+      const count = (playerSubmissionCounts.get(solution.playerName) || 0) + 1;
+      playerSubmissionCounts.set(solution.playerName, count);
+      submissionNumbers.set(solution.submittedAt, count);
+    }
+
+    // Assign ranks (ALL submissions ranked, not just unique players)
     const rankedSolutions: RankedSolution[] = [];
     let currentRank = 1;
 
@@ -82,6 +95,7 @@ export async function getLeaderboard(
       const rankedSolution: RankedSolution = {
         rank: currentRank,
         playerName: solutions[i].playerName,
+        submissionNumber: submissionNumbers.get(solutions[i].submittedAt) || 1,
         moveCount: solutions[i].moveCount,
         winningRobot: solutions[i].winningRobot,
         submittedAt: solutions[i].submittedAt

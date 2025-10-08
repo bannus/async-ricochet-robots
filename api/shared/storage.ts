@@ -64,7 +64,7 @@ export interface RoundEntity {
  */
 export interface SolutionEntity {
   partitionKey: string;  // gameId_roundId
-  rowKey: string;        // playerName (normalized)
+  rowKey: string;        // playerName_timestamp (allows multiple submissions)
   displayName: string;
   moveCount: number;
   winningRobot: RobotColorValue;
@@ -521,7 +521,7 @@ export class SolutionsStorage extends BaseStorageClient {
   }
 
   /**
-   * Submit a new solution
+   * Submit a new solution (supports multiple submissions per player)
    */
   async submitSolution(
     gameId: string,
@@ -538,14 +538,17 @@ export class SolutionsStorage extends BaseStorageClient {
       // Ensure table exists before creating entity
       await this.ensureTable();
 
+      const submittedAt = Date.now();
+      const normalizedName = playerName.toLowerCase().trim();
+
       const entity: SolutionEntity & TableEntity = {
         partitionKey: `${gameId}_${roundId}`,
-        rowKey: playerName.toLowerCase().trim(),
+        rowKey: `${normalizedName}_${submittedAt}`,
         displayName: solutionData.displayName,
         moveCount: solutionData.moveCount,
         winningRobot: solutionData.winningRobot,
         solutionData: JSON.stringify(solutionData.moves),
-        submittedAt: Date.now()
+        submittedAt
       };
 
       await this.tableClient.createEntity(entity);
@@ -557,24 +560,40 @@ export class SolutionsStorage extends BaseStorageClient {
   }
 
   /**
-   * Get a specific player's solution
+   * Get all solutions for a specific player in a round
    */
-  async getSolution(
+  async getPlayerSolutions(
     gameId: string,
     roundId: string,
     playerName: string
-  ): Promise<Solution | null> {
+  ): Promise<Solution[]> {
     try {
-      const entity = await this.tableClient.getEntity<SolutionEntity & TableEntity>(
-        `${gameId}_${roundId}`,
-        playerName.toLowerCase().trim()
-      );
-      return this.parseSolution(entity, gameId, roundId);
+      await this.ensureTable();
+      
+      const partitionKey = `${gameId}_${roundId}`;
+      const normalizedName = playerName.toLowerCase().trim();
+      const entities = this.tableClient.listEntities<SolutionEntity & TableEntity>({
+        queryOptions: { filter: odata`PartitionKey eq ${partitionKey}` }
+      });
+
+      const solutions: Solution[] = [];
+      for await (const entity of entities) {
+        // Extract player name from rowKey (format: playerName_timestamp)
+        const playerFromRowKey = entity.rowKey.substring(0, entity.rowKey.lastIndexOf('_'));
+        if (playerFromRowKey === normalizedName) {
+          solutions.push(this.parseSolution(entity, gameId, roundId));
+        }
+      }
+
+      // Sort by submission time
+      solutions.sort((a, b) => a.submittedAt - b.submittedAt);
+
+      return solutions;
     } catch (error: any) {
       if (error.statusCode === 404) {
-        return null;
+        return [];
       }
-      this.handleError(error, `getSolution(${gameId}, ${roundId}, ${playerName})`);
+      this.handleError(error, `getPlayerSolutions(${gameId}, ${roundId}, ${playerName})`);
     }
   }
 
@@ -629,15 +648,15 @@ export class SolutionsStorage extends BaseStorageClient {
   }
 
   /**
-   * Check if a player has already submitted
+   * Get count of submissions for a specific player
    */
-  async hasSubmitted(
+  async getPlayerSubmissionCount(
     gameId: string,
     roundId: string,
     playerName: string
-  ): Promise<boolean> {
-    const solution = await this.getSolution(gameId, roundId, playerName);
-    return solution !== null;
+  ): Promise<number> {
+    const solutions = await this.getPlayerSolutions(gameId, roundId, playerName);
+    return solutions.length;
   }
 
   /**
@@ -648,10 +667,13 @@ export class SolutionsStorage extends BaseStorageClient {
     gameId: string,
     roundId: string
   ): Solution {
+    // Extract player name from rowKey (format: playerName_timestamp)
+    const playerName = entity.rowKey.substring(0, entity.rowKey.lastIndexOf('_'));
+    
     return {
       gameId,
       roundId,
-      playerName: entity.rowKey,
+      playerName,
       displayName: entity.displayName,
       moveCount: entity.moveCount,
       winningRobot: entity.winningRobot,

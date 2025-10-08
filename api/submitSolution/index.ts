@@ -52,21 +52,6 @@ export async function submitSolution(
       );
     }
 
-    // Check for duplicate submission
-    const existingSolution = await Storage.solutions.getSolution(
-      gameId,
-      roundId,
-      playerName
-    );
-
-    if (existingSolution) {
-      return errorResponse(
-        'You have already submitted a solution for this round.',
-        'DUPLICATE_SUBMISSION',
-        409
-      );
-    }
-
     // Validate solution using game engine
     const validationResult = validateSolution(
       round.robotPositions,  // initialRobots
@@ -96,57 +81,51 @@ export async function submitSolution(
       }
     );
 
-    context.log(`Solution accepted: ${playerName} - ${solution.moveCount} moves`);
+    // Get player's submission count
+    const playerSubmissionCount = await Storage.solutions.getPlayerSubmissionCount(
+      gameId,
+      roundId,
+      playerName
+    );
 
-    // Calculate rank by getting all solutions and finding this player's position
+    context.log(`Solution accepted: ${playerName} - ${solution.moveCount} moves (submission #${playerSubmissionCount})`);
+
+    // Calculate rank among ALL submissions
     const allSolutions = await Storage.solutions.getLeaderboard(gameId, roundId);
     
-    // Sort by moveCount, then by submittedAt
-    allSolutions.sort((a, b) => {
-      if (a.moveCount !== b.moveCount) {
-        return a.moveCount - b.moveCount;
-      }
-      return a.submittedAt - b.submittedAt;
-    });
-
-    // Find rank (with tie handling)
+    // Find rank of this specific submission
     let rank = 1;
-    let foundPlayer = false;
-    
     for (let i = 0; i < allSolutions.length; i++) {
       // Update rank when move count increases
       if (i > 0 && allSolutions[i].moveCount > allSolutions[i - 1].moveCount) {
         rank = i + 1;
       }
       
-      // Check if this is the current player
-      if (allSolutions[i].playerName === playerName.toLowerCase().trim()) {
-        foundPlayer = true;
+      // Check if this is the current submission
+      if (allSolutions[i].submittedAt === solution.submittedAt &&
+          allSolutions[i].playerName === playerName.toLowerCase().trim()) {
         break;
       }
     }
 
-    if (!foundPlayer) {
-      // Shouldn't happen, but fallback to last rank
-      rank = allSolutions.length;
-    }
-
-    // Return success with rank information
+    // Return success with submission information
     return successResponse({
-      message: 'Solution submitted successfully!',
+      message: `Solution #${playerSubmissionCount} submitted successfully!`,
       solution: {
         playerName,
         moveCount: solution.moveCount,
         winningRobot: solution.winningRobot,
         submittedAt: solution.submittedAt,
+        submissionNumber: playerSubmissionCount,
         rank,
         totalSolutions: allSolutions.length
       },
       leaderboard: {
         yourRank: rank,
-        totalPlayers: allSolutions.length,
+        totalSubmissions: allSolutions.length,
         topScore: allSolutions[0]?.moveCount,
         yourScore: solution.moveCount,
+        yourSubmissionCount: playerSubmissionCount,
         ...(rank === 1 && {
           achievement: 'Current leader! 🏆'
         }),
