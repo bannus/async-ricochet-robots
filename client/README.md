@@ -98,19 +98,21 @@ npm run build:once
 
 ## Import Strategy
 
-**Shared Game Engine:**
+**Shared Game Engine & Types:**
 ```typescript
-// Import compiled TypeScript from root /shared
-import { moveRobot } from '../../dist/shared/game-engine.js';
-import type { Robots, Walls } from '../../dist/shared/types.js';
+// Import from root /shared (compiled to dist/shared)
+import { moveRobot } from '../../shared/game-engine.js';
+import type { Position, Robots, Walls, Goal } from '../../shared/types.js';
 ```
 
 **Local Modules:**
 ```typescript
-// Import from compiled dist/
+// Import from local src files (compiled to dist/client/src)
 import { ApiClient } from './api-client.js';
 import { GameRenderer } from './game-renderer.js';
 ```
+
+**Note:** TypeScript compiles both `/shared` and `/client/src` into `/client/dist`, maintaining the directory structure. The compiled output includes both `dist/shared/` and `dist/client/src/`.
 
 ## Browser Support
 
