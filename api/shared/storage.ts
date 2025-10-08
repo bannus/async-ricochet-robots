@@ -583,6 +583,9 @@ export class SolutionsStorage extends BaseStorageClient {
    */
   async getLeaderboard(gameId: string, roundId: string): Promise<Solution[]> {
     try {
+      // Ensure table exists before querying
+      await this.ensureTable();
+      
       const partitionKey = `${gameId}_${roundId}`;
       const filter = odata`PartitionKey eq ${partitionKey}`;
       const entities = this.tableClient.listEntities<SolutionEntity & TableEntity>({
@@ -604,6 +607,11 @@ export class SolutionsStorage extends BaseStorageClient {
 
       return solutions;
     } catch (error) {
+      // If error is "table doesn't exist", return empty array
+      // This can happen on first use before any solutions are submitted
+      if (error && (error as any).statusCode === 404) {
+        return [];
+      }
       this.handleError(error, `getLeaderboard(${gameId}, ${roundId})`);
     }
   }
