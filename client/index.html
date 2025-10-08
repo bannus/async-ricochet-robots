@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Async Ricochet Robots - Multiplayer puzzle game">
+  <title>Async Ricochet Robots</title>
+  <link rel="stylesheet" href="css/shared.css">
+  <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <h1>🤖 Async Ricochet Robots</h1>
+      <div id="game-info">
+        <span id="game-name"></span>
+        <span id="round-number"></span>
+        <span id="time-remaining"></span>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Left: Game Board -->
+      <div class="game-section">
+        <div class="goal-info">
+          <h2>Goal: <span id="goal-description"></span></h2>
+          <div id="goal-status"></div>
+        </div>
+        
+        <canvas id="game-board"></canvas>
+        
+        <div class="controls">
+          <div class="robot-selectors">
+            <button class="robot-selector" data-robot="red" aria-label="Select red robot">
+              Red (R)
+            </button>
+            <button class="robot-selector" data-robot="yellow" aria-label="Select yellow robot">
+              Yellow (Y)
+            </button>
+            <button class="robot-selector" data-robot="green" aria-label="Select green robot">
+              Green (G)
+            </button>
+            <button class="robot-selector" data-robot="blue" aria-label="Select blue robot">
+              Blue (B)
+            </button>
+          </div>
+          
+          <div class="move-controls">
+            <button id="undo-btn" aria-label="Undo last move">
+              ↶ Undo (Ctrl+Z)
+            </button>
+            <button id="reset-btn" aria-label="Reset puzzle">
+              ⟲ Reset
+            </button>
+          </div>
+        </div>
+        
+        <div class="solution-info">
+          <h3>Your Solution</h3>
+          <div class="move-count">
+            Moves: <span id="move-count">0</span>
+          </div>
+          <ul id="move-history" aria-label="Move history"></ul>
+          
+          <div class="submit-section">
+            <input 
+              type="text" 
+              id="player-name" 
+              placeholder="Your name" 
+              maxlength="20"
+              aria-label="Enter your name"
+            >
+            <button id="submit-btn" disabled aria-label="Submit solution">
+              Submit Solution
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Leaderboard -->
+      <aside class="leaderboard-section">
+        <h2>Leaderboard</h2>
+        <div id="leaderboard-container">
+          <table id="leaderboard">
+            <thead>
+              <tr>
+                <th scope="col">Rank</th>
+                <th scope="col">Player</th>
+                <th scope="col">Moves</th>
+                <th scope="col">Robot</th>
+                <th scope="col">Time</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-body">
+              <tr>
+                <td colspan="5">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </aside>
+    </div>
+
+    <!-- No Active Round State -->
+    <div id="no-round-message" style="display: none;">
+      <h2>⏸️ No Active Round</h2>
+      <p>Waiting for host to start the next round...</p>
+      <div id="game-stats"></div>
+    </div>
+
+    <!-- Game Complete State -->
+    <div id="game-complete-message" style="display: none;">
+      <h2>🎉 Game Complete!</h2>
+      <p>All 17 goals have been completed!</p>
+      <p>Thank you for playing!</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="error-message" style="display: none;">
+      <h2>❌ Error</h2>
+      <p id="error-text"></p>
+    </div>
+  </div>
+
+  <!-- Load modules -->
+  <script type="module" src="dist/client/src/api-client.js"></script>
+  <script type="module" src="dist/client/src/game-renderer.js"></script>
+  <script type="module" src="dist/client/src/game-controller.js"></script>
+  <script type="module" src="dist/client/src/player-app.js"></script>
+</body>
+</html>
