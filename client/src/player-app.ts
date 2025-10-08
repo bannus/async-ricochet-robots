@@ -6,30 +6,46 @@
 import { ApiClient } from './api-client.js';
 import { GameRenderer } from './game-renderer.js';
 import { GameController } from './game-controller.js';
+import { CreateGameManager } from './create-game.js';
+import { HostManager } from './host-manager.js';
 
 export class PlayerApp {
   private apiClient!: ApiClient;
   private renderer!: GameRenderer;
   private controller!: GameController;
+  private createGameManager?: CreateGameManager;
+  private hostManager?: HostManager;
   
   private gameId: string = '';
   private currentRound: any = null;
   private pollingInterval: number | null = null;
 
   constructor() {
-    // Get gameId from URL parameter
+    // Get gameId from URL parameters
     const params = new URLSearchParams(window.location.search);
-    this.gameId = params.get('game') || '';
+    const gameId = params.get('game');
     
-    if (!this.gameId) {
-      this.showError('No game ID provided. Please use a valid game link.');
+    // Initialize API client first
+    this.apiClient = new ApiClient();
+    
+    // Case 1: No game ID → Show create game screen
+    if (!gameId) {
+      this.createGameManager = new CreateGameManager(this.apiClient);
+      this.createGameManager.showCreateScreen();
       return;
     }
     
-    // Initialize components
-    this.apiClient = new ApiClient();
+    this.gameId = gameId;
+    
+    // Case 2: Initialize game components
     this.renderer = new GameRenderer('game-board');
     this.controller = new GameController(this.renderer, this.apiClient);
+    
+    // Case 3: Host mode detection (from localStorage only)
+    const storedKey = localStorage.getItem(`hostKey_${this.gameId}`);
+    if (storedKey) {
+      this.hostManager = new HostManager(this.gameId, storedKey, this.apiClient);
+    }
     
     this.init();
   }
@@ -38,6 +54,12 @@ export class PlayerApp {
    * Initialize the application
    */
   private async init(): Promise<void> {
+    // Show main container
+    const container = document.querySelector('.container') as HTMLElement;
+    if (container) {
+      container.style.display = 'block';
+    }
+    
     // Load player name from localStorage
     const savedName = localStorage.getItem('playerName');
     if (savedName) {
@@ -49,6 +71,11 @@ export class PlayerApp {
     
     // Setup event listeners
     this.setupEventListeners();
+    
+    // Initialize host controls if host
+    if (this.hostManager) {
+      this.hostManager.initialize();
+    }
     
     // Initial load
     await this.loadCurrentRound();
@@ -136,6 +163,11 @@ export class PlayerApp {
       
       // Load leaderboard
       await this.loadLeaderboard();
+      
+      // Load host dashboard if host
+      if (this.hostManager) {
+        await this.hostManager.loadDashboard();
+      }
       
     } catch (error) {
       console.error('Error loading current round:', error);

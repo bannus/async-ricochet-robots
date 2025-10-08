@@ -9,6 +9,76 @@
   <link rel="stylesheet" href="css/game.css">
 </head>
 <body>
+  <!-- No Game Screen (shown when no ?game parameter) -->
+  <div id="no-game-screen" style="display: none;">
+    <div class="welcome-container">
+      <h1>🤖 Async Ricochet Robots</h1>
+      <p class="tagline">A collaborative puzzle game where robots slide until they hit walls</p>
+      
+      <div class="action-buttons">
+        <button id="create-game-btn" class="primary-btn">Create New Game</button>
+        <p class="hint">or paste a game link in your browser</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Game Modal -->
+  <div id="create-game-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Create New Game</h2>
+      
+      <form id="create-game-form">
+        <div class="form-group">
+          <label for="new-game-name">Game Name:</label>
+          <input 
+            type="text" 
+            id="new-game-name" 
+            placeholder="Friday Night Robots" 
+            maxlength="50" 
+            required
+            aria-label="Game name"
+          >
+        </div>
+        
+        <div class="form-group">
+          <label for="new-game-duration">Default Round Duration:</label>
+          <select id="new-game-duration" aria-label="Round duration">
+            <option value="3600000">1 hour</option>
+            <option value="21600000">6 hours</option>
+            <option value="86400000" selected>24 hours</option>
+            <option value="172800000">48 hours</option>
+          </select>
+        </div>
+        
+        <button type="submit" class="primary-btn">Create Game</button>
+      </form>
+      
+      <!-- Success State -->
+      <div id="create-success" style="display: none;">
+        <h3>✅ Game Created!</h3>
+        
+        <div class="link-group">
+          <label>Share this link with players:</label>
+          <div class="link-input">
+            <input type="text" id="created-player-link" readonly aria-label="Player link">
+            <button type="button" class="copy-btn" data-target="created-player-link">
+              Copy
+            </button>
+          </div>
+        </div>
+        
+        <p class="hint" style="margin: var(--spacing-md) 0;">
+          Host controls will appear automatically for you when you visit the game.
+        </p>
+        
+        <button id="goto-host-panel" class="primary-btn">
+          Go to Game
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div class="container">
     <!-- Header -->
     <header>
@@ -103,6 +173,59 @@
       </aside>
     </div>
 
+    <!-- Host Controls Section (only visible to host) -->
+    <section id="host-controls" style="display: none;">
+      <h2>🔑 Host Controls</h2>
+      
+      <div class="host-stats">
+        <div class="stat-card">
+          <span class="stat-label">Goals</span>
+          <span class="stat-value" id="host-goals-completed">0/17</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Total Players</span>
+          <span class="stat-value" id="host-total-players">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Total Solutions</span>
+          <span class="stat-value" id="host-total-solutions">0</span>
+        </div>
+      </div>
+      
+      <div class="host-actions">
+        <div class="action-group">
+          <label for="host-round-duration">Round Duration:</label>
+          <select id="host-round-duration" aria-label="Round duration">
+            <option value="3600000">1 hour</option>
+            <option value="21600000">6 hours</option>
+            <option value="86400000" selected>24 hours</option>
+            <option value="172800000">48 hours</option>
+          </select>
+          <button id="host-start-round" class="primary-btn">Start New Round</button>
+        </div>
+        
+        <div class="action-group">
+          <button id="host-extend-round" class="secondary-btn">
+            Extend Deadline (+6h)
+          </button>
+          <button id="host-end-round" class="danger-btn">End Round</button>
+        </div>
+      </div>
+      
+      <div class="host-links">
+        <h3>Share Links</h3>
+        <div class="link-group">
+          <label for="share-player-link">Player Link:</label>
+          <div class="link-input">
+            <input type="text" id="share-player-link" readonly aria-label="Player link to share">
+            <button type="button" class="copy-btn" data-target="share-player-link">
+              Copy
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- No Active Round State -->
     <div id="no-round-message" style="display: none;">
       <h2>⏸️ No Active Round</h2>
@@ -128,6 +251,8 @@
   <script type="module" src="dist/client/src/api-client.js"></script>
   <script type="module" src="dist/client/src/game-renderer.js"></script>
   <script type="module" src="dist/client/src/game-controller.js"></script>
+  <script type="module" src="dist/client/src/create-game.js"></script>
+  <script type="module" src="dist/client/src/host-manager.js"></script>
   <script type="module" src="dist/client/src/player-app.js"></script>
 </body>
 </html>
