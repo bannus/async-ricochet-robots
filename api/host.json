@@ -16,5 +16,9 @@
       "routePrefix": "api"
     }
   },
+  "cors": {
+    "allowedOrigins": ["*"],
+    "supportCredentials": false
+  },
   "scriptFile": "dist/**/*.js"
 }
