@@ -295,9 +295,14 @@ export class PlayerApp {
         row.classList.add('current-player');
       }
       
+      // Display player name with submission number if available
+      const playerDisplay = solution.submissionNumber 
+        ? `${this.escapeHtml(solution.playerName)} (#${solution.submissionNumber})`
+        : this.escapeHtml(solution.playerName);
+      
       row.innerHTML = `
         <td>${solution.rank}</td>
-        <td>${this.escapeHtml(solution.playerName)}</td>
+        <td>${playerDisplay}</td>
         <td>${solution.moveCount}</td>
         <td class="robot-${solution.winningRobot}">${solution.winningRobot}</td>
         <td>${this.formatTime(solution.submittedAt)}</td>
@@ -328,16 +333,18 @@ export class PlayerApp {
       const result = await this.controller.submitSolution(playerName);
       
       if (result.success) {
-        alert(`Solution submitted! You used ${result.data.moveCount} moves. Current rank: #${result.data.rank}`);
+        const data = result.data;
+        const submissionNum = data.solution?.submissionNumber || data.leaderboard?.yourSubmissionCount || 1;
+        const moveCount = data.solution?.moveCount || data.moveCount;
+        const rank = data.solution?.rank || data.rank;
         
-        // Disable further submissions
-        const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
-        if (submitBtn) {
-          submitBtn.disabled = true;
-        }
+        alert(`Solution #${submissionNum} submitted! You used ${moveCount} moves. Current rank: #${rank}\n\nYou can submit again to improve your score!`);
         
-        // Reload leaderboard
+        // Reload leaderboard to show new submission
         await this.loadLeaderboard();
+        
+        // Reset the puzzle so player can try again
+        this.controller.reset();
       } else {
         alert('Failed to submit: ' + (result.error || 'Unknown error'));
       }
