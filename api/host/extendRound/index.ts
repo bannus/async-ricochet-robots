@@ -14,42 +14,28 @@ import {
   errorResponse,
   handleError
 } from '../../shared/validation';
-
-/**
- * Authenticate host using hostKey
- * Returns true if hostKey matches the game's hostKey
- */
-async function authenticateHost(gameId: string, providedHostKey: string): Promise<boolean> {
-  try {
-    const game = await Storage.games.getGame(gameId);
-    return game.hostKey === providedHostKey;
-  } catch (error) {
-    return false;
-  }
-}
+import { validateHostAuth } from '../../shared/host-auth';
 
 export async function extendRound(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   try {
+    // Authenticate host from headers
+    const authResult = await validateHostAuth(request);
+    if ('error' in authResult) {
+      return authResult.error;
+    }
+    
+    const { gameId } = authResult;
+
     // Parse and validate request body
     const body = await request.json() as any;
     validateExtendRoundRequest(body);
 
-    const { gameId, roundId, hostKey, additionalTimeMs } = body;
+    const { roundId, extendByMs } = body;
 
-    context.log(`extendRound: gameId=${gameId}, roundId=${roundId}, additionalTime=${additionalTimeMs}ms`);
-
-    // Authenticate host
-    const isAuthenticated = await authenticateHost(gameId, hostKey);
-    if (!isAuthenticated) {
-      return errorResponse(
-        'Invalid host key. Only the game host can extend rounds.',
-        'UNAUTHORIZED',
-        401
-      );
-    }
+    context.log(`extendRound: gameId=${gameId}, roundId=${roundId}, extendBy=${extendByMs}ms`);
 
     // Get round data
     const round = await Storage.rounds.getRound(gameId, roundId);
@@ -64,7 +50,7 @@ export async function extendRound(
     }
 
     // Calculate new end time
-    const newEndTime = round.endTime + additionalTimeMs;
+    const newEndTime = round.endTime + extendByMs;
     const now = Date.now();
 
     context.log(`Current endTime: ${round.endTime}, New endTime: ${newEndTime}`);
@@ -75,7 +61,7 @@ export async function extendRound(
     });
 
     const timeRemaining = newEndTime - now;
-    const hoursAdded = Math.round(additionalTimeMs / (1000 * 60 * 60) * 10) / 10;
+    const hoursAdded = Math.round(extendByMs / (1000 * 60 * 60) * 10) / 10;
 
     context.log(`Round ${roundId} extended by ${hoursAdded} hours`);
 
@@ -89,7 +75,7 @@ export async function extendRound(
         goal: round.goal,
         originalEndTime: round.endTime,
         newEndTime: newEndTime,
-        timeAdded: additionalTimeMs,
+        timeAdded: extendByMs,
         timeRemaining: timeRemaining,
         status: 'active'
       },

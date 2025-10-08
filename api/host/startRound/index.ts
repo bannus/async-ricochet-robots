@@ -14,42 +14,27 @@ import {
   errorResponse,
   handleError
 } from '../../shared/validation';
-
-/**
- * Authenticate host using hostKey
- * Returns true if hostKey matches the game's hostKey
- */
-async function authenticateHost(gameId: string, providedHostKey: string): Promise<boolean> {
-  try {
-    const game = await Storage.games.getGame(gameId);
-    return game.hostKey === providedHostKey;
-  } catch (error) {
-    return false;
-  }
-}
+import { validateHostAuth } from '../../shared/host-auth';
 
 export async function startRound(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   try {
+    // Authenticate host from headers
+    const authResult = await validateHostAuth(request);
+    if ('error' in authResult) {
+      return authResult.error;
+    }
+    
+    const { gameId } = authResult;
+    context.log(`startRound: gameId=${gameId}`);
+
     // Parse and validate request body
     const body = await request.json() as any;
     validateStartRoundRequest(body);
-
-    const { gameId, hostKey, customDurationMs } = body;
-
-    context.log(`startRound: gameId=${gameId}`);
-
-    // Authenticate host
-    const isAuthenticated = await authenticateHost(gameId, hostKey);
-    if (!isAuthenticated) {
-      return errorResponse(
-        'Invalid host key. Only the game host can start rounds.',
-        'UNAUTHORIZED',
-        401
-      );
-    }
+    
+    const { durationMs } = body;
 
     // Get game data
     const game = await Storage.games.getGame(gameId);
@@ -97,10 +82,10 @@ export async function startRound(
 
     context.log(`Selected goal index ${nextGoalIndex}: ${selectedGoal.color} at (${selectedGoal.position.x}, ${selectedGoal.position.y})`);
 
-    // Determine round duration
-    const durationMs = customDurationMs || game.defaultRoundDurationMs;
+    // Determine round duration (use provided or game default)
+    const roundDurationMs = durationMs || game.defaultRoundDurationMs;
     const startTime = Date.now();
-    const endTime = startTime + durationMs;
+    const endTime = startTime + roundDurationMs;
 
     // Calculate round number (total completed + 1)
     const roundNumber = game.board.completedGoalIndices.length + 1;
@@ -140,7 +125,7 @@ export async function startRound(
         robotPositions: round.robotPositions,
         startTime: round.startTime,
         endTime: round.endTime,
-        durationMs: durationMs,
+        durationMs: roundDurationMs,
         status: 'active'
       },
       gameProgress: {

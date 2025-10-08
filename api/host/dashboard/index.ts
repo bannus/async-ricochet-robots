@@ -10,60 +10,23 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/fu
 import { Storage } from '../../shared/storage';
 import {
   successResponse,
-  errorResponse,
   handleError
 } from '../../shared/validation';
-
-/**
- * Authenticate host using hostKey
- * Returns true if hostKey matches the game's hostKey
- */
-async function authenticateHost(gameId: string, providedHostKey: string): Promise<boolean> {
-  try {
-    const game = await Storage.games.getGame(gameId);
-    return game.hostKey === providedHostKey;
-  } catch (error) {
-    return false;
-  }
-}
+import { validateHostAuth } from '../../shared/host-auth';
 
 export async function getDashboard(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   try {
-    // Get query parameters
-    const gameId = request.query.get('gameId');
-    const hostKey = request.query.get('hostKey');
-
-    // Validate required parameters
-    if (!gameId) {
-      return errorResponse(
-        'gameId query parameter is required',
-        'VALIDATION_ERROR',
-        400
-      );
+    // Authenticate host from headers
+    const authResult = await validateHostAuth(request);
+    if ('error' in authResult) {
+      return authResult.error;
     }
-
-    if (!hostKey) {
-      return errorResponse(
-        'hostKey query parameter is required',
-        'VALIDATION_ERROR',
-        400
-      );
-    }
-
+    
+    const { gameId } = authResult;
     context.log(`getDashboard: gameId=${gameId}`);
-
-    // Authenticate host
-    const isAuthenticated = await authenticateHost(gameId, hostKey);
-    if (!isAuthenticated) {
-      return errorResponse(
-        'Invalid host key. Only the game host can access the dashboard.',
-        'UNAUTHORIZED',
-        401
-      );
-    }
 
     // Get game data
     const game = await Storage.games.getGame(gameId);

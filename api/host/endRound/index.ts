@@ -15,43 +15,29 @@ import {
   errorResponse,
   handleError
 } from '../../shared/validation';
+import { validateHostAuth } from '../../shared/host-auth';
 import { applyMoves } from '../../lib-shared/game-engine';
-
-/**
- * Authenticate host using hostKey
- * Returns true if hostKey matches the game's hostKey
- */
-async function authenticateHost(gameId: string, providedHostKey: string): Promise<boolean> {
-  try {
-    const game = await Storage.games.getGame(gameId);
-    return game.hostKey === providedHostKey;
-  } catch (error) {
-    return false;
-  }
-}
 
 export async function endRound(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   try {
+    // Authenticate host from headers
+    const authResult = await validateHostAuth(request);
+    if ('error' in authResult) {
+      return authResult.error;
+    }
+    
+    const { gameId } = authResult;
+
     // Parse and validate request body
     const body = await request.json() as any;
     validateEndRoundRequest(body);
 
-    const { gameId, roundId, hostKey } = body;
+    const { roundId, skipGoal } = body;
 
-    context.log(`endRound: gameId=${gameId}, roundId=${roundId}`);
-
-    // Authenticate host
-    const isAuthenticated = await authenticateHost(gameId, hostKey);
-    if (!isAuthenticated) {
-      return errorResponse(
-        'Invalid host key. Only the game host can end rounds.',
-        'UNAUTHORIZED',
-        401
-      );
-    }
+    context.log(`endRound: gameId=${gameId}, roundId=${roundId}, skipGoal=${skipGoal || false}`);
 
     // Get game and round data
     const game = await Storage.games.getGame(gameId);

@@ -484,6 +484,7 @@ export function validateStartRoundRequest(body: any): void {
     }]);
   }
 
+  // durationMs is optional - uses game default if not provided
   validateDuration(body.durationMs);
 }
 
@@ -500,40 +501,15 @@ export function validateExtendRoundRequest(body: any): void {
   }
 
   validateRoundId(body.roundId);
-
-  // Must have either newEndTime OR extendByMs, but not both
-  const hasNewEndTime = body.newEndTime !== undefined && body.newEndTime !== null;
-  const hasExtendBy = body.extendByMs !== undefined && body.extendByMs !== null;
-
-  if (!hasNewEndTime && !hasExtendBy) {
-    throw new ValidationException([{
-      field: 'body',
-      message: 'Must provide either newEndTime or extendByMs',
-      code: 'MISSING_EXTENSION_PARAMS'
-    }]);
-  }
-
-  if (hasNewEndTime && hasExtendBy) {
-    throw new ValidationException([{
-      field: 'body',
-      message: 'Cannot provide both newEndTime and extendByMs',
-      code: 'CONFLICTING_PARAMS'
-    }]);
-  }
-
-  if (hasNewEndTime) {
-    validateTimestamp(body.newEndTime, 'newEndTime', true);
-  }
-
-  if (hasExtendBy) {
-    validateNumber(body.extendByMs, 'extendByMs', {
-      min: 1000, // At least 1 second
-      max: 7 * 24 * 60 * 60 * 1000, // At most 1 week
-      integer: true,
-      message: 'Extension must be between 1 second and 1 week',
-      required: true
-    });
-  }
+  
+  // extendByMs is required
+  validateNumber(body.extendByMs, 'extendByMs', {
+    min: 1000, // At least 1 second
+    max: 7 * 24 * 60 * 60 * 1000, // At most 1 week
+    integer: true,
+    message: 'Extension must be between 1 second and 1 week',
+    required: true
+  });
 }
 
 /**
