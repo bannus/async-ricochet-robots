@@ -2,42 +2,113 @@
 
 ## Current Status
 
-**Phase:** Phase 3 Complete - Backend API ✅  
-**Date:** October 7, 2025  
-**Next Phase:** Phase 4 - Frontend UI
+**Phase:** Phase 4 - Frontend UI (IN PROGRESS) 🔄  
+**Date:** October 8, 2025  
+**Completion:** ~60%  
+**Next Milestone:** Complete player UI, implement host panel
 
-## Recent Changes (October 7, 2025)
+## Recent Changes (October 8, 2025)
 
-### API Integration Testing Complete ✅
+### Phase 4: Frontend UI Implementation - Player App (60% Complete)
 
-**Automated Test Infrastructure:**
-- ✅ Test organization restructured (unit/, integration/, manual/, helpers/)
-- ✅ API test helpers created (reusable utilities in `tests/helpers/api-test-utils.ts`)
-- ✅ Integration test framework operational (3/3 tests passing)
-- ✅ CI/CD requirements documented (`doc/CI-CD-REQUIREMENTS.md`)
-- ✅ Complete test coverage: **224 total tests** (207 unit + 14 game integration + 3 API integration)
+**Frontend Infrastructure Complete:**
+- ✅ TypeScript project structure in `/client` folder
+- ✅ Build configuration (tsconfig.json, package.json, webpack)
+- ✅ Shared code integration (lib-shared/ copied from /shared)
+- ✅ Azure Static Web App configuration (staticwebapp.config.json)
 
-**Key Fixes for Integration Tests:**
-1. **Authentication Method** - Fixed to use request body (not headers) for gameId/hostKey
-2. **Storage Table Creation** - Added `ensureTable()` to `getActiveRound()` for new games
-3. **Response Structure** - Updated helpers to access nested `round` object in API responses
-4. **Data Models** - Fixed `RoundData` interface to match actual API response structure
+**Core Modules Implemented:**
+1. **API Client (`api-client.ts`)** ✅
+   - Complete wrapper for all backend endpoints
+   - Error handling with retries
+   - Type-safe request/response interfaces
+   - CORS-enabled communication
 
-**Test Results:**
-```
-Test Suites: 1 passed, 1 total
-Tests:       3 passed, 3 total
-- ✅ Game Creation Test
-- ✅ Round Lifecycle Test  
-- ✅ Integration Test Info
-```
+2. **Game Renderer (`game-renderer.ts`)** ✅
+   - HTML5 Canvas rendering for 16×16 grid
+   - Wall visualization (horizontal/vertical segments)
+   - Robot rendering with color coding
+   - Goal markers with active highlighting
+   - Smooth animation support (ready for move playback)
 
-**Testing Documentation:**
-- `tests/README.md` - Complete test organization guide
-- `doc/CI-CD-REQUIREMENTS.md` - Azure DevOps/GitHub Actions setup
-- `tests/helpers/api-test-utils.ts` - Reusable API test utilities
+3. **Game Controller (`game-controller.ts`)** ✅
+   - Keyboard controls (arrow keys for movement, R/Y/G/B for robot selection)
+   - Mouse controls (click to select robots)
+   - Local puzzle solving with move history
+   - Undo/reset functionality
+   - Solution validation before submission
+   - Integration with shared game engine
 
-### Phase 3: Backend API Implementation ✅ COMPLETE
+4. **Player App (`player-app.ts`)** ✅
+   - Main application controller
+   - Polling architecture (20-second intervals)
+   - Game state management
+   - Round detection and UI updates
+   - Leaderboard display with live updates
+   - LocalStorage for player name persistence
+   - Round timer countdown
+
+5. **HTML Structure (`index.html`)** ✅
+   - Complete player UI layout
+   - Game board canvas container
+   - Robot selector controls
+   - Move history display
+   - Solution submission interface
+   - Leaderboard table
+   - Round status indicators
+
+6. **CSS Foundation** ✅ (Partial)
+   - Base styles (shared.css)
+   - Game UI styles (game.css) - partial implementation
+   - Host panel styles (host.css) - structure only
+
+**Critical Bug Fixes in Phase 4:**
+
+1. **CORS Configuration** ✅
+   - Issue: API calls blocked by CORS policy from browser
+   - Solution: Added CORS headers in `api/host.json`
+   - Configuration: `"allowedOrigins": ["*"]` for development
+   - Status: Complete - API accessible from client
+
+2. **Active Round Detection** ✅
+   - Issue: `getCurrentRound` not detecting active rounds correctly
+   - Solution: Fixed `hasActiveRound` logic in API endpoint
+   - Added proper status field checking
+   - Status: Complete - rounds detected correctly
+
+3. **Round ID Validation Standardization** ✅
+   - Issue: Validation regex accepted two different formats
+   - Old: Allowed both `{gameId}_round{number}` and `{gameId}_{roundNumber}`
+   - Solution: Standardized to ONLY `{gameId}_round{number}`
+   - Files Updated:
+     - `api/shared/validation.ts` - Updated regex pattern
+     - `doc/api-specification.md` - All 15+ examples updated
+   - Implementation Verified: API already generates correct format
+   - Status: Complete - full consistency achieved
+
+4. **Empty Leaderboard Handling** ✅
+   - Issue: Leaderboard endpoint didn't handle "no solutions" case
+   - Solution: Return empty array with appropriate message
+   - Status: Complete - graceful empty state display
+
+**Known Issues:**
+- 🐛 **Player app refresh issue** - Under investigation
+  - Symptom: Page doesn't update when new round starts
+  - WebSocket from live-server works (not the issue)
+  - Suspected: Polling logic or state comparison
+  - Next step: Debug network requests and console logs
+
+**Remaining Phase 4 Tasks:**
+- [ ] Complete CSS styling (game.css fully polished)
+- [ ] Create host panel HTML (host.html)
+- [ ] Implement host panel logic (host-panel.ts)
+- [ ] Debug and fix player app refresh/polling
+- [ ] Mobile responsive testing
+- [ ] Cross-browser testing
+- [ ] Animation polish
+- [ ] End-to-end gameplay testing
+
+### Phase 3: Backend API Implementation ✅ COMPLETE (October 7, 2025)
 
 **All 9 Azure Functions Operational:**
 - ✅ All HTTP endpoints implemented and tested
@@ -47,485 +118,279 @@ Tests:       3 passed, 3 total
 - ✅ Host authentication system operational
 - ✅ Comprehensive error handling and validation
 
-**Key Implementation Achievements:**
-1. **TypeScript Throughout** - Strict mode enabled, full type safety
-2. **Storage Layer** - Auto-creates tables, handles all CRUD operations
-3. **Validation Layer** - Input sanitization, format validation, business logic checks
-4. **Game Engine Integration** - Shared code between API and tests via lib-shared
-5. **Manual Test Suite** - 22 comprehensive test scenarios documented
-6. **Automated Test Suite** - End-to-end API integration tests operational
+**Testing Infrastructure:**
+- ✅ Manual test suite (22 scenarios in manual-api-tests.http)
+- ✅ Automated API integration tests (3/3 passing)
+- ✅ Complete test coverage: **224 total tests** (207 unit + 14 game integration + 3 API integration)
 
 **Critical Bug Fixes:**
-1. **Import Path Issues** - Fixed TypeScript build configuration
-   - Created `api/lib-shared/` with copied game engine modules
-   - Updated all imports from `../../dist/shared/` to `../lib-shared/`
-   - Fixed tsconfig.json rootDir and outDir paths
-   
-2. **Storage Table Creation** - Added ensureTable() calls
-   - Tables now auto-create on first entity insertion
-   - Prevents "Entity not found" errors on fresh Azurite instances
-   - Added to `getActiveRound()` for query operations on new games
-   
-3. **Azure Functions v4 Configuration** - Corrected package.json
-   - Set main to `"dist/**/*.js"` (glob pattern per Microsoft docs)
-   - Removed invalid src/functions.ts file
-
-4. **API Test Authentication** - Fixed helper methods
-   - Changed from header-based to body-based authentication
-   - Fixed `startTestRound()` and `endTestRound()` helpers
-   - Updated `RoundData` interface to match nested response structure
-
-**Testing Infrastructure Created:**
-- `tests/manual/manual-api-tests.http` - REST Client test file with 22 scenarios
-- `tests/manual/TESTING_GUIDE.md` - Comprehensive testing documentation
-- `tests/integration/api-integration.test.ts` - Automated integration tests
-- `tests/helpers/api-test-utils.ts` - Reusable test utilities
-- `tests/README.md` - Complete test organization guide
-- `doc/CI-CD-REQUIREMENTS.md` - CI/CD pipeline requirements
-
-**First Successful Test:**
-```json
-{
-  "success": true,
-  "data": {
-    "gameId": "game_c790fff30cd58185",
-    "hostKey": "host_e12c2e6190bd64add4c94bf3",
-    "totalGoals": 17,
-    "goalsCompleted": 0
-  }
-}
-```
-
-### TypeScript Migration (October 6, 2025) ✅ COMPLETE
-**Rationale:** Switched from vanilla JavaScript to TypeScript for better type safety, IDE support, and maintainability.
-
-**Changes Made:**
-1. Installed TypeScript toolchain (`typescript`, `ts-jest`, `@types/jest`, `@types/node`)
-2. Created `tsconfig.json` with strict mode enabled
-3. Converted `shared/types.js` → `shared/types.ts` with:
-   - Enums for RobotColor, Direction, GoalColor
-   - Strong interfaces (Position, Move, Robots, Walls, Goal)
-   - Type guards for validation functions
-   - Exported type aliases for enum values
-4. Converted `tests/types.test.js` → `tests/types.test.ts`
-5. Updated Jest configuration for ts-jest preset
-6. Updated package.json with build scripts
-7. Updated documentation (README, activeContext)
-
-**Test Results:**
-- ✅ All 29 tests pass
-- ✅ 100% statement coverage
-- ✅ 93.1% branch coverage
-- ✅ 100% function coverage
-- ✅ 100% line coverage
-
-**Benefits Realized:**
-- Type safety catches errors at compile time
-- Better IDE autocomplete and refactoring
-- Self-documenting code with interfaces
-- Native enum support (no more string arrays)
-- Type guards provide runtime validation with compile-time benefits
-
-## What We Just Completed
-
-### Phase 3: Backend API Implementation (✅ Complete)
-
-**All Azure Functions Implemented:**
-1. ✅ Player endpoints (getCurrentRound, getLeaderboard, submitSolution)
-2. ✅ Game management (createGame)
-3. ✅ Host endpoints (startRound, endRound, extendRound, dashboard)
-4. ✅ Timer function (checkRoundEnd)
-5. ✅ Storage layer with Azure Table Storage
-6. ✅ Validation layer with input sanitization
-7. ✅ Host authentication middleware
-
-**Implementation Details:**
-- Complete Azure Functions app with TypeScript
-- Azure Table Storage integration (Games, Rounds, Solutions tables)
-- Full solution validation using game engine
-- Multi-color goal support throughout
-- Board persistence and robot position tracking
-- Goal skip functionality
-- 17-goal game lifecycle management
-- Comprehensive error handling
-- Documentation consolidated in api.md
-
-### Design Documentation (✅ Complete - UPDATED with Game Corrections)
-1. **architecture.md** - Full system architecture with Azure serverless design
-2. **api-specification.md** - Complete REST API with all endpoints documented ✅ UPDATED
-3. **data-models.md** - Azure Table Storage schemas and query patterns ✅ UPDATED
-4. **game-rules.md** - Ricochet Robots mechanics and puzzle generation algorithms ✅ UPDATED
-5. **user-flows.md** - Detailed UX flows for hosts and players
-
-### Memory Bank (✅ Complete)
-1. **projectbrief.md** - Core project vision, requirements, and decisions
-2. **activeContext.md** - This file (current work state) ✅ UPDATING
-
-## Critical Design Refinements (October 5, 2025)
-
-### Wall Generation Corrections
-**Original (Incorrect):**
-- 30-50 random walls placed anywhere
-- 50% wall density
-- Single walls allowed
-
-**Corrected (Authentic to Original Game):**
-- Exactly 17 L-shaped wall pieces (2 walls each forming a corner)
-- Each L-shape contains one goal in its corner
-- L-shaped walls CANNOT touch or overlap each other
-- 8 outer edge walls (2 per quadrant on outer boundaries, positioned 2-7 cells from corner)
-  - Wall positioning clarification: "2-7 cells from corner" means wall at columns/rows 2-7
-- Total: ~42 wall segments (17 L-shapes × 2 + 8 outer edges)
-- Sparse layout matching actual Ricochet Robots board game
-
-### Goal Distribution System
-**Structure:**
-- 4 quadrants (8×8 each): NW, NE, SW, SE
-- 4 goals per quadrant (one per robot color) = 16 single-color goals
-- Exactly 1 multi-color goal (placed randomly in one quadrant) = 17 total goals
-- Goals cannot be on outer boundary (rows/cols 0 or 15)
-  - Clarification: Walls CAN touch boundary, but goal positions cannot be at boundary
-- Goals placed randomly within quadrant constraints
-- Each quadrant contains 4-5 goals (16 single-color distributed + 1 multi-color random)
-
-**Multi-Color Goal Behavior:**
-- ANY robot reaching the goal position wins
-- Different players may use different robots for same goal
-- Leaderboard tracks `winningRobot` for each solution
-- No robot assignment at generation (stays flexible)
-- Placement: Random quadrant, not necessarily near center
-
-### Board Persistence & Game Lifecycle
-**Key Change:** One board = 17 rounds maximum
-
-**Lifecycle:**
-1. Game creation → Generate board with walls, robots, 17 goals
-2. Round creation → Select random goal from incomplete goals
-3. Round completion → Update robots to final positions, mark goal completed
-4. Round skip → Goal NOT marked completed, robots unchanged, goal stays available
-5. Game ends → When `completedGoalIndices.length === 17`
-
-**Robot Persistence:**
-- Robots stay in their final positions after each round
-- Creates evolving difficulty (early rounds simpler, later rounds more complex)
-- Starting positions only used for first round
-
-**Goal Management:**
-- `completedGoalIndices`: Array of indices into `allGoals` that are done
-- Skipped goals do NOT get added to completed (return to pool)
-- Host can skip "too easy" goals for later when robots have moved
-
-### Data Model Changes
-**Game Entity:**
-- Added `boardData` (JSON): walls, robots, allGoals, completedGoalIndices
-- Board generated once, persists throughout game
-
-**Round Entity:**
-- Removed `puzzleData` (use Game.boardData instead)
-- Added `goalIndex`: Index into allGoals array
-- Added `goalColor`: 'red', 'yellow', 'green', 'blue', or 'multi'
-- Added `robotPositions`: Snapshot of robots at round start (for replay)
-- Added `status`: 'active', 'completed', or 'skipped'
-
-**Solution Entity:**
-- Added `winningRobot`: Which robot reached goal (important for multi-color)
-
-### API Changes
-**New Endpoint:**
-- `POST /api/host/endRound` with `skipGoal` parameter
-- Allows host to skip goals that are too easy
-
-**Modified Behaviors:**
-- `POST /api/host/startRound`: Returns 400 if all 17 goals exhausted
-- Solution validation: Checks goalColor to allow multi-color flexibility
-- Leaderboard: Shows `winningRobot` for each solution
-
-## Key Decisions from Planning Session
-
-### Architecture Decisions
-1. **Serverless with Polling** (not WebSockets)
-   - Azure Static Web Apps for frontend
-   - Azure Functions for API
-   - Azure Table Storage for database
-   - HTTP polling every 20 seconds
-   - **Rationale:** Simpler, more reliable, perfect for async gameplay
-
-2. **Multi-Game System** (not single global game)
-   - Each game has unique gameId and hostKey
-   - Host controls rounds, not automatic
-   - Games are isolated (separate partitions)
-   - **Rationale:** Allows friends to run private games
-
-3. **Vanilla JavaScript** (not React/Vue/Svelte)
-   - HTML5 Canvas for rendering
-   - No framework dependencies
-   - ~50KB total bundle size
-   - **Rationale:** Simple, fast, easy to maintain
-
-### Game Design Decisions
-1. **One Solution Per Round** (no resubmission)
-   - Encourages thoughtful solving before submitting
-   - Prevents spam/trial-and-error
-   - Players can practice locally unlimited
-
-2. **Move Counts Visible, Solutions Hidden**
-   - Creates competitive tension
-   - Prevents copying solutions
-   - Solutions revealed when round ends
-
-3. **Configurable Round Duration**
-   - Host sets default (e.g., 24 hours)
-   - Can override per round
-   - Can extend deadline during round
-   - Can end manually
+1. ✅ Import path issues - Fixed TypeScript build configuration
+2. ✅ Storage table creation - Added ensureTable() calls
+3. ✅ Azure Functions v4 configuration - Corrected package.json
+4. ✅ API test authentication - Fixed helper methods
 
 ## What Needs to Be Done Next
 
-### Immediate Next Steps (Phase 4 - Frontend UI)
+### Immediate Next Steps (Phase 4 Completion)
 
-1. **Set Up Frontend Structure**
+1. **Debug Player App Refresh Issue** 🔍
+   - Investigate polling logic in player-app.ts
+   - Check network tab for API call frequency
+   - Verify round state comparison logic
+   - Test manual refresh vs automatic polling
+
+2. **Complete CSS Styling** 🎨
+   - Finish game.css with all game board styles
+   - Polish robot selector UI
+   - Style leaderboard table
+   - Add responsive breakpoints
+   - Implement loading states and transitions
+
+3. **Build Host Panel** 👨‍💼
    ```
-   client/
-   ├── index.html       # Player UI
-   ├── host.html        # Host panel
-   ├── css/
-   │   └── style.css    # Styling
-   ├── js/
-   │   ├── game-board.js    # Canvas rendering
-   │   ├── api-client.js    # API communication
-   │   ├── player-ui.js     # Player interactions
-   │   └── host-ui.js       # Host dashboard
-   └── assets/          # Images, icons
+   Tasks:
+   - Create host.html structure
+   - Implement host-panel.ts logic
+   - Build dashboard with statistics
+   - Add round management controls
+   - Create deadline extension UI
+   - Display round history
    ```
 
-2. **Implement Canvas Game Board**
-   - 16×16 grid rendering
-   - Wall visualization (L-shapes)
-   - Robot rendering with colors
-   - Goal markers (17 goals, active highlighted)
-   - Smooth robot movement animations
-   - Interactive controls (click/keyboard)
+4. **Testing & Polish** ✅
+   - End-to-end gameplay testing
+   - Mobile device testing
+   - Cross-browser compatibility
+   - Performance optimization
+   - Accessibility review
 
-3. **Build Player UI**
-   - Game join flow (URL parameter)
-   - Player name input and storage
-   - Move history display
-   - Solution submission interface
-   - Leaderboard component (polling updates)
-   - Round status indicators
+### Next Phase (Phase 5: Polish & Testing)
 
-4. **Build Host Panel**
-   - Host authentication via URL
-   - Game dashboard with statistics
-   - Round creation controls
-   - Active round management
-   - Deadline extension interface
-   - Round history view
-   - Player participation tracking
+1. **Error Handling Improvements**
+   - Graceful error messages
+   - Offline mode handling
+   - Network retry logic
 
-5. **Implement API Client**
-   - Polling mechanism (20s interval)
-   - Error handling and retries
-   - Response caching
-   - Loading states
+2. **UX Enhancements**
+   - Smooth animations
+   - Visual feedback on actions
+   - Help/tutorial overlay
+   - Keyboard shortcuts guide
 
-## Important Implementation Notes
+3. **Performance**
+   - Canvas rendering optimization
+   - Bundle size reduction
+   - Lazy loading strategies
 
-### Game Engine Requirements
-- **Isomorphic JavaScript:** Same code runs on client and server
-- **Pure Functions:** No side effects, easy to test
-- **Immutable State:** Don't modify input objects
-- **Clear Interfaces:** Well-documented function signatures
+4. **Documentation**
+   - User guide
+   - Host manual
+   - Deployment guide
 
-### Wall Format (Critical!)
-```javascript
-walls.horizontal[row] = [col1, col2, ...]  // Walls BELOW this row
-walls.vertical[col] = [row1, row2, ...]    // Walls RIGHT of this column
+## Implementation Highlights
+
+### Frontend Architecture
+- **Framework:** Vanilla TypeScript (no dependencies)
+- **Rendering:** HTML5 Canvas (16×16 grid)
+- **State Management:** Polling-based with local state
+- **Styling:** Custom CSS (mobile-first responsive)
+- **Build:** Webpack with TypeScript loader
+
+### Key Features Implemented
+1. **Real-time-ish Updates** - 20-second polling for round changes
+2. **Local Puzzle Solving** - Full game engine in browser
+3. **Move Validation** - Client-side validation before submission
+4. **Persistent State** - LocalStorage for player preferences
+5. **Responsive Design** - Mobile-ready layout (in progress)
+
+### Code Organization
 ```
-This format is used throughout the system - must be consistent!
-
-### L-Shape Wall Orientations
-```javascript
-// Four orientations, each forms a corner:
-'NW': ┐  // Walls on top and right
-'NE': ┌  // Walls on top and left
-'SW': ┘  // Walls on bottom and right
-'SE': └  // Walls on bottom and left
+client/
+├── src/
+│   ├── api-client.ts        # API communication layer
+│   ├── game-renderer.ts     # Canvas rendering engine
+│   ├── game-controller.ts   # Game interaction logic
+│   ├── player-app.ts        # Main player application
+│   └── host-panel.ts        # Host dashboard (TODO)
+├── lib-shared/              # Shared game engine (copied)
+├── css/
+│   ├── shared.css           # Base styles
+│   ├── game.css             # Player UI styles
+│   └── host.css             # Host panel styles
+├── index.html               # Player UI
+├── host.html                # Host panel (TODO)
+└── staticwebapp.config.json # Azure SWA config
 ```
 
-### Solution Format
-```javascript
-[
-  { robot: "red", direction: "up" },
-  { robot: "blue", direction: "right" },
-  // ...
-]
-```
-Each move is an object with robot and direction.
+## Critical Design Refinements (October 5, 2025)
 
-### Validation Rules
-1. Robot must be valid: "red", "yellow", "green", "blue"
-2. Direction must be valid: "up", "down", "left", "right"
-3. Solution must reach goal position
-4. **For single-color goals:** Specific robot must reach goal
-5. **For multi-color goals:** ANY robot reaching goal is valid
-6. Move count must match array length
-7. Track `winningRobot` in validation result
+### Wall Generation (L-Shaped Walls)
+- Exactly 17 L-shaped wall pieces (2 walls each forming a corner)
+- Each L-shape contains one goal in its corner
+- 8 outer edge walls (2 per quadrant, positioned at columns/rows 2-7)
+- Total: ~42 wall segments (17 L-shapes × 2 + 8 outer edges)
+- Sparse layout matching authentic Ricochet Robots
 
-## Current Challenges & Questions
+### Goal Distribution System
+- 4 quadrants (8×8 each): NW, NE, SW, SE
+- 4 goals per quadrant (one per robot color) = 16 single-color goals
+- Exactly 1 multi-color goal (ANY robot wins) = 17 total goals
+- Goals cannot be on outer boundary (rows/cols 0 or 15)
 
-### Design Challenges Resolved
-1. ✅ **Backend vs P2P:** Chose simple backend (Azure Functions)
-2. ✅ **WebSocket vs Polling:** Chose polling (simpler, reliable)
-3. ✅ **Global admin vs Multi-game:** Chose multi-game with host keys
-4. ✅ **Move count visibility:** Show counts, hide solutions until end
+### Board Persistence & Game Lifecycle
+- One board = 17 rounds maximum
+- Robot positions persist between rounds (evolving difficulty)
+- Skipped goals return to pool (don't count as completed)
+- Game ends when `completedGoalIndices.length === 17`
 
-### Implementation Challenges Ahead
-1. **L-Shape Wall Collision Detection**
-   - Ensure L-shapes don't overlap with each other
-   - Ensure L-shapes don't conflict with center 2×2 area
-   - Validate goal positions are within L-shape corners
+## Key Architecture Decisions
 
-2. **Multi-Color Goal Validation**
-   - Server must check ANY robot at goal position
-   - Track which robot actually won
-   - Display correctly in leaderboard
+### 1. Serverless with Polling
+- Azure Static Web Apps (frontend hosting)
+- Azure Functions (API)
+- Azure Table Storage (database)
+- HTTP polling every 20 seconds
+- **Rationale:** Simple, reliable, perfect for async gameplay
 
-3. **Board State Management**
-   - Update robot positions after round completion
-   - Track completed vs skipped goals separately
-   - Handle edge case: What if winning solution is invalid on replay?
+### 2. Multi-Game System
+- Each game has unique gameId and hostKey
+- Host controls rounds (not automatic)
+- Games isolated in separate partitions
+- **Rationale:** Enables private games for friends
 
-4. **Canvas Rendering Performance**
-   - 16×16 grid with smooth animations
-   - Render all 17 goals (faded) with active one highlighted
-   - Show robot position persistence across rounds
-   - 60fps target
-
-## User Feedback from Planning
-
-User preferences captured:
-- ✅ Classic 16×16 grid with random boards
-- ✅ 4 robots (red, yellow, green, blue)
-- ✅ One puzzle per round (all players solve same puzzle)
-- ✅ Ranked by fewest moves
-- ✅ Require local playthrough (verify solutions work)
-- ✅ Show move counts, hide solutions until round ends
-- ✅ Azure serverless (no traditional backend)
-- ✅ Configurable round duration
-- ✅ Host can extend deadlines and manage rounds
-- ✅ No authentication (anonymous with usernames)
-
-**Critical User Corrections (October 5, 2025):**
-- ✅ L-shaped walls only (no single walls, no decorative walls)
-- ✅ Sparse wall layout (~42 wall segments: 17 L-pieces + 8 outer edges)
-- ✅ Outer edge walls: 2 per quadrant, positioned 2-7 cells from corner
-- ✅ Goals in L-shape corners (guarantees reachability)
-- ✅ 4 per quadrant + 1 multi-color = 17 total
-- ✅ Multi-color goal allows ANY robot to win
-- ✅ Skipped goals don't consume - they return to pool
-- ✅ Game ends after 17 completions (not automatic regeneration)
-- ✅ Robot positions persist between rounds
+### 3. Vanilla TypeScript
+- No framework dependencies
+- HTML5 Canvas for rendering
+- Small bundle size (~50KB target)
+- **Rationale:** Simple, fast, maintainable
 
 ## Files to Reference
 
-### For Implementation
-- **doc/game-rules.md** - Movement logic algorithms
-- **doc/data-models.md** - Data structures to use
-- **doc/api-specification.md** - API contracts to implement
+### For Current Implementation
+- **doc/implementation/phase4.md** - Frontend UI implementation plan
+- **client/src/player-app.ts** - Main app logic (debugging focus)
+- **doc/api-specification.md** - API contracts
 
 ### For Context
-- **doc/architecture.md** - Overall system design
-- **doc/user-flows.md** - How users will interact
-- **memory-bank/projectbrief.md** - Core vision and requirements
+- **doc/architecture.md** - System design
+- **doc/user-flows.md** - UX workflows
+- **memory-bank/projectbrief.md** - Project vision
+- **memory-bank/progress.md** - Detailed progress tracking
 
-## Next Session Preparation
+## Success Criteria for Phase 4
 
-When starting next session, Cline should:
-1. Read ALL memory bank files (projectbrief, activeContext, etc.)
-2. Review game-rules.md for implementation details
-3. Set up project structure (create folders, package.json)
-4. Begin implementing game engine with TDD approach
-5. Write tests first, then implement to pass tests
+### Completed ✅
+- [x] Project structure set up correctly
+- [x] TypeScript compilation working
+- [x] API client communicates with backend
+- [x] Canvas renders game board correctly
+- [x] Game controller handles keyboard/mouse input
+- [x] Player app loads and displays state
+- [x] LocalStorage persists player name
+- [x] Leaderboard displays and updates
 
-## Important Patterns & Conventions
-
-### Code Style
-- TypeScript with strict mode enabled
-- ES6+ features (async/await, destructuring, etc.)
-- Descriptive variable names
-- Strong typing with interfaces and enums
-- JSDoc comments for complex functions
-- Prefer pure functions
-- Type guards for validation (e.g., `pos is Position`)
-
-### Testing
-- Jest for unit tests
-- Test-driven development
-- High coverage target (>90%)
-- Test edge cases (boundaries, collisions)
-
-### Git Workflow
-- Meaningful commit messages
-- Feature branches (optional for solo project)
-- Regular commits with working code
-
-### Documentation
-- Update doc/ as implementation progresses
-- Keep Memory Bank current
-- Code comments for complex logic
-- README with setup instructions
-
-## Success Indicators
-
-We'll know we're on track when:
-- ✅ Game engine passes all movement tests
-- ✅ Puzzle generator creates solvable puzzles
-- ✅ Solution validator correctly identifies valid/invalid solutions
-- ✅ BFS solver finds optimal solutions
-- ✅ Code is clean, tested, and well-documented
+### In Progress ⏳
+- [ ] Polling detects round changes reliably
+- [ ] Complete CSS styling applied
+- [ ] Host panel fully implemented
+- [ ] End-to-end testing complete
+- [ ] Mobile responsive verified
+- [ ] Cross-browser compatibility confirmed
 
 ## Blockers & Dependencies
 
 ### Current Blockers
-- None (design phase complete)
+1. **Player app refresh bug** - Investigating polling logic
+   - Not critical for development
+   - Can continue with other features
 
-### Dependencies
-- Node.js 18+ (for Azure Functions)
-- npm (package management)
-- Azure account (for deployment, not needed yet)
-- Git (version control)
+### Dependencies Met
+- ✅ Node.js 18+ installed
+- ✅ npm package management
+- ✅ TypeScript toolchain
+- ✅ Azure Functions Core Tools
+- ✅ Azurite (local storage emulator)
 
-### Tools Needed
-- VS Code (already available)
-- Azure Functions Core Tools (install later)
-- Azurite (local storage emulator, install later)
+## Time Tracking
 
-## Time Estimates
+### Completed Phases
+- Phase 1 (Design): ~4 hours (October 5, 2025)
+- Phase 2 (Core Engine): ~8 hours (October 6, 2025)
+- Phase 3 (Backend API): ~8 hours (October 7, 2025)
+- Phase 4 (Frontend) so far: ~8 hours (October 8, 2025)
 
-### Phase 2 (Core Engine): ~8-12 hours
-- Project setup: 1 hour
-- Game engine: 3-4 hours
-- Puzzle generator: 2-3 hours
-- BFS solver: 2-3 hours
-- Tests: 2 hours
+### Remaining Estimate
+- Phase 4 completion: ~4-6 hours
+- Phase 5 (Polish): ~4-6 hours
+- Phase 6 (Deployment): ~2-4 hours
 
-### Phase 3 (Backend): ~6-8 hours
-- Azure Functions setup: 2 hours
-- Storage layer: 2 hours
-- API endpoints: 3-4 hours
-- Host auth: 1 hour
+**Total Remaining:** 10-16 hours
 
-### Phase 4 (Frontend): ~12-16 hours
-- Canvas rendering: 4-5 hours
-- Player UI: 4-5 hours
-- Host panel: 3-4 hours
-- Polling client: 1-2 hours
+## Next Session Preparation
 
-### Phase 5 (Polish): ~4-6 hours
-- Error handling: 2 hours
-- UX improvements: 2 hours
-- Performance: 1-2 hours
-- Documentation: 1 hour
+When resuming work, priorities are:
 
-**Total Estimate:** 30-42 hours of development time
+1. **Debug refresh issue** - Fix polling/state detection
+2. **Complete CSS** - Polish game.css and host.css
+3. **Build host panel** - Create host.html and host-panel.ts
+4. **End-to-end testing** - Verify complete gameplay flow
+5. **Mobile testing** - Responsive design verification
+
+## Quality Metrics
+
+### Current Status
+- **Documentation:** Comprehensive ✅
+- **Test Coverage:** 96.46% (game engine), API tests passing ✅
+- **Code Quality:** TypeScript strict mode ✅
+- **API:** Complete and operational ✅
+- **Frontend:** 60% complete (core features working) ⏳
+
+### Targets
+- **Performance:** <2s page load, 60fps Canvas animations
+- **Accessibility:** WCAG 2.1 AA compliance
+- **Mobile:** Responsive design working on phones/tablets
+- **Browser Support:** Chrome, Firefox, Safari, Edge (latest 2 versions)
+
+## Important Patterns & Conventions
+
+### Frontend Code Style
+- TypeScript strict mode enabled
+- ES6+ features (async/await, modules, etc.)
+- Functional programming where possible
+- Clear separation of concerns (rendering, logic, API)
+- JSDoc comments for complex functions
+
+### Testing Strategy
+- Unit tests for game engine (Jest) ✅
+- Integration tests for API (Jest) ✅
+- Manual testing for UI (in progress)
+- End-to-end scenarios documented
+
+### Git Workflow
+- Meaningful commit messages
+- Regular commits with working code
+- Feature branches for major changes
+
+## Learning & Insights
+
+### What's Working Well
+- Comprehensive design prevents confusion
+- TypeScript catches errors early
+- Polling is simpler than WebSockets
+- Shared code between client/server works great
+- Canvas performance is excellent
+- Memory Bank pattern maintains context
+
+### Challenges Encountered
+- CORS configuration needed for local development
+- Round ID format inconsistency (now resolved)
+- Live-server WebSocket not related to app logic
+- Polling refresh detection needs debugging
+
+### Key Learnings
+1. TypeScript across stack provides excellent safety
+2. Azure serverless is simpler than expected
+3. Canvas rendering is performant enough for our needs
+4. Polling every 20s is perfectly adequate
+5. Documentation upfront saves debugging time
+6. User feedback on design is invaluable
