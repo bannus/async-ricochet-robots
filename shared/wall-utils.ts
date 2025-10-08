@@ -3,8 +3,8 @@
  * Handles checking if walls block robot movement in specific directions
  */
 
-import type { Walls, DirectionValue } from './types';
-import { Direction, BOARD_SIZE } from './types';
+import type { Walls, DirectionValue } from './types.js';
+import { Direction, BOARD_SIZE } from './types.js';
 
 /**
  * Checks if a wall blocks movement from a specific position in a given direction

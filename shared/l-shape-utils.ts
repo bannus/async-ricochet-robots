@@ -3,7 +3,7 @@
  * Handles L-shaped wall placement, validation, and overlap detection
  */
 
-import type { Position, Walls } from './types';
+import type { Position, Walls } from './types.js';
 
 /**
  * L-shape orientation types

@@ -3,9 +3,9 @@
  * Validates that move sequences successfully reach goal positions
  */
 
-import type { Robots, Walls, Move, Goal, Position, RobotColorValue } from './types';
-import { isValidMove } from './types';
-import { applyMoves, positionsEqual } from './game-engine';
+import type { Robots, Walls, Move, Goal, Position, RobotColorValue } from './types.js';
+import { isValidMove } from './types.js';
+import { applyMoves, positionsEqual } from './game-engine.js';
 
 /**
  * Result of solution validation

@@ -4,8 +4,8 @@
  */
 
 import type { Position, Robots, Walls, Move, DirectionValue } from './types';
-import { Direction, BOARD_SIZE, cloneRobots } from './types';
-import { isWallBlocking } from './wall-utils';
+import { Direction, BOARD_SIZE, cloneRobots } from './types.js';
+import { isWallBlocking } from './wall-utils.js';
 
 /**
  * Moves a robot in the specified direction until it hits an obstacle

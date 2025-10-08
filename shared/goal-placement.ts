@@ -3,7 +3,7 @@
  * Generates valid goal positions with L-shaped walls across quadrants
  */
 
-import type { Position, Goal, Walls, GoalColorValue } from './types';
+import type { Position, Goal, Walls, GoalColorValue } from './types.js';
 import {
   canPlaceLShape,
   addLShapeWall,
@@ -11,7 +11,7 @@ import {
   isValidLShapePosition,
   type LShape,
   type LShapeOrientation
-} from './l-shape-utils';
+} from './l-shape-utils.js';
 
 /**
  * Quadrant definition for goal placement
