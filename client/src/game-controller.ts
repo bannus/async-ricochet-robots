@@ -27,6 +27,9 @@ export class GameController {
   private moveHistory: Move[] = [];
   private selectedRobot: string | null = null;
   private goalIndex: number = 0;
+  private animationQueue: Array<{robot: string, direction: 'up' | 'down' | 'left' | 'right'}> = [];
+  private isProcessingQueue: boolean = false;
+  private readonly MAX_QUEUE_SIZE = 50;
   
   public gameId: string = '';
   public roundId: string = '';
@@ -129,53 +132,88 @@ export class GameController {
 
   /**
    * Move the selected robot in a direction
+   * Queues the move for sequential animation processing
    */
   async move(robotColor: string, direction: 'up' | 'down' | 'left' | 'right'): Promise<void> {
-    if (!this.puzzle || !this.currentState) return;
+    // Prevent queue from growing too large
+    if (this.animationQueue.length >= this.MAX_QUEUE_SIZE) {
+      return;
+    }
     
-    const beforePos = { ...this.currentState[robotColor as keyof Robots] };
+    // Add to queue
+    this.animationQueue.push({
+      robot: robotColor,
+      direction: direction
+    });
     
-    // Calculate new position using game engine
-    const newPos = moveRobot(
-      this.currentState,
-      this.puzzle.walls,
-      robotColor as keyof Robots,
-      direction
-    );
+    // Start processing if not already running (race condition protected)
+    if (!this.isProcessingQueue) {
+      this.isProcessingQueue = true;
+      this.updateButtonStates(); // Disable buttons immediately
+      await this.processQueue();
+    }
+  }
+
+  /**
+   * Process the animation queue sequentially
+   */
+  private async processQueue(): Promise<void> {
+    // Note: isProcessingQueue already set to true by move()
     
-    // Check if robot actually moved
-    const moved = (beforePos.x !== newPos.x || beforePos.y !== newPos.y);
-    
-    if (moved) {
-      // Add to move history
-      this.moveHistory.push({ 
-        robot: robotColor as 'red' | 'yellow' | 'green' | 'blue',
-        direction 
-      });
+    while (this.animationQueue.length > 0) {
+      const move = this.animationQueue.shift()!;
       
-      // Animate the move
-      await this.renderer.animateMove(
-        robotColor,
-        beforePos,
-        newPos,
-        {
-          walls: this.puzzle.walls,
-          robots: this.currentState,
-          allGoals: this.puzzle.allGoals
-        },
-        this.goalIndex,
-        300
+      if (!this.puzzle || !this.currentState) {
+        continue;
+      }
+      
+      const beforePos = { ...this.currentState[move.robot as keyof Robots] };
+      
+      // Calculate new position using game engine
+      const newPos = moveRobot(
+        this.currentState,
+        this.puzzle.walls,
+        move.robot as keyof Robots,
+        move.direction
       );
       
-      // Update current state
-      this.currentState[robotColor as keyof Robots] = newPos;
+      // Check if robot actually moved
+      const moved = (beforePos.x !== newPos.x || beforePos.y !== newPos.y);
       
-      // Check if goal reached
-      this.checkGoalReached();
-      
-      // Update UI
-      this.updateUI();
+      if (moved) {
+        // Add to move history
+        this.moveHistory.push({
+          robot: move.robot as 'red' | 'yellow' | 'green' | 'blue',
+          direction: move.direction
+        });
+        
+        // Animate the move
+        await this.renderer.animateMove(
+          move.robot,
+          beforePos,
+          newPos,
+          {
+            walls: this.puzzle.walls,
+            robots: this.currentState,
+            allGoals: this.puzzle.allGoals
+          },
+          this.goalIndex,
+          300
+        );
+        
+        // Update current state
+        this.currentState[move.robot as keyof Robots] = newPos;
+        
+        // Update UI
+        this.updateUI();
+        
+        // Check if goal reached
+        this.checkGoalReached();
+      }
     }
+    
+    this.isProcessingQueue = false;
+    this.updateButtonStates(); // Re-enable buttons
   }
 
   /**
@@ -335,6 +373,32 @@ export class GameController {
     
     // Update move history list
     this.updateMoveHistoryUI();
+    
+    // Update button states
+    this.updateButtonStates();
+  }
+
+  /**
+   * Update button enabled/disabled states based on game state
+   */
+  private updateButtonStates(): void {
+    const undoBtn = document.getElementById('undo-btn') as HTMLButtonElement;
+    const resetBtn = document.getElementById('reset-btn') as HTMLButtonElement;
+    const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+    
+    const hasHistory = this.moveHistory.length > 0;
+    const isProcessing = this.isProcessingQueue;
+    
+    // Disable undo/reset/submit if queue is processing or no history
+    if (undoBtn) {
+      undoBtn.disabled = isProcessing || !hasHistory;
+    }
+    if (resetBtn) {
+      resetBtn.disabled = isProcessing || !hasHistory;
+    }
+    if (submitBtn) {
+      submitBtn.disabled = isProcessing || !hasHistory;
+    }
   }
 
   /**
