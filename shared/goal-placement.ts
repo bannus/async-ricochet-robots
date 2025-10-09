@@ -35,13 +35,15 @@ export interface GoalGenerationResult {
 }
 
 /**
- * Define the four quadrants (excluding outer boundary)
+ * Define the four quadrants (excluding outer boundary AND center 2×2 square)
+ * Center square occupies (7,7), (7,8), (8,7), (8,8)
+ * Quadrants exclude rows/cols 7-8 to avoid the center
  */
 export const QUADRANTS: Quadrant[] = [
-  { name: 'NW', xMin: 1, xMax: 7, yMin: 1, yMax: 7 },
-  { name: 'NE', xMin: 8, xMax: 14, yMin: 1, yMax: 7 },
-  { name: 'SW', xMin: 1, xMax: 7, yMin: 8, yMax: 14 },
-  { name: 'SE', xMin: 8, xMax: 14, yMin: 8, yMax: 14 }
+  { name: 'NW', xMin: 1, xMax: 6, yMin: 1, yMax: 6 },
+  { name: 'NE', xMin: 9, xMax: 14, yMin: 1, yMax: 6 },
+  { name: 'SW', xMin: 1, xMax: 6, yMin: 9, yMax: 14 },
+  { name: 'SE', xMin: 9, xMax: 14, yMin: 9, yMax: 14 }
 ];
 
 /**
@@ -65,7 +67,8 @@ export function placeGoalInQuadrant(
   quadrant: Quadrant,
   _color: GoalColorValue,
   existingLShapes: LShape[],
-  maxAttempts: number = 100
+  walls: Walls,
+  maxAttempts: number = 500
 ): { position: Position; orientation: LShapeOrientation } | null {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const position = randomPositionInQuadrant(quadrant);
@@ -77,8 +80,8 @@ export function placeGoalInQuadrant(
     
     const orientation = getRandomOrientation();
     
-    // Check if L-shape can be placed without overlap
-    if (canPlaceLShape(position, orientation, existingLShapes)) {
+    // Check if L-shape can be placed without overlap or touching existing walls
+    if (canPlaceLShape(position, orientation, existingLShapes, walls)) {
       return { position, orientation };
     }
   }
@@ -98,7 +101,7 @@ export function generateSingleColorGoals(
   // Generate 4 goals per quadrant (one of each color)
   for (const quadrant of QUADRANTS) {
     for (const color of ROBOT_COLORS) {
-      const placement = placeGoalInQuadrant(quadrant, color, lShapes);
+      const placement = placeGoalInQuadrant(quadrant, color, lShapes, walls);
       
       if (!placement) {
         return {
@@ -131,7 +134,7 @@ export function generateMultiColorGoal(
   // Randomly select a quadrant
   const quadrant = QUADRANTS[Math.floor(Math.random() * QUADRANTS.length)];
   
-  const placement = placeGoalInQuadrant(quadrant, 'multi', existingLShapes, 200);
+  const placement = placeGoalInQuadrant(quadrant, 'multi', existingLShapes, walls, 200);
   
   if (!placement) {
     return {
@@ -158,27 +161,55 @@ export function generateMultiColorGoal(
 
 /**
  * Generates all 17 goals (16 single-color + 1 multi-color) for a board
+ * 
+ * With smaller quadrants (6×6 instead of 7×7 to avoid center), we retry
+ * the entire generation if it fails due to space constraints.
+ * 
+ * Note: This function assumes walls already contains center square and outer edge walls.
+ * On retry, it clears only the L-shape walls (not center/edge walls).
  */
-export function generateAllGoals(walls: Walls): GoalGenerationResult {
-  // Generate 16 single-color goals
-  const singleColorResult = generateSingleColorGoals(walls);
+export function generateAllGoals(walls: Walls, maxRetries: number = 10): GoalGenerationResult {
+  // Store initial wall state (center square + outer edges) before adding L-shapes
+  const initialHorizontal = walls.horizontal.map(row => [...row]);
+  const initialVertical = walls.vertical.map(col => [...col]);
   
-  if (!singleColorResult.success) {
-    return singleColorResult;
+  for (let retry = 0; retry < maxRetries; retry++) {
+    // Reset to initial state (clear L-shape walls but keep center/edges)
+    if (retry > 0) {
+      for (let i = 0; i < 16; i++) {
+        walls.horizontal[i] = [...initialHorizontal[i]];
+        walls.vertical[i] = [...initialVertical[i]];
+      }
+    }
+    
+    // Generate 16 single-color goals
+    const singleColorResult = generateSingleColorGoals(walls);
+    
+    if (!singleColorResult.success) {
+      continue; // Retry
+    }
+    
+    // Generate 1 multi-color goal
+    const multiColorResult = generateMultiColorGoal(walls, singleColorResult.lShapes);
+    
+    if (!multiColorResult.success) {
+      continue; // Retry
+    }
+    
+    // Success! Combine results
+    return {
+      goals: [...singleColorResult.goals, ...multiColorResult.goals],
+      lShapes: [...singleColorResult.lShapes, ...multiColorResult.lShapes],
+      success: true
+    };
   }
   
-  // Generate 1 multi-color goal
-  const multiColorResult = generateMultiColorGoal(walls, singleColorResult.lShapes);
-  
-  if (!multiColorResult.success) {
-    return multiColorResult;
-  }
-  
-  // Combine results
+  // Failed after all retries
   return {
-    goals: [...singleColorResult.goals, ...multiColorResult.goals],
-    lShapes: [...singleColorResult.lShapes, ...multiColorResult.lShapes],
-    success: true
+    goals: [],
+    lShapes: [],
+    success: false,
+    error: `Failed to generate all 17 goals after ${maxRetries} retries`
   };
 }
 

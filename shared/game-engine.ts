@@ -186,28 +186,82 @@ export interface Puzzle {
 }
 
 /**
+ * Generates random robot starting positions
+ * Avoids the center 2×2 blocked area and goal positions
+ * 
+ * @param goalPositions - Set of goal positions to avoid
+ * @returns Robot positions
+ */
+function generateRobotPositions(goalPositions: Set<string>): Robots {
+  const occupied = new Set(goalPositions);
+  
+  // Center blocked area: (7,7), (7,8), (8,7), (8,8)
+  occupied.add('7,7');
+  occupied.add('7,8');
+  occupied.add('8,7');
+  occupied.add('8,8');
+  
+  const colors: (keyof Robots)[] = ['red', 'yellow', 'green', 'blue'];
+  const robots: Partial<Robots> = {};
+  
+  for (const color of colors) {
+    let position: Position;
+    let posKey: string;
+    
+    do {
+      position = {
+        x: Math.floor(Math.random() * 16),
+        y: Math.floor(Math.random() * 16)
+      };
+      posKey = `${position.x},${position.y}`;
+    } while (occupied.has(posKey));
+    
+    robots[color] = position;
+    occupied.add(posKey);
+  }
+  
+  return robots as Robots;
+}
+
+/**
  * Generates a complete puzzle for a new game
- * Creates 17 L-shaped wall pieces, places 4 robots, and generates 17 goals
+ * Creates walls (center square + outer edges + 17 L-shapes with goals), and places 4 robots
+ * 
+ * Algorithm:
+ * 1. Initialize empty walls structure
+ * 2. Add center 2×2 blocking square
+ * 3. Add 8 outer edge walls (2 per quadrant)
+ * 4. Generate 17 goals with their L-shaped walls (16 single-color + 1 multi-color)
+ * 5. Place robots randomly (avoiding center and goals)
  * 
  * @returns Complete puzzle ready for gameplay
  */
 export function generatePuzzle(): Puzzle {
-  const { generateWalls } = require('./l-shape-utils');
+  const { initializeWalls, addCenterSquare, addOuterEdgeWalls } = require('./l-shape-utils');
   const { generateAllGoals } = require('./goal-placement');
   
-  // Generate 17 L-shaped wall pieces
-  const walls = generateWalls();
+  // Step 1: Initialize empty walls structure
+  const walls = initializeWalls();
   
-  // Place robots in starting positions (center area, not overlapping)
-  const robots: Robots = {
-    red: { x: 7, y: 7 },
-    yellow: { x: 8, y: 7 },
-    green: { x: 7, y: 8 },
-    blue: { x: 8, y: 8 }
-  };
+  // Step 2: Add center 2×2 blocking square
+  addCenterSquare(walls);
   
-  // Generate 17 goals (4 per color + 1 multi)
+  // Step 3: Add 8 outer edge walls (2 per quadrant)
+  addOuterEdgeWalls(walls);
+  
+  // Step 4: Generate 17 goals with their L-shaped walls
+  // This adds 17 L-shapes (one per goal) to the walls structure
   const goalResult = generateAllGoals(walls);
+  
+  if (!goalResult.success) {
+    throw new Error(`Failed to generate goals: ${goalResult.error}`);
+  }
+  
+  // Step 5: Place robots randomly (avoiding center blocked area and goals)
+  const goalPositions = new Set<string>(
+    goalResult.goals.map((g: import('./types').Goal) => `${g.position.x},${g.position.y}`)
+  );
+  const robots = generateRobotPositions(goalPositions);
   
   return {
     walls,

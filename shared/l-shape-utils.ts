@@ -111,28 +111,226 @@ export function wallsOverlap(walls1: WallSegment[], walls2: WallSegment[]): bool
 }
 
 /**
- * Checks if an L-shape can be placed without overlapping existing L-shapes
+ * Checks if a wall exists at a specific position in the walls structure
+ * 
+ * @param walls - Walls structure to check
+ * @param wallSegment - Wall segment to look for
+ * @returns True if the wall exists
+ */
+export function hasWallAt(walls: Walls, wallSegment: WallSegment): boolean {
+  if (wallSegment.type === 'horizontal') {
+    const row = walls.horizontal[wallSegment.row];
+    return row ? row.includes(wallSegment.col) : false;
+  } else {
+    const col = walls.vertical[wallSegment.col];
+    return col ? col.includes(wallSegment.row) : false;
+  }
+}
+
+/**
+ * Gets all wall positions that would be directly adjacent to an L-shape
+ * (i.e., walls that would touch this L-shape, including at corners)
+ * 
+ * @param position - L-shape position
+ * @param orientation - L-shape orientation
+ * @returns Array of wall segments that would be directly adjacent
+ */
+export function getAdjacentWallPositions(
+  position: Position,
+  orientation: LShapeOrientation
+): WallSegment[] {
+  const { x, y } = position;
+  const adjacent: WallSegment[] = [];
+
+  switch (orientation) {
+    case 'NW': // ┏ - horizontal at (y-1, x), vertical at (x-1, y)
+      // Walls that would touch the horizontal wall:
+      adjacent.push({ type: 'horizontal', row: y - 1, col: x - 1 }); // Extends left
+      adjacent.push({ type: 'horizontal', row: y - 1, col: x + 1 }); // Extends right
+      
+      // Walls that would touch the vertical wall:
+      adjacent.push({ type: 'vertical', col: x - 1, row: y - 1 }); // Extends up
+      adjacent.push({ type: 'vertical', col: x - 1, row: y + 1 }); // Extends down
+      
+      // Corner connection (both walls meet here):
+      adjacent.push({ type: 'vertical', col: x, row: y - 1 }); // Perpendicular from horizontal
+      adjacent.push({ type: 'horizontal', row: y, col: x - 1 }); // Perpendicular from vertical
+      break;
+
+    case 'NE': // ┓ - horizontal at (y-1, x), vertical at (x, y)
+      // Horizontal wall adjacencies:
+      adjacent.push({ type: 'horizontal', row: y - 1, col: x - 1 });
+      adjacent.push({ type: 'horizontal', row: y - 1, col: x + 1 });
+      
+      // Vertical wall adjacencies:
+      adjacent.push({ type: 'vertical', col: x, row: y - 1 });
+      adjacent.push({ type: 'vertical', col: x, row: y + 1 });
+      
+      // Corner connections:
+      adjacent.push({ type: 'vertical', col: x - 1, row: y - 1 });
+      adjacent.push({ type: 'horizontal', row: y, col: x + 1 });
+      break;
+
+    case 'SW': // ┗ - horizontal at (y, x), vertical at (x-1, y)
+      // Horizontal wall adjacencies:
+      adjacent.push({ type: 'horizontal', row: y, col: x - 1 });
+      adjacent.push({ type: 'horizontal', row: y, col: x + 1 });
+      
+      // Vertical wall adjacencies:
+      adjacent.push({ type: 'vertical', col: x - 1, row: y - 1 });
+      adjacent.push({ type: 'vertical', col: x - 1, row: y + 1 });
+      
+      // Corner connections:
+      adjacent.push({ type: 'vertical', col: x, row: y + 1 });
+      adjacent.push({ type: 'horizontal', row: y - 1, col: x - 1 });
+      break;
+
+    case 'SE': // ┛ - horizontal at (y, x), vertical at (x, y)
+      // Horizontal wall adjacencies:
+      adjacent.push({ type: 'horizontal', row: y, col: x - 1 });
+      adjacent.push({ type: 'horizontal', row: y, col: x + 1 });
+      
+      // Vertical wall adjacencies:
+      adjacent.push({ type: 'vertical', col: x, row: y - 1 });
+      adjacent.push({ type: 'vertical', col: x, row: y + 1 });
+      
+      // Corner connections:
+      adjacent.push({ type: 'vertical', col: x - 1, row: y + 1 });
+      adjacent.push({ type: 'horizontal', row: y + 1, col: x + 1 });
+      break;
+  }
+
+  // Remove duplicates and filter out invalid positions
+  const uniqueAdjacent: WallSegment[] = [];
+  const seen = new Set<string>();
+  
+  for (const wall of adjacent) {
+    // Check bounds
+    if (wall.type === 'horizontal') {
+      if (wall.row < 0 || wall.row >= 16 || wall.col < 0 || wall.col >= 16) continue;
+    } else {
+      if (wall.col < 0 || wall.col >= 16 || wall.row < 0 || wall.row >= 16) continue;
+    }
+    
+    const key = `${wall.type}-${wall.row}-${wall.col}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniqueAdjacent.push(wall);
+    }
+  }
+  
+  return uniqueAdjacent;
+}
+
+/**
+ * Checks if placing an L-shape would fully enclose the goal position
+ * 
+ * An L-shape creates 2 walls. If the other 2 walls already exist, the goal
+ * would be trapped in a fully enclosed tile and unreachable.
+ * 
+ * @param position - Goal position
+ * @param orientation - L-shape orientation
+ * @param walls - Current walls structure
+ * @returns True if the position would be fully enclosed
+ */
+function wouldBeFullyEnclosed(
+  position: Position,
+  orientation: LShapeOrientation,
+  walls: Walls
+): boolean {
+  const { x, y } = position;
+  
+  // For each orientation, check if the 2 "completing" walls exist
+  // that would trap the goal in a fully enclosed tile
+  
+  switch (orientation) {
+    case 'NW': // ┏ - Creates top+left walls
+      // Check if bottom+right walls exist (would complete the box)
+      const bottomWall = hasWallAt(walls, { type: 'horizontal', row: y, col: x });
+      const rightWall = hasWallAt(walls, { type: 'vertical', col: x, row: y });
+      return bottomWall && rightWall;
+      
+    case 'NE': // ┓ - Creates top+right walls
+      // Check if bottom+left walls exist
+      const bottomWall2 = hasWallAt(walls, { type: 'horizontal', row: y, col: x });
+      const leftWall = hasWallAt(walls, { type: 'vertical', col: x - 1, row: y });
+      return bottomWall2 && leftWall;
+      
+    case 'SW': // ┗ - Creates bottom+left walls
+      // Check if top+right walls exist
+      const topWall = hasWallAt(walls, { type: 'horizontal', row: y - 1, col: x });
+      const rightWall2 = hasWallAt(walls, { type: 'vertical', col: x, row: y });
+      return topWall && rightWall2;
+      
+    case 'SE': // ┛ - Creates bottom+right walls
+      // Check if top+left walls exist
+      const topWall2 = hasWallAt(walls, { type: 'horizontal', row: y - 1, col: x });
+      const leftWall2 = hasWallAt(walls, { type: 'vertical', col: x - 1, row: y });
+      return topWall2 && leftWall2;
+  }
+}
+
+/**
+ * Checks if an L-shape can be placed without overlapping existing L-shapes,
+ * being too close to other goals, or touching static walls
+ * 
+ * This function checks four conditions:
+ * 1. Direct overlap: The new L-shape's walls don't overlap existing L-shape walls
+ * 2. Minimum distance: The goal is not within a 3×3 box centered on any existing goal
+ * 3. Static wall adjacency: The L-shape doesn't touch edge walls or center square
+ * 4. Enclosure: The goal position won't be fully enclosed (trapped in a 4-walled tile)
  * 
  * @param position - Proposed goal position
  * @param orientation - Proposed L-shape orientation
  * @param existingLShapes - Array of already-placed L-shapes
- * @returns True if L-shape can be placed without overlap
+ * @param walls - Current walls structure (includes center square and outer edge walls)
+ * @returns True if L-shape can be placed
  */
 export function canPlaceLShape(
   position: Position,
   orientation: LShapeOrientation,
-  existingLShapes: LShape[]
+  existingLShapes: LShape[],
+  walls?: Walls
 ): boolean {
   // Get the wall positions this L-shape would create
   const newWalls = getLShapeWallPositions(position, orientation);
 
-  // Check against each existing L-shape
+  // Check 1: Direct overlap - walls can't overlap existing L-shape walls
   for (const existing of existingLShapes) {
     const existingWalls = getLShapeWallPositions(existing.position, existing.orientation);
 
     // Check if any wall segment overlaps
     if (wallsOverlap(newWalls, existingWalls)) {
       return false;
+    }
+  }
+
+  // Check 2: Minimum distance - goals can't be within a 3×3 box of each other
+  // This prevents L-shapes from touching, forming continuous paths, or being too close
+  for (const existing of existingLShapes) {
+    const dx = Math.abs(position.x - existing.position.x);
+    const dy = Math.abs(position.y - existing.position.y);
+    
+    // If within 3×3 box (distance of 1 or less in both dimensions)
+    if (dx <= 1 && dy <= 1) {
+      return false; // Goals are too close
+    }
+  }
+
+  // If walls structure is provided, perform additional checks against static walls
+  if (walls) {
+    // Check 3: Static wall adjacency - L-shapes shouldn't touch edge walls or center square
+    const adjacentPositions = getAdjacentWallPositions(position, orientation);
+    
+    for (const adjWall of adjacentPositions) {
+      if (hasWallAt(walls, adjWall)) {
+        return false; // Would touch a static wall (edge or center square)
+      }
+    }
+    
+    // Check 4: Enclosure - goal shouldn't be trapped in a fully enclosed tile
+    if (wouldBeFullyEnclosed(position, orientation, walls)) {
+      return false; // Goal would be unreachable in a fully enclosed tile
     }
   }
 
@@ -255,8 +453,102 @@ export function isValidLShapePosition(
 }
 
 /**
+ * Initializes an empty walls structure
+ * 
+ * @returns Empty walls structure with arrays for all 16 rows/columns
+ */
+export function initializeWalls(): Walls {
+  const walls: Walls = {
+    horizontal: Array(16).fill(null).map(() => []),
+    vertical: Array(16).fill(null).map(() => [])
+  };
+  return walls;
+}
+
+/**
+ * Adds the center 2×2 blocking square to walls
+ * Blocks the 4 center tiles: (7,7), (7,8), (8,7), (8,8)
+ * 
+ * Creates walls AROUND the perimeter to prevent entry:
+ * - Top wall: horizontal wall above row 7 (blocks downward into center)
+ * - Bottom wall: horizontal wall below row 8 (blocks upward into center)
+ * - Left wall: vertical wall left of col 7 (blocks rightward into center)
+ * - Right wall: vertical wall right of col 8 (blocks leftward into center)
+ * 
+ * @param walls - Walls structure to modify
+ */
+export function addCenterSquare(walls: Walls): void {
+  // Top edge of center square: horizontal wall ABOVE row 7 at columns 7-8
+  walls.horizontal[6].push(7, 8);
+  
+  // Bottom edge of center square: horizontal wall BELOW row 8 at columns 7-8
+  walls.horizontal[8].push(7, 8);
+  
+  // Left edge of center square: vertical wall LEFT of column 7 at rows 7-8
+  walls.vertical[6].push(7, 8);
+  
+  // Right edge of center square: vertical wall RIGHT of column 8 at rows 7-8
+  walls.vertical[8].push(7, 8);
+}
+
+/**
+ * Adds 8 outer edge walls (2 per quadrant) to walls
+ * Walls are PERPENDICULAR to the edges (stick out into the board)
+ * Each wall is positioned 2-7 cells from the corner
+ * 
+ * Edge orientation:
+ * - Top edge (row 0): VERTICAL walls at row 0 (perpendicular to edge)
+ * - Bottom edge (row 15): VERTICAL walls at row 15 (perpendicular to edge)
+ * - Left edge (col 0): HORIZONTAL walls at col 0 (perpendicular to edge)
+ * - Right edge (col 15): HORIZONTAL walls at col 15 (perpendicular to edge)
+ * 
+ * @param walls - Walls structure to modify
+ */
+export function addOuterEdgeWalls(walls: Walls): void {
+  // Helper to get random position in range 2-7
+  const randomEdgePos = () => Math.floor(Math.random() * 6) + 2; // 2-7
+  
+  // NW quadrant: top edge (vertical wall) and left edge (horizontal wall)
+  const nwTopCol = randomEdgePos(); // Column 2-7
+  const nwLeftRow = randomEdgePos(); // Row 2-7
+  // Top edge: vertical wall at row 0, sticking down into board
+  walls.vertical[nwTopCol].push(0);
+  // Left edge: horizontal wall at col 0, sticking right into board
+  walls.horizontal[nwLeftRow].push(0);
+  
+  // NE quadrant: top edge (vertical wall) and right edge (horizontal wall)
+  const neTopCol = Math.floor(Math.random() * 6) + 8; // Column 8-13
+  const neRightRow = randomEdgePos(); // Row 2-7
+  // Top edge: vertical wall at row 0
+  walls.vertical[neTopCol].push(0);
+  // Right edge: horizontal wall at col 15
+  walls.horizontal[neRightRow].push(15);
+  
+  // SW quadrant: bottom edge (vertical wall) and left edge (horizontal wall)
+  const swBottomCol = randomEdgePos(); // Column 2-7
+  const swLeftRow = Math.floor(Math.random() * 6) + 8; // Row 8-13
+  // Bottom edge: vertical wall at row 15
+  walls.vertical[swBottomCol].push(15);
+  // Left edge: horizontal wall at col 0
+  walls.horizontal[swLeftRow].push(0);
+  
+  // SE quadrant: bottom edge (vertical wall) and right edge (horizontal wall)
+  const seBottomCol = Math.floor(Math.random() * 6) + 8; // Column 8-13
+  const seRightRow = Math.floor(Math.random() * 6) + 8; // Row 8-13
+  // Bottom edge: vertical wall at row 15
+  walls.vertical[seBottomCol].push(15);
+  // Right edge: horizontal wall at col 15
+  walls.horizontal[seRightRow].push(15);
+}
+
+/**
+ * @deprecated Use initializeWalls() + addCenterSquare() + addOuterEdgeWalls() + goal placement instead
+ * 
  * Generates 17 random L-shaped wall pieces for a new game
  * Places them randomly on the board without overlaps
+ * 
+ * NOTE: This function is deprecated because it generates orphaned L-shapes without goals.
+ * The correct approach is to generate goals with their associated L-shapes.
  * 
  * @returns Walls structure with 17 L-shapes
  */
