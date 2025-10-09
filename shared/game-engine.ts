@@ -6,6 +6,8 @@
 import type { Position, Robots, Walls, Move, DirectionValue } from './types';
 import { Direction, BOARD_SIZE, cloneRobots } from './types.js';
 import { isWallBlocking } from './wall-utils.js';
+import { initializeWalls, addCenterSquare, addOuterEdgeWalls } from './l-shape-utils.js';
+import { generateAllGoals } from './goal-placement.js';
 
 /**
  * Moves a robot in the specified direction until it hits an obstacle
@@ -237,9 +239,6 @@ function generateRobotPositions(goalPositions: Set<string>): Robots {
  * @returns Complete puzzle ready for gameplay
  */
 export function generatePuzzle(): Puzzle {
-  const { initializeWalls, addCenterSquare, addOuterEdgeWalls } = require('./l-shape-utils');
-  const { generateAllGoals } = require('./goal-placement');
-  
   // Step 1: Initialize empty walls structure
   const walls = initializeWalls();
   
