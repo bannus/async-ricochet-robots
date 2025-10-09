@@ -4,7 +4,8 @@
   "description": "Frontend for Async Ricochet Robots game",
   "scripts": {
     "prebuild": "npm run copy:shared",
-    "build": "tsc --watch",
+    "build": "tsc",
+    "dev": "tsc --watch",
     "build:once": "npm run copy:shared && tsc",
     "copy:shared": "copyfiles -u 2 \"../shared/**/*.ts\" lib-shared",
     "clean": "npm run clean:shared && rimraf dist",
