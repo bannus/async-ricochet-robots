@@ -371,6 +371,46 @@ When resuming work, priorities are:
 - Regular commits with working code
 - Feature branches for major changes
 
+## Recent Critical Fixes (October 8-9, 2025)
+
+### Wall Generation Bug Fixes
+Several critical issues with L-shape placement were discovered during E2E testing and resolved:
+
+**1. Goals in Fully Enclosed Tiles** ✅ FIXED
+- **Issue:** Goals could be placed in unreachable 4-walled tiles
+- **Fix:** Added `wouldBeFullyEnclosed()` check to detect if placing an L-shape would trap the goal
+- **Implementation:** Checks if the 2 "completing" walls already exist before allowing placement
+- **File:** `shared/l-shape-utils.ts`
+
+**2. L-Shapes Forming Continuous Paths** ✅ FIXED
+- **Issue:** L-shapes could connect end-to-end creating long barrier paths
+- **Attempted Fix:** Complex adjacency detection (too many edge cases)
+- **Final Solution:** Simple **3×3 exclusion zone** - goals can't be within 3×3 box of each other
+- **Implementation:** Distance check `dx <= 1 && dy <= 1` → reject placement
+- **Benefits:** Simple, reliable, no edge cases
+- **File:** `shared/l-shape-utils.ts`
+
+**3. L-Shapes Touching Static Walls** ✅ FIXED
+- **Issue:** Distance check alone didn't prevent touching edge walls/center square
+- **Fix:** **Hybrid approach** combining distance + adjacency checks
+  - Distance check for goal-to-goal separation (3×3 exclusion)
+  - Adjacency check for goal-to-static-wall separation (edge walls + center)
+- **File:** `shared/l-shape-utils.ts`
+
+**Final `canPlaceLShape()` Logic:**
+```typescript
+1. Direct overlap check (walls don't overlap existing L-shapes) ✅
+2. 3×3 exclusion zone (goals separated from each other) ✅
+3. Static wall adjacency (L-shapes don't touch edge/center) ✅
+4. Enclosure check (goals aren't trapped in 4-walled tiles) ✅
+```
+
+**Test Results:**
+- All 210 tests passing ✅
+- Clean, maintainable code
+- Simple distance-based separation between L-shapes
+- Precise adjacency detection for static walls only
+
 ## Learning & Insights
 
 ### What's Working Well
@@ -380,12 +420,14 @@ When resuming work, priorities are:
 - Shared code between client/server works great
 - Canvas performance is excellent
 - Memory Bank pattern maintains context
+- **Hybrid validation approaches** (distance + adjacency) balance simplicity with precision
 
 ### Challenges Encountered
 - CORS configuration needed for local development
 - Round ID format inconsistency (now resolved)
 - Live-server WebSocket not related to app logic
 - Polling refresh detection needs debugging
+- **Complex wall adjacency detection** (solved with simpler distance-based approach)
 
 ### Key Learnings
 1. TypeScript across stack provides excellent safety
@@ -394,3 +436,5 @@ When resuming work, priorities are:
 4. Polling every 20s is perfectly adequate
 5. Documentation upfront saves debugging time
 6. User feedback on design is invaluable
+7. **Simple solutions often beat complex ones** (3×3 exclusion zone vs full adjacency detection)
+8. **Hybrid approaches can combine best of both worlds** (distance for L-shapes, adjacency for static walls)
