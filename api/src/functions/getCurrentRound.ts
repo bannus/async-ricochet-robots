@@ -6,15 +6,15 @@
  */
 
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { Storage } from '../shared/storage';
+import { Storage } from '../../shared/storage';
 import {
   validateGetCurrentRoundQuery,
   successResponse,
   errorResponse,
   handleError
-} from '../shared/validation';
+} from '../../shared/validation';
 
-export async function getCurrentRound(
+async function getCurrentRoundHandler(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
@@ -91,5 +91,5 @@ export async function getCurrentRound(
 app.http('getCurrentRound', {
   methods: ['GET'],
   authLevel: 'anonymous',
-  handler: getCurrentRound
+  handler: getCurrentRoundHandler
 });

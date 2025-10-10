@@ -18,7 +18,7 @@ import {
 import { validateHostAuth } from '../../shared/host-auth';
 import { applyMoves } from '../../lib-shared/game-engine';
 
-export async function endRound(
+async function endRoundHandler(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
@@ -188,5 +188,5 @@ app.http('endRound', {
   methods: ['POST'],
   authLevel: 'anonymous',
   route: 'host/endRound',
-  handler: endRound
+  handler: endRoundHandler
 });

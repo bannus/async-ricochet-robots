@@ -14,7 +14,7 @@ import {
 } from '../../shared/validation';
 import { validateHostAuth } from '../../shared/host-auth';
 
-export async function getDashboard(
+async function getDashboardHandler(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
@@ -143,5 +143,5 @@ app.http('getDashboard', {
   methods: ['GET'],
   authLevel: 'anonymous',
   route: 'host/dashboard',
-  handler: getDashboard
+  handler: getDashboardHandler
 });

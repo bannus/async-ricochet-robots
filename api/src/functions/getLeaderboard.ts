@@ -8,12 +8,12 @@
  */
 
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { Storage } from '../shared/storage';
+import { Storage } from '../../shared/storage';
 import {
   validateGetLeaderboardQuery,
   successResponse,
   handleError
-} from '../shared/validation';
+} from '../../shared/validation';
 
 interface RankedSolution {
   rank: number;
@@ -25,7 +25,7 @@ interface RankedSolution {
   moves?: Array<{ robot: string; direction: string }>;
 }
 
-export async function getLeaderboard(
+async function getLeaderboardHandler(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
@@ -135,5 +135,5 @@ export async function getLeaderboard(
 app.http('getLeaderboard', {
   methods: ['GET'],
   authLevel: 'anonymous',
-  handler: getLeaderboard
+  handler: getLeaderboardHandler
 });

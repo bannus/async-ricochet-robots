@@ -16,7 +16,7 @@ import {
 } from '../../shared/validation';
 import { validateHostAuth } from '../../shared/host-auth';
 
-export async function startRound(
+async function startRoundHandler(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
@@ -150,5 +150,5 @@ app.http('startRound', {
   methods: ['POST'],
   authLevel: 'anonymous',
   route: 'host/startRound',
-  handler: startRound
+  handler: startRoundHandler
 });

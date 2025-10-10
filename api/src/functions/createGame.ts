@@ -7,13 +7,13 @@
  */
 
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { Storage, BoardData } from '../shared/storage';
+import { Storage, BoardData } from '../../shared/storage';
 import {
   validateCreateGameRequest,
   successResponse,
   handleError
-} from '../shared/validation';
-import { generatePuzzle } from '../lib-shared/game-engine';
+} from '../../shared/validation';
+import { generatePuzzle } from '../../lib-shared/game-engine';
 import { randomBytes } from 'crypto';
 
 /**
@@ -48,7 +48,7 @@ function generateUrls(gameId: string, hostKey: string, baseUrl?: string): {
   };
 }
 
-export async function createGame(
+async function createGameHandler(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
@@ -131,5 +131,5 @@ export async function createGame(
 app.http('createGame', {
   methods: ['POST'],
   authLevel: 'anonymous',
-  handler: createGame
+  handler: createGameHandler
 });

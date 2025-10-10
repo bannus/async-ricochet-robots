@@ -7,17 +7,17 @@
  */
 
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { Storage } from '../shared/storage';
+import { Storage } from '../../shared/storage';
 import {
   validateSubmitSolutionRequest,
   successResponse,
   errorResponse,
   handleError,
   ValidationException
-} from '../shared/validation';
-import { validateSolution } from '../lib-shared/solution-validator';
+} from '../../shared/validation';
+import { validateSolution } from '../../lib-shared/solution-validator';
 
-export async function submitSolution(
+async function submitSolutionHandler(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
@@ -144,5 +144,5 @@ export async function submitSolution(
 app.http('submitSolution', {
   methods: ['POST'],
   authLevel: 'anonymous',
-  handler: submitSolution
+  handler: submitSolutionHandler
 });

@@ -7,10 +7,10 @@
  */
 
 import { app, InvocationContext, Timer } from '@azure/functions';
-import { Storage } from '../shared/storage';
-import { applyMoves } from '../lib-shared/game-engine';
+import { Storage } from '../../shared/storage';
+import { applyMoves } from '../../lib-shared/game-engine';
 
-export async function checkRoundEnd(
+async function checkRoundEndHandler(
   myTimer: Timer,
   context: InvocationContext
 ): Promise<void> {
@@ -102,5 +102,5 @@ export async function checkRoundEnd(
 // NCRONTAB expression: "0 */5 * * * *" = At second 0, every 5 minutes
 app.timer('checkRoundEnd', {
   schedule: '0 */5 * * * *',
-  handler: checkRoundEnd
+  handler: checkRoundEndHandler
 });

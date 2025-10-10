@@ -13,7 +13,8 @@
     "types": ["node"]
   },
   "include": [
-    "./**/*.ts"
+    "src/**/*.ts",
+    "shared/**/*.ts"
   ],
   "exclude": [
     "node_modules",
