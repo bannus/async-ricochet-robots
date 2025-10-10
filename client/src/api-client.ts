@@ -13,8 +13,9 @@ export class ApiClient {
   private baseUrl: string;
 
   constructor(baseUrl?: string) {
-    // Default to localhost for development, will be /api in production
-    this.baseUrl = baseUrl || 'http://localhost:7071/api';
+    // Default to /api (relative path works in both dev and production)
+    // For local development with Azure Functions Core Tools, pass 'http://localhost:7071/api'
+    this.baseUrl = baseUrl || '/api';
   }
 
   /**
