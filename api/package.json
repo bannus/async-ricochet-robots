@@ -7,7 +7,7 @@
     "copy:shared": "copyfiles -u 2 \"../shared/**/*.ts\" lib-shared",
     "clean:shared": "rimraf lib-shared",
     "prebuild": "npm run copy:shared",
-    "build": "tsc",
+    "build": "tsc && node scripts/generate-function-metadata.js",
     "watch": "npm run copy:shared && tsc --watch",
     "clean": "npm run clean:shared && rimraf dist",
     "prestart": "npm run build",
