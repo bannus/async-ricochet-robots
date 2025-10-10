@@ -226,9 +226,6 @@ export class GamesStorage extends BaseStorageClient {
     gameName?: string
   ): Promise<Game> {
     try {
-      // Ensure table exists before creating entity
-      await this.ensureTable();
-
       const entity: GameEntity & TableEntity = {
         partitionKey: 'GAME',
         rowKey: gameId,
@@ -355,9 +352,6 @@ export class RoundsStorage extends BaseStorageClient {
     }
   ): Promise<Round> {
     try {
-      // Ensure table exists before creating entity
-      await this.ensureTable();
-
       const entity: RoundEntity & TableEntity = {
         partitionKey: gameId,
         rowKey: roundId,
@@ -425,9 +419,6 @@ export class RoundsStorage extends BaseStorageClient {
    */
   async getActiveRound(gameId: string): Promise<Round | null> {
     try {
-      // Ensure table exists before querying
-      await this.ensureTable();
-      
       const filter = odata`PartitionKey eq ${gameId} and status eq 'active'`;
       const entities = this.tableClient.listEntities<RoundEntity & TableEntity>({
         queryOptions: { filter }
@@ -535,9 +526,6 @@ export class SolutionsStorage extends BaseStorageClient {
     }
   ): Promise<Solution> {
     try {
-      // Ensure table exists before creating entity
-      await this.ensureTable();
-
       const submittedAt = Date.now();
       const normalizedName = playerName.toLowerCase().trim();
 
@@ -568,8 +556,6 @@ export class SolutionsStorage extends BaseStorageClient {
     playerName: string
   ): Promise<Solution[]> {
     try {
-      await this.ensureTable();
-      
       const partitionKey = `${gameId}_${roundId}`;
       const normalizedName = playerName.toLowerCase().trim();
       const entities = this.tableClient.listEntities<SolutionEntity & TableEntity>({
@@ -602,9 +588,6 @@ export class SolutionsStorage extends BaseStorageClient {
    */
   async getLeaderboard(gameId: string, roundId: string): Promise<Solution[]> {
     try {
-      // Ensure table exists before querying
-      await this.ensureTable();
-      
       const partitionKey = `${gameId}_${roundId}`;
       const filter = odata`PartitionKey eq ${partitionKey}`;
       const entities = this.tableClient.listEntities<SolutionEntity & TableEntity>({
@@ -626,8 +609,8 @@ export class SolutionsStorage extends BaseStorageClient {
 
       return solutions;
     } catch (error) {
-      // If error is "table doesn't exist", return empty array
-      // This can happen on first use before any solutions are submitted
+      // Handle 404 errors gracefully - can occur if table doesn't exist yet
+      // or if querying an empty/newly created table before it's fully available
       if (error && (error as any).statusCode === 404) {
         return [];
       }
@@ -718,6 +701,7 @@ export class Storage {
 
   /**
    * Initialize all tables (create if they don't exist)
+   * Called at app startup to pre-create tables during function warmup
    */
   static async initialize(): Promise<void> {
     await Promise.all([
