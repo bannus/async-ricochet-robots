@@ -3,9 +3,38 @@
 ## Current Status
 
 **Phase:** Phase 4 - Frontend UI (IN PROGRESS) 🔄  
-**Date:** October 8, 2025  
-**Completion:** ~60%  
+**Date:** October 10, 2025  
+**Completion:** ~65%  
 **Next Milestone:** Complete player UI, implement host panel
+
+## Recent Deployment Fix (October 10, 2025)
+
+### Azure Functions v4 Deployment Success ✅
+
+**Issue Resolved**: API deployment was failing with "Failed to deploy the Azure Functions"
+
+**Root Cause Identified**:
+- Forbidden app setting `AzureWebJobsStorage` was configured in Azure Static Web App
+- Azure Static Web Apps uses **Managed Functions** which automatically handles storage
+- Manually setting `AzureWebJobsStorage` conflicts with managed system
+- Deployment was rejected before it even started
+
+**Solution Applied**:
+1. Accessed Azure Portal → Static Web App → Configuration → Application Settings
+2. Removed the `AzureWebJobsStorage` setting
+3. Triggered new deployment via git push
+4. **Result**: ✅ Deployment successful, all API functions operational
+
+**Key Learnings**:
+- Azure Static Web Apps Managed Functions handle storage automatically
+- DO NOT manually configure `AzureWebJobsStorage` for SWA deployments
+- Standalone Azure Functions apps NEED this setting; SWA Managed Functions DON'T
+- Initial troubleshooting incorrectly suspected Functions v4 compatibility issues
+- Actual issue was simpler: forbidden configuration setting
+
+**Documentation Updated**:
+- ✅ `doc/DEPLOYMENT.md` - Added version history entry with fix details
+- ✅ Included warning about not setting AzureWebJobsStorage for Managed Functions
 
 ## Recent Changes (October 8, 2025)
 
