@@ -30,30 +30,5 @@
     "node-fetch": "^2.7.0",
     "ts-jest": "^29.4.4",
     "typescript": "^5.9.3"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node",
-    "roots": [
-      "<rootDir>/tests",
-      "<rootDir>/shared"
-    ],
-    "testMatch": [
-      "**/tests/**/*.test.ts"
-    ],
-    "transform": {
-      "^.+\\.ts$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "shared/**/*.ts",
-      "!shared/**/*.test.ts",
-      "!shared/**/*.d.ts"
-    ],
-    "coverageDirectory": "coverage",
-    "moduleFileExtensions": [
-      "ts",
-      "js",
-      "json"
-    ]
   }
 }
