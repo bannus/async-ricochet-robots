@@ -6,7 +6,10 @@
     "prebuild": "npm run copy:shared",
     "build": "npm run copy:static && tsc",
     "copy:static": "copyfiles \"index.html\" \"css/**/*\" \"assets/**/*\" \"staticwebapp.config.json\" dist",
-    "dev": "tsc --watch",
+    "watch": "tsc --watch",
+    "serve": "live-server dist --port=8080",
+    "dev": "npm-run-all --parallel watch serve",
+    "start": "npm run build && npm run serve",
     "build:once": "npm run copy:shared && npm run copy:static && tsc",
     "copy:shared": "copyfiles -u 2 \"../shared/**/*.ts\" lib-shared",
     "clean": "npm run clean:shared && rimraf dist",
@@ -21,6 +24,8 @@
   "license": "MIT",
   "devDependencies": {
     "copyfiles": "^2.4.1",
+    "live-server": "^1.2.2",
+    "npm-run-all": "^4.1.5",
     "rimraf": "^5.0.5",
     "typescript": "^5.3.3"
   }

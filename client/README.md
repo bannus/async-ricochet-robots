@@ -35,7 +35,6 @@ client/
 ### Prerequisites
 
 - Node.js 18+ installed
-- VS Code with Live Server extension (`ritwickdey.LiveServer`)
 - Backend API running (see `/api/README.md`)
 
 ### Installation
@@ -47,30 +46,56 @@ npm install
 
 ### Running Locally
 
-**Three-terminal workflow:**
+**Recommended: Single-command development mode**
 
 ```bash
-# Terminal 1: Start backend API
-cd api
-npm start
-# API runs on http://localhost:7071
+# From root directory
+npm run dev:client
 
-# Terminal 2: Build frontend (auto-compile on save)
+# Or from client directory
 cd client
-npm run build
-# TypeScript compiler watches for changes
+npm run dev
+```
 
-# Terminal 3: Start Live Server
-# In VS Code: Click "Go Live" in bottom-right status bar
-# Or right-click index.html → "Open with Live Server"
-# Frontend runs on http://localhost:5500
+This starts both:
+- TypeScript compiler in watch mode (auto-recompiles on save)
+- Live server on http://localhost:8080 (auto-reloads browser)
+
+**Alternative: Two-terminal workflow**
+
+```bash
+# Terminal 1: Watch TypeScript files
+cd client
+npm run watch
+
+# Terminal 2: Serve compiled files
+cd client
+npm run serve
+```
+
+### Available Commands
+
+```bash
+# Development mode (watch + serve)
+npm run dev              # Run from client/
+npm run dev:client       # Run from root/
+
+# Build and serve (one-time build)
+npm start                # Run from client/
+npm run start:client     # Run from root/
+
+# Individual commands
+npm run build            # Full build (includes copy:shared + copy:static)
+npm run watch            # TypeScript watch mode only
+npm run serve            # Live server only (port 8080)
+npm run build:once       # One-time build (alias for build)
 ```
 
 ### Building for Production
 
 ```bash
-# One-time build (no watch mode)
-npm run build:once
+# One-time build
+npm run build
 ```
 
 ## Development Workflow

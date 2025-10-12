@@ -45,6 +45,8 @@ Players compete to solve puzzles using the fewest moves over extended time perio
 
 ### Development
 
+#### Shared Code & Tests
+
 Build TypeScript:
 ```bash
 npm run build
@@ -74,6 +76,24 @@ Generate test coverage report:
 ```bash
 npm run test:coverage
 ```
+
+#### Client Development
+
+Run client in development mode (watch + serve):
+```bash
+npm run dev:client
+```
+
+Build client and serve (one-time build):
+```bash
+npm run start:client
+```
+
+See `client/README.md` for detailed client setup and available commands.
+
+#### API Development
+
+See `api/README.md` for backend development setup.
 
 ## Project Structure
 
