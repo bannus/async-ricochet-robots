@@ -39,6 +39,12 @@ header h1 {
 .main-content {
   display: flex;
   gap: var(--spacing-lg);
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.main-content.loading {
+  opacity: 0.6;
 }
 
 .game-section {
@@ -89,6 +95,12 @@ header h1 {
   margin: 0 auto var(--spacing-lg);
   background: white;
   box-shadow: 0 2px 8px var(--color-shadow);
+  cursor: default;
+  transition: box-shadow var(--transition-speed);
+}
+
+#game-board:hover {
+  box-shadow: 0 4px 12px var(--color-shadow);
 }
 
 /* Controls */
@@ -236,8 +248,23 @@ header h1 {
   color: #7F8C8D;
 }
 
+#leaderboard tbody tr {
+  animation: fadeInRow 0.3s ease-in;
+}
+
 #leaderboard tbody tr:hover {
   background: #F8F9FA;
+}
+
+@keyframes fadeInRow {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .current-player {

@@ -114,6 +114,18 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* Accessibility: Keyboard focus states */
+/* Only show focus ring when using keyboard (not mouse clicks) */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--color-blue);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.2);
+}
+
 /* Inputs */
 input, select, textarea {
   font-family: var(--font-family);
