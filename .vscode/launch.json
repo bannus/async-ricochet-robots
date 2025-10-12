@@ -1,0 +1,59 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Client (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:4280",
+      "webRoot": "${workspaceFolder}/client/dist",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "webpack:///./*": "${webRoot}/*",
+        "webpack:///src/*": "${webRoot}/src/*",
+        "webpack:///*": "*",
+        "webpack:///./~/*": "${webRoot}/node_modules/*"
+      },
+      "preLaunchTask": "Start SWA Emulator"
+    },
+    {
+      "name": "Attach to API (Node)",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "restart": true,
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "localRoot": "${workspaceFolder}/api",
+      "remoteRoot": "${workspaceFolder}/api"
+    },
+    {
+      "name": "Debug Client Only",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:8080",
+      "webRoot": "${workspaceFolder}/client/dist",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "webpack:///./*": "${webRoot}/*",
+        "webpack:///src/*": "${webRoot}/src/*"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug Full Stack (SWA)",
+      "configurations": [
+        "Debug Client (Chrome)",
+        "Attach to API (Node)"
+      ],
+      "presentation": {
+        "hidden": false,
+        "group": "Full Stack",
+        "order": 1
+      },
+      "stopAll": true
+    }
+  ]
+}

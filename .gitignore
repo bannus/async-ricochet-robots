@@ -16,7 +16,7 @@ __azurite_db*__.json
 AzuriteConfig
 
 # IDE
-.vscode/
+# .vscode/ - Now tracked for shared debugging configs
 .idea/
 *.swp
 *.swo

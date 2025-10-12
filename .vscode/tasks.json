@@ -1,0 +1,107 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start SWA Emulator",
+      "type": "shell",
+      "command": "npm run swa:build && npm run swa:start",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*$",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Azure Static Web Apps emulator started",
+          "endsPattern": "listening on port"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "Build Client",
+      "type": "npm",
+      "script": "build",
+      "path": "client/",
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "Build API",
+      "type": "npm",
+      "script": "build",
+      "path": "api/",
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "Watch Client",
+      "type": "npm",
+      "script": "watch",
+      "path": "client/",
+      "isBackground": true,
+      "problemMatcher": ["$tsc-watch"],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Watch API",
+      "type": "npm",
+      "script": "watch",
+      "path": "api/",
+      "isBackground": true,
+      "problemMatcher": ["$tsc-watch"],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Client: Dev Mode",
+      "type": "npm",
+      "script": "dev:client",
+      "isBackground": true,
+      "problemMatcher": ["$tsc-watch"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "API: Start",
+      "type": "npm",
+      "script": "start",
+      "path": "api/",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Worker process started",
+          "endsPattern": "Host started"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    }
+  ]
+}

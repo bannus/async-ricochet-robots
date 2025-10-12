@@ -16,7 +16,8 @@
     "baseUrl": ".",
     "paths": {
       "../../shared/*": ["./lib-shared/*"]
-    }
+    },
+    "types": []
   },
   "include": ["src/**/*", "lib-shared/**/*"],
   "exclude": ["node_modules", "dist"]

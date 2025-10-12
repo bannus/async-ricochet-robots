@@ -46,7 +46,26 @@ npm install
 
 ### Running Locally
 
-**Recommended: Single-command development mode**
+**Recommended: F5 Debugging with SWA Emulator**
+
+For full-stack development with debugging support:
+
+```bash
+# Just press F5 in VS Code!
+# Selects "Debug Full Stack (SWA)" configuration
+```
+
+This starts:
+- SWA emulator on `http://localhost:4280`
+- Client served from `client/dist`
+- API proxied from Azure Functions (port 7071)
+- Full debugging support for client and API code
+
+See `doc/DEBUGGING.md` for complete debugging guide.
+
+**Alternative: Standalone Client Development**
+
+For frontend-only work without API:
 
 ```bash
 # From root directory
@@ -57,21 +76,11 @@ cd client
 npm run dev
 ```
 
-This starts both:
+This starts:
 - TypeScript compiler in watch mode (auto-recompiles on save)
 - Live server on http://localhost:8080 (auto-reloads browser)
 
-**Alternative: Two-terminal workflow**
-
-```bash
-# Terminal 1: Watch TypeScript files
-cd client
-npm run watch
-
-# Terminal 2: Serve compiled files
-cd client
-npm run serve
-```
+**Note:** With standalone mode, API calls will fail unless you separately run the API server (`cd api && npm start`) and have CORS configured.
 
 ### Available Commands
 

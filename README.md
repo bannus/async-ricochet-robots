@@ -79,6 +79,17 @@ npm run test:coverage
 
 #### Client Development
 
+**Recommended: F5 Full-Stack Debugging**
+
+Press **F5** in VS Code to start the SWA emulator with full debugging support:
+- Client + API on `http://localhost:4280`
+- Set breakpoints in both client and API TypeScript files
+- Auto-builds both client and API before starting
+
+See `doc/DEBUGGING.md` for complete debugging guide.
+
+**Alternative: Standalone Client**
+
 Run client in development mode (watch + serve):
 ```bash
 npm run dev:client

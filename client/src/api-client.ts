@@ -17,8 +17,18 @@ export class ApiClient {
     if (baseUrl) {
       this.baseUrl = baseUrl;
     } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      // Local development - point to Azure Functions local server (default port 7071)
-      this.baseUrl = 'http://localhost:7071/api';
+      // Check which local development environment we're in
+      if (window.location.port === '4280') {
+        // SWA emulator (F5 debugging) - use relative path
+        // The emulator proxies /api requests to Azure Functions on port 7071
+        this.baseUrl = '/api';
+      } else if (window.location.port === '8080') {
+        // Live-server (npm run dev:client) - point directly to Functions
+        this.baseUrl = 'http://localhost:7071/api';
+      } else {
+        // Other local scenarios - use relative path
+        this.baseUrl = '/api';
+      }
     } else {
       // Production - use relative path (works with Azure Static Web Apps)
       this.baseUrl = '/api';
