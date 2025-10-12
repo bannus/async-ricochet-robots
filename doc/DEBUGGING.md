@@ -23,6 +23,7 @@ The project is configured for compound debugging, allowing you to debug both the
 This is the primary debugging workflow using Azure Static Web Apps CLI.
 
 **What it does:**
+- Starts Azurite (local Azure Storage emulator)
 - Builds both client and API
 - Starts SWA emulator on `http://localhost:4280`
 - Launches Chrome with debugger attached

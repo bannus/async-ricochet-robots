@@ -7,6 +7,84 @@
 **Completion:** ~85%  
 **Next Milestone:** Complete CSS styling, E2E testing
 
+## VS Code F5 Debugging Setup (October 12, 2025)
+
+### Full-Stack Debugging with Azure SWA CLI ✅ COMPLETE
+
+**Implementation Complete:**
+- ✅ VS Code launch configurations (`.vscode/launch.json`)
+- ✅ VS Code task automation (`.vscode/tasks.json`)
+- ✅ Azure SWA CLI integration (`@azure/static-web-apps-cli`)
+- ✅ API endpoint detection logic in `api-client.ts`
+- ✅ Documentation in `doc/DEBUGGING.md`
+
+**How It Works:**
+
+Press **F5** in VS Code to start full-stack debugging:
+1. **Task auto-runs:** "Start SWA Emulator" builds client + API
+2. **SWA emulator starts:** Serves on `http://localhost:4280`
+3. **Chrome launches:** With debugger attached to port 4280
+4. **Node debugger attaches:** To Azure Functions on port 9229
+5. **Set breakpoints:** In both client `.ts` and API `.ts` files
+
+**Port Configuration:**
+- `4280` - SWA emulator (serves client + proxies API)
+- `7071` - Azure Functions (internal, started by SWA CLI)
+- `9229` - Node debugger port
+- `8080` - Alternative: standalone client (live-server)
+
+**API Routing Architecture:**
+
+The SWA emulator acts as a reverse proxy:
+```
+Browser: http://localhost:4280/api/createGame
+         ↓ (client detects port 4280, uses relative path)
+         fetch('/api/createGame')
+         ↓ (SWA emulator proxies)
+         → http://localhost:7071/api/createGame (Azure Functions)
+         ↓ (response)
+Browser: ← result
+```
+
+**Critical Fix Applied:**
+
+Updated `client/src/api-client.ts` constructor to detect environment:
+```typescript
+if (window.location.port === '4280') {
+  // SWA emulator - use relative path (let emulator proxy)
+  this.baseUrl = '/api';
+} else if (window.location.port === '8080') {
+  // Live-server - point directly to Functions
+  this.baseUrl = 'http://localhost:7071/api';
+} else {
+  // Production or other - use relative path
+  this.baseUrl = '/api';
+}
+```
+
+**Benefits:**
+- ✅ No CORS issues (same origin via proxy)
+- ✅ No CSP violations (no cross-port requests)
+- ✅ Matches production behavior
+- ✅ Debugging works for both client and API code
+- ✅ One-button start (F5)
+
+**Debugging Issue Resolved:**
+
+Initial F5 setup failed with TypeScript build error:
+- **Error:** `Cannot find type definition file for 'minimatch'`
+- **Cause:** SWA CLI dependency needed `@types/minimatch` in client
+- **Fix Applied:**
+  1. Installed `@types/minimatch` in `client/package.json`
+  2. Added `"types": []` to `client/tsconfig.json` to prevent auto-inclusion
+- **Result:** ✅ Build succeeds, F5 debugging fully operational
+
+**Documentation Updates:**
+- ✅ `doc/DEBUGGING.md` - Complete debugging guide with API routing explanation
+- ✅ `client/README.md` - Added F5 as recommended development workflow
+- ✅ `README.md` - Quick reference for F5 debugging
+- ✅ `memory-bank/activeContext.md` - This section!
+
 ## Recent Deployment Fix (October 10, 2025)
 
 ### Azure Functions v4 Deployment Success ✅

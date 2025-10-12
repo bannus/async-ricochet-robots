@@ -2,10 +2,31 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Start Azurite",
+      "type": "shell",
+      "command": "azurite --silent --location azurite --debug azurite/debug.log",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Azurite",
+          "endsPattern": "successfully listening"
+        }
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
       "label": "Start SWA Emulator",
       "type": "shell",
       "command": "npm run swa:build && npm run swa:start",
       "isBackground": true,
+      "dependsOn": ["Start Azurite"],
       "problemMatcher": {
         "pattern": {
           "regexp": "^.*$",
