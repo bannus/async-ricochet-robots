@@ -13,9 +13,16 @@ export class ApiClient {
   private baseUrl: string;
 
   constructor(baseUrl?: string) {
-    // Default to /api (relative path works in both dev and production)
-    // For local development with Azure Functions Core Tools, pass 'http://localhost:7071/api'
-    this.baseUrl = baseUrl || '/api';
+    // Auto-detect environment if baseUrl not provided
+    if (baseUrl) {
+      this.baseUrl = baseUrl;
+    } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      // Local development - point to Azure Functions local server (default port 7071)
+      this.baseUrl = 'http://localhost:7071/api';
+    } else {
+      // Production - use relative path (works with Azure Static Web Apps)
+      this.baseUrl = '/api';
+    }
   }
 
   /**
