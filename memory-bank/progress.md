@@ -224,12 +224,16 @@
 - [x] **Implement host panel controls (integrated into index.html)**
 - [x] **Implement host manager logic (host-manager.ts)**
 - [x] **Create game creation modal and workflow (create-game.ts)**
+- [x] **CSS Polish & UX Enhancements (October 11-12, 2025)**
+  - [x] Keyboard focus states for accessibility (WCAG 2.1 compliance)
+  - [x] Dynamic canvas cursor (pointer on robots, default elsewhere)
+  - [x] Smooth state transitions and animations
+  - [x] Leaderboard row fade-in animations
+  - [x] Document future enhancements (loading animations)
 
 #### Remaining Tasks
-- [ ] Complete CSS styling (game.css, host.css)
 - [ ] Test end-to-end gameplay
 - [ ] Mobile responsive testing
-- [ ] Polish animations and UX
 - [ ] Cross-browser testing
 
 #### Deliverables

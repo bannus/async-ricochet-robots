@@ -36,9 +36,9 @@
 - ✅ `doc/DEPLOYMENT.md` - Added version history entry with fix details
 - ✅ Included warning about not setting AzureWebJobsStorage for Managed Functions
 
-## Recent Changes (October 8, 2025)
+## Recent Changes (October 8-12, 2025)
 
-### Phase 4: Frontend UI Implementation - Player App (60% Complete)
+### Phase 4: Frontend UI Implementation - CSS Polish Complete (85% Complete)
 
 **Frontend Infrastructure Complete:**
 - ✅ TypeScript project structure in `/client` folder
@@ -126,6 +126,34 @@
 - [ ] Cross-browser testing
 - [ ] Animation polish
 - [ ] End-to-end gameplay testing
+
+**CSS Polish & UX Enhancements:** ✅ COMPLETE (October 11-12, 2025)
+
+1. **Keyboard Accessibility (WCAG 2.1 Compliance)** ✅
+   - Added `:focus-visible` styles for all interactive elements
+   - 3px blue outline with 2px offset for clear visibility
+   - Semi-transparent shadow for extra prominence
+   - Only appears when navigating via keyboard (Tab key)
+   - File: `client/css/shared.css`
+
+2. **Dynamic Canvas Cursor** ✅
+   - Default cursor on game board normally
+   - Pointer cursor when hovering over robots (indicates clickable)
+   - Implementation:
+     - Added `getRobotAtPoint()` method to renderer (distance-based detection)
+     - Mousemove listener in controller updates cursor dynamically
+   - Files: `client/css/game.css`, `client/src/game-renderer.ts`, `client/src/game-controller.ts`
+
+3. **Smooth State Transitions** ✅
+   - Main content fade (0.3s opacity transition) during polling updates
+   - Leaderboard row fade-in animation when new solutions appear
+   - Enhanced canvas shadow on hover
+   - File: `client/css/game.css`
+
+4. **Future Enhancements Documented** ✅
+   - Created `doc/FUTURE-ENHANCEMENTS.md`
+   - Documented loading animations as medium-priority enhancement
+   - Included implementation details and benefits
 
 **Host Panel Status:** ✅ COMPLETE
 - Host controls are integrated into index.html (not separate page)
