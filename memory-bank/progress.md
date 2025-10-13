@@ -281,7 +281,15 @@
    - Solution: Added empty array handling with message
    - Status: Fixed and verified
 
-#### Known Issues
+#### Recent Bug Fixes
+- ✅ **Bug #9: No Mobile Robot Movement** - Fixed 2025-10-13
+  - Issue: Game completely unusable on mobile (no touch controls) + desktop clicks not working
+  - Cause: No touch handlers implemented + double coordinate conversion in click handler
+  - Fix: Integrated Hammer.js for swipe gestures + fixed click coordinate calculation
+  - Implementation: Downloaded Hammer.js locally (20KB), added swipe detection, fixed getCellFromPoint() usage
+  - Files: `client/assets/hammer.min.js`, `client/index.html`, `client/src/game-controller.ts`, `client/css/game.css`
+  - Status: ✅ Complete - Mobile swipes working, desktop clicks fixed
+  
 - ✅ **Bug #7: Outer Wall Distance** - Fixed 2025-10-12
   - Issue: Walls could be placed 8 tiles from corners (spec: 2-7)
   - Cause: Incorrect random ranges (2-7 and 8-13 allowed position 7 and 8)
