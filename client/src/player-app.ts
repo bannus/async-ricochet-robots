@@ -37,8 +37,9 @@ export class PlayerApp {
     
     this.gameId = gameId;
     
-    // Case 2: Initialize game components
-    this.renderer = new GameRenderer('game-board');
+    // Case 2: Initialize game components with responsive cell size
+    const cellSize = this.calculateCellSize();
+    this.renderer = new GameRenderer('game-board', cellSize);
     this.controller = new GameController(this.renderer, this.apiClient);
     
     // Case 3: Host mode detection (from localStorage only)
@@ -130,6 +131,18 @@ export class PlayerApp {
         localStorage.setItem('playerName', target.value);
       });
     }
+    
+    // Handle window resize for responsive canvas
+    let resizeTimeout: number | null = null;
+    window.addEventListener('resize', () => {
+      // Debounce resize events
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
+      resizeTimeout = window.setTimeout(() => {
+        this.handleResize();
+      }, 250);
+    });
   }
 
   /**
@@ -464,6 +477,42 @@ export class PlayerApp {
     setTimeout(() => {
       toast.remove();
     }, 3000);
+  }
+
+  /**
+   * Calculate appropriate cell size based on viewport width
+   * Ensures the 16x16 board fits within the available width
+   */
+  private calculateCellSize(): number {
+    // Get the game section element to determine available width
+    const gameSection = document.querySelector('.game-section') as HTMLElement;
+    
+    // Fallback to viewport width if game section not found
+    const availableWidth = gameSection 
+      ? gameSection.clientWidth - 48 // Account for padding (24px * 2)
+      : window.innerWidth - 48; // Account for container padding
+    
+    // Calculate cell size: available width / 16 cells
+    // Add some margin for borders and spacing (subtract ~50px total)
+    const calculatedCellSize = Math.floor((availableWidth - 50) / 16);
+    
+    // Clamp between reasonable min/max values
+    // Min: 20px (for very small screens)
+    // Max: 40px (default desktop size)
+    return Math.max(20, Math.min(40, calculatedCellSize));
+  }
+
+  /**
+   * Handle window resize events to keep canvas responsive
+   */
+  private handleResize(): void {
+    if (!this.renderer || !this.currentRound) return;
+    
+    const newCellSize = this.calculateCellSize();
+    this.renderer.resize(newCellSize);
+    
+    // Re-render the current puzzle
+    this.renderer.render(this.currentRound, this.currentRound.activeGoalIndex || 0);
   }
 
   /**
