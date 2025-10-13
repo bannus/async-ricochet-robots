@@ -100,16 +100,18 @@ export class HostManager {
     const playersElem = document.getElementById('host-total-players');
     const solutionsElem = document.getElementById('host-total-solutions');
     
-    if (goalsElem) {
-      goalsElem.textContent = `${data.goalsCompleted}/17`;
+    if (goalsElem && data.progress) {
+      const completed = data.progress.goalsCompleted || 0;
+      const total = data.progress.totalGoals || 17;
+      goalsElem.textContent = `${completed}/${total}`;
     }
     
     if (playersElem && data.statistics) {
-      playersElem.textContent = data.statistics.totalPlayers.toString();
+      playersElem.textContent = (data.statistics.uniquePlayers || 0).toString();
     }
     
     if (solutionsElem && data.statistics) {
-      solutionsElem.textContent = data.statistics.totalSolutions.toString();
+      solutionsElem.textContent = (data.statistics.totalSolutions || 0).toString();
     }
   }
 

@@ -116,6 +116,25 @@ Initial F5 setup failed with TypeScript build error:
 
 ## Recent Changes (October 8-12, 2025)
 
+### Bug Fix: Host Controls "undefined/17" Display ✅ FIXED (October 12, 2025)
+
+**Bug Resolved:**
+- **Issue:** Host dashboard showed "undefined/17" for goals instead of "0/17"
+- **Root Cause:** Property path mismatch - API returns `data.progress.goalsCompleted` and `data.statistics.uniquePlayers`, but client was reading `data.goalsCompleted` and `data.statistics.totalPlayers`
+- **Fix:** Updated `displayStats()` in `client/src/host-manager.ts` to use correct property paths
+- **Changes:**
+  - Goals: Read from `data.progress.goalsCompleted` (not `data.goalsCompleted`)
+  - Players: Read from `data.statistics.uniquePlayers` (not `data.statistics.totalPlayers`)
+  - Added null/undefined checks with fallback to 0
+- **Files Modified:**
+  - `client/src/host-manager.ts` - Updated displayStats() method
+  - `doc/BUGS.md` - Moved Bug #3 to doc/BUGS-FIXED.md
+  - `doc/BUGS-FIXED.md` - New file created for fixed bugs archive
+
+**Status:** Ready for E2E testing. Dashboard should now show "0/17" at start.
+
+---
+
 ### Bug Fix: Extend Round 404 Error ✅ FIXED (October 12, 2025)
 
 **Critical Bug Resolved:**
@@ -126,9 +145,23 @@ Initial F5 setup failed with TypeScript build error:
 - **Files Modified:**
   - `client/src/api-client.ts` - Changed HTTP method
   - `doc/api-specification.md` - Updated documentation
-  - `doc/BUGS.md` - Moved Bug #1 to Fixed section
+  - `doc/BUGS.md` - Moved Bug #1 to doc/BUGS-FIXED.md
 
 **Status:** Ready for E2E testing. Host functionality now fully operational.
+
+---
+
+### Documentation Organization Improvement ✅ COMPLETE (October 12, 2025)
+
+**Improvement Made:**
+- Created `doc/BUGS-FIXED.md` to archive all resolved bugs
+- Updated `doc/BUGS.md` to only track active/open bugs
+- Added note in BUGS.md directing readers to BUGS-FIXED.md for resolved issues
+- Cleaner organization: active bugs stay focused, historical fixes preserved
+
+**Files Created/Modified:**
+- `doc/BUGS-FIXED.md` - New archive file with 5 fixed bugs (#1, #2, #3, #4, #7)
+- `doc/BUGS.md` - Cleaned up to show only 7 active bugs
 
 ### Phase 4: Frontend UI Implementation - CSS Polish Complete (85% Complete)
 
