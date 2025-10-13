@@ -282,7 +282,12 @@
    - Status: Fixed and verified
 
 #### Known Issues
-- None currently identified
+- ✅ **Bug #7: Outer Wall Distance** - Fixed 2025-10-12
+  - Issue: Walls could be placed 8 tiles from corners (spec: 2-7)
+  - Cause: Incorrect random ranges (2-7 and 8-13 allowed position 7 and 8)
+  - Fix: Changed to ranges 1-6 and 8-13
+  - Files: `shared/l-shape-utils.ts`, `tests/manual/check-outer-walls.ts`
+  - Status: ✅ Fixed and verified with diagnostic script
 
 #### Success Criteria Progress
 - ✅ Project structure set up correctly

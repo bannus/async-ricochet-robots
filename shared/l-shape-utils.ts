@@ -505,36 +505,39 @@ export function addCenterSquare(walls: Walls): void {
  * @param walls - Walls structure to modify
  */
 export function addOuterEdgeWalls(walls: Walls): void {
-  // Helper to get random position in range 2-7
-  const randomEdgePos = () => Math.floor(Math.random() * 6) + 2; // 2-7
+  // Helper to get random position in range 1-6 (2-7 tiles from left/top corner)
+  const randomEdgePosLeft = () => Math.floor(Math.random() * 6) + 1; // 1-6
+  
+  // Helper to get random position in range 8-13 (2-7 tiles from right/bottom corner)
+  const randomEdgePosRight = () => Math.floor(Math.random() * 6) + 8; // 8-13
   
   // NW quadrant: top edge (vertical wall) and left edge (horizontal wall)
-  const nwTopCol = randomEdgePos(); // Column 2-7
-  const nwLeftRow = randomEdgePos(); // Row 2-7
+  const nwTopCol = randomEdgePosLeft(); // Column 1-6
+  const nwLeftRow = randomEdgePosLeft(); // Row 1-6
   // Top edge: vertical wall at row 0, sticking down into board
   walls.vertical[nwTopCol].push(0);
   // Left edge: horizontal wall at col 0, sticking right into board
   walls.horizontal[nwLeftRow].push(0);
   
   // NE quadrant: top edge (vertical wall) and right edge (horizontal wall)
-  const neTopCol = Math.floor(Math.random() * 6) + 8; // Column 8-13
-  const neRightRow = randomEdgePos(); // Row 2-7
+  const neTopCol = randomEdgePosRight(); // Column 8-13
+  const neRightRow = randomEdgePosLeft(); // Row 1-6
   // Top edge: vertical wall at row 0
   walls.vertical[neTopCol].push(0);
   // Right edge: horizontal wall at col 15
   walls.horizontal[neRightRow].push(15);
   
   // SW quadrant: bottom edge (vertical wall) and left edge (horizontal wall)
-  const swBottomCol = randomEdgePos(); // Column 2-7
-  const swLeftRow = Math.floor(Math.random() * 6) + 8; // Row 8-13
+  const swBottomCol = randomEdgePosLeft(); // Column 1-6
+  const swLeftRow = randomEdgePosRight(); // Row 8-13
   // Bottom edge: vertical wall at row 15
   walls.vertical[swBottomCol].push(15);
   // Left edge: horizontal wall at col 0
   walls.horizontal[swLeftRow].push(0);
   
   // SE quadrant: bottom edge (vertical wall) and right edge (horizontal wall)
-  const seBottomCol = Math.floor(Math.random() * 6) + 8; // Column 8-13
-  const seRightRow = Math.floor(Math.random() * 6) + 8; // Row 8-13
+  const seBottomCol = randomEdgePosRight(); // Column 8-13
+  const seRightRow = randomEdgePosRight(); // Row 8-13
   // Bottom edge: vertical wall at row 15
   walls.vertical[seBottomCol].push(15);
   // Right edge: horizontal wall at col 15
