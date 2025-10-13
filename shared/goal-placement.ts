@@ -35,15 +35,15 @@ export interface GoalGenerationResult {
 }
 
 /**
- * Define the four quadrants (excluding outer boundary AND center 2×2 square)
- * Center square occupies (7,7), (7,8), (8,7), (8,8)
- * Quadrants exclude rows/cols 7-8 to avoid the center
+ * Define the four quadrants (excluding outer boundary)
+ * Quadrants now include rows/cols 7-8, but randomPositionInQuadrant()
+ * explicitly excludes the center 2×2 square: (7,7), (7,8), (8,7), (8,8)
  */
 export const QUADRANTS: Quadrant[] = [
-  { name: 'NW', xMin: 1, xMax: 6, yMin: 1, yMax: 6 },
-  { name: 'NE', xMin: 9, xMax: 14, yMin: 1, yMax: 6 },
-  { name: 'SW', xMin: 1, xMax: 6, yMin: 9, yMax: 14 },
-  { name: 'SE', xMin: 9, xMax: 14, yMin: 9, yMax: 14 }
+  { name: 'NW', xMin: 1, xMax: 7, yMin: 1, yMax: 7 },
+  { name: 'NE', xMin: 8, xMax: 14, yMin: 1, yMax: 7 },
+  { name: 'SW', xMin: 1, xMax: 7, yMin: 8, yMax: 14 },
+  { name: 'SE', xMin: 8, xMax: 14, yMin: 8, yMax: 14 }
 ];
 
 /**
@@ -52,11 +52,17 @@ export const QUADRANTS: Quadrant[] = [
 export const ROBOT_COLORS: GoalColorValue[] = ['red', 'yellow', 'green', 'blue'];
 
 /**
- * Generates a random position within a quadrant
+ * Generates a random position within a quadrant, excluding the center 2×2 square
  */
 export function randomPositionInQuadrant(quadrant: Quadrant): Position {
-  const x = quadrant.xMin + Math.floor(Math.random() * (quadrant.xMax - quadrant.xMin + 1));
-  const y = quadrant.yMin + Math.floor(Math.random() * (quadrant.yMax - quadrant.yMin + 1));
+  let x: number, y: number;
+  
+  // Keep generating until we get a position that's not in the center 2×2 square
+  do {
+    x = quadrant.xMin + Math.floor(Math.random() * (quadrant.xMax - quadrant.xMin + 1));
+    y = quadrant.yMin + Math.floor(Math.random() * (quadrant.yMax - quadrant.yMin + 1));
+  } while ((x === 7 || x === 8) && (y === 7 || y === 8));
+  
   return { x, y };
 }
 
@@ -162,8 +168,8 @@ export function generateMultiColorGoal(
 /**
  * Generates all 17 goals (16 single-color + 1 multi-color) for a board
  * 
- * With smaller quadrants (6×6 instead of 7×7 to avoid center), we retry
- * the entire generation if it fails due to space constraints.
+ * Quadrants are now 7×7 (49 cells each) with center square explicitly excluded.
+ * If generation fails due to space constraints, we retry the entire generation.
  * 
  * Note: This function assumes walls already contains center square and outer edge walls.
  * On retry, it clears only the L-shape walls (not center/edge walls).

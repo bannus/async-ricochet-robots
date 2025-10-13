@@ -20,60 +20,6 @@ This document tracks **active/open bugs only**. For resolved bugs, see **[BUGS-F
 
 ## 🟡 High Priority Issues
 
-### Bug #6: Quadrant Definition Overly Restrictive
-**Priority:** 🟡 High  
-**Status:** Not Started  
-**Location:** `shared/goal-placement.ts` (QUADRANTS definition)  
-**Discovered:** Code Review
-
-**Description:**  
-The QUADRANTS definition excludes all of rows and columns 7-8 to avoid the center square, but this is overly restrictive. The center square only occupies 4 specific cells: (7,7), (7,8), (8,7), (8,8). The current implementation excludes 28 valid positions unnecessarily.
-
-**Current Behavior:**
-```typescript
-// Quadrants are 6×6 (36 cells each)
-{ name: 'NW', xMin: 1, xMax: 6, yMin: 1, yMax: 6 },
-{ name: 'NE', xMin: 9, xMax: 14, yMin: 1, yMax: 6 },
-{ name: 'SW', xMin: 1, xMax: 6, yMin: 9, yMax: 14 },
-{ name: 'SE', xMin: 9, xMax: 14, yMin: 9, yMax: 14 }
-```
-
-**Expected Behavior:**
-```typescript
-// Quadrants should be 7×7 (49 cells each) with center check
-{ name: 'NW', xMin: 1, xMax: 7, yMin: 1, yMax: 7 },
-{ name: 'NE', xMin: 8, xMax: 14, yMin: 1, yMax: 7 },
-{ name: 'SW', xMin: 1, xMax: 7, yMin: 8, yMax: 14 },
-{ name: 'SE', xMin: 8, xMax: 14, yMin: 8, yMax: 14 }
-// Plus center exclusion check in randomPositionInQuadrant()
-```
-
-**Impact:**
-- Reduces available goal placement space by 13 cells per quadrant (28%)
-- May contribute to goal generation failures requiring retries
-- Makes puzzle generation less efficient
-
-**Root Cause:**  
-Overly conservative approach to avoiding center square - excluding entire rows/columns instead of just the 4 center cells.
-
-**Fix Plan:**
-1. Update QUADRANTS to use full 7×7 ranges (1-7 and 8-14)
-2. Add center exclusion check to `randomPositionInQuadrant()`:
-   ```typescript
-   // Exclude center 2×2 square
-   if ((x === 7 || x === 8) && (y === 7 || y === 8)) {
-     continue; // retry
-   }
-   ```
-3. Update tests to verify goals never appear in center square
-4. Test that generation succeeds with fewer retries
-
-**Affected Components:**
-- `shared/goal-placement.ts` (QUADRANTS and randomPositionInQuadrant)
-- `tests/unit/goal-placement.test.ts` (validation tests)
-
----
-
 ### Bug #9: No Mobile Robot Movement
 **Priority:** 🟡 High  
 **Status:** Not Started  
@@ -335,7 +281,9 @@ After each bug fix:
 
 ## Next Priority
 
-The next highest priority bug to work on is **Bug #6: Quadrant Definition Overly Restrictive** (🟡 High Priority).
+The next highest priority bugs to work on are:
+1. **Bug #9: No Mobile Robot Movement** (🟡 High Priority)
+2. **Bug #10: NPM Package Vulnerabilities** (🟡 High Priority)
 
 For all resolved bugs, see **[BUGS-FIXED.md](BUGS-FIXED.md)**.
 

@@ -367,3 +367,58 @@ describe('ROBOT_COLORS constant', () => {
     expect(ROBOT_COLORS).toContain('blue');
   });
 });
+
+describe('Center square exclusion', () => {
+  test('randomPositionInQuadrant never returns center square positions', () => {
+    // Test all four quadrants extensively
+    const quadrants: Quadrant[] = [
+      { name: 'NW', xMin: 1, xMax: 7, yMin: 1, yMax: 7 },
+      { name: 'NE', xMin: 8, xMax: 14, yMin: 1, yMax: 7 },
+      { name: 'SW', xMin: 1, xMax: 7, yMin: 8, yMax: 14 },
+      { name: 'SE', xMin: 8, xMax: 14, yMin: 8, yMax: 14 }
+    ];
+    
+    const centerPositions = new Set(['7,7', '7,8', '8,7', '8,8']);
+    
+    for (const quadrant of quadrants) {
+      for (let i = 0; i < 200; i++) {
+        const pos = randomPositionInQuadrant(quadrant);
+        const key = `${pos.x},${pos.y}`;
+        
+        // Should never generate a center square position
+        expect(centerPositions.has(key)).toBe(false);
+      }
+    }
+  });
+
+  test('generateAllGoals never places goals in center square', () => {
+    const walls: Walls = {
+      horizontal: Array(16).fill(null).map(() => []),
+      vertical: Array(16).fill(null).map(() => [])
+    };
+    
+    // Run multiple times to ensure consistency
+    for (let run = 0; run < 10; run++) {
+      // Reset walls for each run
+      for (let i = 0; i < 16; i++) {
+        walls.horizontal[i] = [];
+        walls.vertical[i] = [];
+      }
+      
+      const result = generateAllGoals(walls);
+      expect(result.success).toBe(true);
+      
+      // Check that no goal is in the center square
+      const centerPositions = [
+        { x: 7, y: 7 }, { x: 7, y: 8 },
+        { x: 8, y: 7 }, { x: 8, y: 8 }
+      ];
+      
+      for (const goal of result.goals) {
+        for (const centerPos of centerPositions) {
+          expect(goal.position.x === centerPos.x && goal.position.y === centerPos.y).toBe(false);
+        }
+      }
+    }
+  });
+});

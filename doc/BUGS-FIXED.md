@@ -11,6 +11,102 @@ This file contains all bugs that have been resolved and verified. For active bug
 
 ## Fixed Bugs (Newest First)
 
+### Bug #6: Quadrant Definition Overly Restrictive
+**Priority:** 🟡 High  
+**Status:** ✅ Fixed  
+**Location:** `shared/goal-placement.ts` (QUADRANTS definition and randomPositionInQuadrant)  
+**Discovered:** Code Review  
+**Fixed:** 2025-10-12
+
+**Description:**  
+The QUADRANTS definition excluded all of rows and columns 7-8 to avoid the center square, but this was overly restrictive. The center square only occupies 4 specific cells: (7,7), (7,8), (8,7), (8,8). The current implementation excluded 28 valid positions unnecessarily (7 per quadrant × 4 quadrants).
+
+**Expected Behavior:**
+- Quadrants should use full 7×7 ranges to maximize available space
+- Only the 4 center square cells should be excluded
+- More efficient goal placement with fewer retries
+
+**Actual Behavior:**
+- Quadrants were 6×6 (36 cells each) using ranges 1-6 and 9-14
+- Excluded 13 valid positions per quadrant
+- Reduced available placement space by 28%
+
+**Root Cause:**  
+Overly conservative approach to avoiding center square - excluding entire rows/columns 7-8 instead of just the 4 center cells.
+
+**Fix Implementation:**
+
+1. **Expanded QUADRANTS to 7×7:**
+   ```typescript
+   // Old (6×6 quadrants)
+   { name: 'NW', xMin: 1, xMax: 6, yMin: 1, yMax: 6 }
+   { name: 'NE', xMin: 9, xMax: 14, yMin: 1, yMax: 6 }
+   { name: 'SW', xMin: 1, xMax: 6, yMin: 9, yMax: 14 }
+   { name: 'SE', xMin: 9, xMax: 14, yMin: 9, yMax: 14 }
+   
+   // New (7×7 quadrants)
+   { name: 'NW', xMin: 1, xMax: 7, yMin: 1, yMax: 7 }
+   { name: 'NE', xMin: 8, xMax: 14, yMin: 1, yMax: 7 }
+   { name: 'SW', xMin: 1, xMax: 7, yMin: 8, yMax: 14 }
+   { name: 'SE', xMin: 8, xMax: 14, yMin: 8, yMax: 14 }
+   ```
+
+2. **Added center exclusion to randomPositionInQuadrant():**
+   ```typescript
+   export function randomPositionInQuadrant(quadrant: Quadrant): Position {
+     let x: number, y: number;
+     
+     // Keep generating until we get a position that's not in the center 2×2 square
+     do {
+       x = quadrant.xMin + Math.floor(Math.random() * (quadrant.xMax - quadrant.xMin + 1));
+       y = quadrant.yMin + Math.floor(Math.random() * (quadrant.yMax - quadrant.yMin + 1));
+     } while ((x === 7 || x === 8) && (y === 7 || y === 8));
+     
+     return { x, y };
+   }
+   ```
+
+3. **Updated documentation comments:**
+   - QUADRANTS definition comment updated to reflect new approach
+   - generateAllGoals() comment updated (now 7×7 instead of 6×6)
+
+4. **Added comprehensive tests:**
+   - Test: `randomPositionInQuadrant never returns center square positions`
+     - Tests all 4 quadrants with 200 iterations each
+     - Verifies no center positions (7,7), (7,8), (8,7), (8,8) generated
+   - Test: `generateAllGoals never places goals in center square`
+     - Runs 10 full puzzle generations
+     - Verifies all 17 goals avoid center square
+
+**Impact:**
+- ✅ Added 28 valid goal positions (increases space by 28%)
+- ✅ Reduces goal generation failures/retries
+- ✅ More efficient puzzle generation
+- ✅ All 28 unit tests pass (26 existing + 2 new)
+- ✅ All 14 integration tests pass
+
+**Files Modified:**
+- `shared/goal-placement.ts` - Updated QUADRANTS and randomPositionInQuadrant()
+- `tests/unit/goal-placement.test.ts` - Added center square exclusion tests
+- `doc/BUGS.md` - Moved to BUGS-FIXED.md
+
+**Verification:**
+```
+Test Suites: 1 passed, 1 total
+Tests:       28 passed, 28 total (goal-placement unit tests)
+
+Test Suites: 1 passed, 1 total  
+Tests:       14 passed, 14 total (game integration tests)
+```
+
+**Benefits:**
+- Puzzle generation has 28% more space to work with
+- Expected reduction in generation retry failures
+- Simpler, more precise center exclusion logic
+- No performance impact (do-while loop typically executes once)
+
+---
+
 ### Bug #3: Host Controls Shows "undefined/17"
 **Priority:** 🟡 High  
 **Status:** ✅ Fixed  
