@@ -20,45 +20,6 @@ This document tracks **active/open bugs only**. For resolved bugs, see **[BUGS-F
 
 ## 🟡 High Priority Issues
 
-### Bug #9: No Mobile Robot Movement
-**Priority:** 🟡 High  
-**Status:** Not Started  
-**Location:** Mobile UI - needs touch controls  
-**Discovered:** User Testing
-
-**Description:**  
-There is no way to move robots on mobile devices without a keyboard. The game is currently keyboard-only, making it completely unusable on mobile devices.
-
-**Expected Behavior:**  
-- Touch-based controls for robot movement
-- Options could include: directional buttons, swipe gestures, or on-screen directional pad
-- Touch controls should be as intuitive as keyboard controls
-
-**Actual Behavior:**  
-- Only keyboard arrow keys work for robot movement
-- No touch/tap controls available
-- Mobile users cannot play the game
-
-**Root Cause:** TBD  
-**Likely Issues:**
-- No mobile UI implementation
-- No touch event handlers
-- Game controller only listens for keyboard events
-
-**Fix Plan:**
-1. Design mobile control scheme (directional buttons recommended)
-2. Add touch event handlers to game controller
-3. Create mobile-responsive UI for control buttons
-4. Test on various mobile devices and screen sizes
-5. Consider adding swipe gesture support as enhancement
-
-**Affected Components:**
-- `client/src/game-controller.ts` (add touch event handlers)
-- `client/index.html` (add mobile control UI)
-- `client/css/game.css` (mobile-responsive styling)
-
----
-
 ### Bug #10: NPM Package Vulnerabilities
 **Priority:** 🟡 High  
 **Status:** Not Started  
@@ -281,12 +242,11 @@ After each bug fix:
 
 ## Next Priority
 
-The next highest priority bugs to work on are:
-1. **Bug #9: No Mobile Robot Movement** (🟡 High Priority)
-2. **Bug #10: NPM Package Vulnerabilities** (🟡 High Priority)
+The next highest priority bug to work on is:
+1. **Bug #10: NPM Package Vulnerabilities** (🟡 High Priority)
 
 For all resolved bugs, see **[BUGS-FIXED.md](BUGS-FIXED.md)**.
 
 ---
 
-*Last Updated: 2025-10-12*
+*Last Updated: 2025-10-12 (Bug #9 Fixed)*

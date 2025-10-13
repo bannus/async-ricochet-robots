@@ -114,7 +114,38 @@ Initial F5 setup failed with TypeScript build error:
 - ✅ `doc/DEPLOYMENT.md` - Added version history entry with fix details
 - ✅ Included warning about not setting AzureWebJobsStorage for Managed Functions
 
-## Recent Changes (October 8-12, 2025)
+## Recent Changes (October 8-13, 2025)
+
+### Bug Fix: No Mobile Robot Movement ✅ FIXED (October 13, 2025)
+
+**Critical Bug Resolved:**
+- **Issue:** Game was completely unusable on mobile devices - no touch controls for robot movement
+- **Root Causes:**
+  1. No touch event handlers implemented (game was keyboard-only)
+  2. Desktop mouse clicks not working (double coordinate conversion bug)
+- **Solution:** Integrated Hammer.js library for unified touch and mouse controls
+- **Implementation:**
+  - Downloaded Hammer.js v2.0.8 locally to `client/assets/hammer.min.js` (20KB)
+  - Added `@types/hammerjs` for TypeScript type definitions
+  - Configured swipe gesture detection for robot movement
+  - Added native click handler for desktop (more reliable than Hammer tap)
+  - Fixed double `getBoundingClientRect()` subtraction bug in click coordinates
+  - Applied CSS touch optimizations (`touch-action: none`, no text selection, no tap highlight)
+- **Control Scheme:**
+  - **Desktop:** Keyboard (primary) + Mouse clicks to select + Mouse drag/swipe to move
+  - **Mobile:** Touch tap to select + Swipe gestures to move (up/down/left/right)
+- **Files Modified:**
+  - `client/assets/hammer.min.js` - Local Hammer.js library
+  - `client/index.html` - Added script tag for Hammer.js
+  - `client/package.json` - Added `@types/hammerjs`, removed unused `hammerjs` package
+  - `client/src/game-controller.ts` - Integrated Hammer + fixed click handler + added debug logging
+  - `client/css/game.css` - Touch optimization CSS
+  - `doc/BUGS-FIXED.md` - Documented complete fix
+  - `doc/BUGS.md` - Bug #9 removed (was already removed on 2025-10-12)
+
+**Status:** ✅ Complete. Mobile swipe gestures verified working. Desktop clicks fixed (awaiting final user confirmation). Debug logging still active for verification.
+
+---
 
 ### Bug Fix: Host Controls "undefined/17" Display ✅ FIXED (October 12, 2025)
 

@@ -691,18 +691,26 @@ header h1 {
     padding: var(--spacing-md);
   }
   
-  #game-board {
-    max-width: 100%;
-    height: auto;
-  }
+#game-board {
+  border: 2px solid var(--border-color);
+  background: var(--board-bg);
+  display: block;
+  margin: 0 auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease;
   
-  .robot-selectors {
-    flex-wrap: wrap;
-  }
-  
-  .robot-selector {
-    flex: 1 1 calc(50% - var(--spacing-sm));
-  }
+  /* Touch optimizations for mobile */
+  touch-action: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#game-board:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
   
   .submit-section {
     flex-direction: column;

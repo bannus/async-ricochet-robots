@@ -3,6 +3,9 @@
  * Handles player input, local puzzle solving, and solution building
  */
 
+// Hammer.js is loaded from assets/hammer.min.js in index.html
+declare const Hammer: typeof import('hammerjs');
+
 import type { Position, Robots, Walls, Move, Goal } from '../../shared/types.js';
 import { moveRobot } from '../../shared/game-engine.js';
 import { validateSolution } from '../../shared/solution-validator.js';
@@ -39,7 +42,7 @@ export class GameController {
     this.apiClient = apiClient;
     
     this.setupKeyboardControls();
-    this.setupMouseControls();
+    this.setupHammerControls();
   }
 
   /**
@@ -100,25 +103,77 @@ export class GameController {
   }
 
   /**
-   * Setup mouse event listeners for robot selection
+   * Setup Hammer.js controls for unified mouse and touch input
    */
-  private setupMouseControls(): void {
+  private setupHammerControls(): void {
     const canvas = document.getElementById('game-board') as HTMLCanvasElement;
-    if (!canvas) return;
+    if (!canvas) {
+      console.error('[GameController] Canvas not found!');
+      return;
+    }
 
-    canvas.addEventListener('click', (e) => {
-      if (!this.currentState) return;
+    console.log('[GameController] Setting up Hammer controls on canvas');
+
+    const hammer = new Hammer(canvas);
+    
+    // Configure swipe recognizer for all cardinal directions
+    hammer.get('swipe').set({
+      direction: Hammer.DIRECTION_ALL,
+      threshold: 10,      // Minimum distance in pixels
+      velocity: 0.3       // Minimum velocity
+    });
+    
+    // Swipe handler - moves selected robot (works for mouse drag and touch swipe)
+    hammer.on('swipe', (e: HammerInput) => {
+      console.log('[GameController] Swipe detected:', e.direction);
+      if (!this.selectedRobot) return;
       
+      const direction = this.getDirectionFromHammer(e.direction);
+      if (direction) {
+        this.move(this.selectedRobot, direction);
+      }
+    });
+    
+    // Regular click handler for desktop - more reliable than Hammer tap for mouse
+    console.log('[GameController] Adding click event listener to canvas');
+    canvas.addEventListener('click', (e: MouseEvent) => {
+      console.log('[GameController] Click detected at', e.clientX, e.clientY);
+      
+      if (!this.currentState) {
+        console.log('[GameController] No current state, ignoring click');
+        return;
+      }
+      
+      // Pass absolute client coordinates - getCellFromPoint handles conversion
       const pos = this.renderer.getCellFromPoint(e.clientX, e.clientY);
+      console.log('[GameController] Cell position:', pos);
       
       // Check if clicked on a robot
       for (const [color, robotPos] of Object.entries(this.currentState)) {
         if (robotPos.x === pos.x && robotPos.y === pos.y) {
+          console.log('[GameController] Found robot at click position:', color);
           this.selectRobot(color);
           return;
         }
       }
+      
+      console.log('[GameController] No robot found at click position');
     });
+    
+    console.log('[GameController] Hammer controls setup complete');
+  }
+
+  /**
+   * Convert Hammer.js direction constant to game direction
+   */
+  private getDirectionFromHammer(hammerDirection: number): 'up' | 'down' | 'left' | 'right' | null {
+    switch (hammerDirection) {
+      case Hammer.DIRECTION_UP: return 'up';
+      case Hammer.DIRECTION_DOWN: return 'down';
+      case Hammer.DIRECTION_LEFT: return 'left';
+      case Hammer.DIRECTION_RIGHT: return 'right';
+      default: return null;
+    }
   }
 
   /**
