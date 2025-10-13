@@ -46,9 +46,17 @@ describe('randomPositionInQuadrant', () => {
 
 describe('placeGoalInQuadrant', () => {
   const quadrant: Quadrant = { name: 'NW', xMin: 1, xMax: 7, yMin: 1, yMax: 7 };
+  let walls: Walls;
+
+  beforeEach(() => {
+    walls = {
+      horizontal: Array(16).fill(null).map(() => []),
+      vertical: Array(16).fill(null).map(() => [])
+    };
+  });
 
   test('places goal with valid position and orientation', () => {
-    const result = placeGoalInQuadrant(quadrant, 'red', []);
+    const result = placeGoalInQuadrant(quadrant, 'red', [], walls);
     
     expect(result).not.toBeNull();
     expect(result?.position.x).toBeGreaterThanOrEqual(1);
@@ -63,7 +71,7 @@ describe('placeGoalInQuadrant', () => {
       { position: { x: 3, y: 3 }, orientation: 'NW' }
     ];
     
-    const result = placeGoalInQuadrant(quadrant, 'yellow', existing);
+    const result = placeGoalInQuadrant(quadrant, 'yellow', existing, walls);
     
     expect(result).not.toBeNull();
     // Should be different from existing
@@ -79,7 +87,7 @@ describe('placeGoalInQuadrant', () => {
       }
     }
     
-    const result = placeGoalInQuadrant(quadrant, 'blue', existing, 5);
+    const result = placeGoalInQuadrant(quadrant, 'blue', existing, walls, 5);
     expect(result).toBeNull();
   });
 });
