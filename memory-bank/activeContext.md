@@ -116,6 +116,20 @@ Initial F5 setup failed with TypeScript build error:
 
 ## Recent Changes (October 8-12, 2025)
 
+### Bug Fix: Extend Round 404 Error ✅ FIXED (October 12, 2025)
+
+**Critical Bug Resolved:**
+- **Issue:** Clicking "Extend Deadline" button returned 404 error
+- **Root Cause:** HTTP method mismatch (client sent PUT, server expected POST)
+- **Fix:** Changed `client/src/api-client.ts` extendRound method from PUT to POST
+- **Rationale:** Maintains consistency with other host endpoints (all use POST)
+- **Files Modified:**
+  - `client/src/api-client.ts` - Changed HTTP method
+  - `doc/api-specification.md` - Updated documentation
+  - `doc/BUGS.md` - Moved Bug #1 to Fixed section
+
+**Status:** Ready for E2E testing. Host functionality now fully operational.
+
 ### Phase 4: Frontend UI Implementation - CSS Polish Complete (85% Complete)
 
 **Frontend Infrastructure Complete:**

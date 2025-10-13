@@ -185,7 +185,7 @@ export class ApiClient {
     const url = `${this.baseUrl}/host/extendRound`;
     
     return this.fetchWithErrorHandling(url, {
-      method: 'PUT',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Game-Id': gameId,

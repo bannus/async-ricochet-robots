@@ -600,7 +600,7 @@ X-Host-Key: host_9f8e7d6c5b4a
 
 ---
 
-## PUT /api/host/extendRound
+## POST /api/host/extendRound
 
 Extend or modify the deadline of the current round.
 

@@ -11,44 +11,11 @@
 
 ## 🔴 Critical Issues
 
-### Bug #1: Extend Round Returns 404
-**Priority:** 🔴 Critical  
-**Status:** Not Started  
-**Location:** API endpoint `/host/extendRound`  
-**Discovered:** E2E Testing Phase 4
-
-**Description:**  
-When clicking the "Extend Deadline" button and submitting a custom hour value, the API returns a 404 error.
-
-**Expected Behavior:**  
-- Endpoint should accept the request
-- Round deadline should be extended by the specified number of hours
-- UI should update with new deadline
-
-**Actual Behavior:**  
-- API returns 404 Not Found
-- No deadline extension occurs
-
-**Root Cause:** TBD  
-**Likely Issues:**
-- Route not registered in function app
-- Path mismatch in API routing
-- Missing function export
-
-**Fix Plan:**
-1. Check `api/host/extendRound/index.ts` exists and is exported
-2. Verify route registration in Azure Functions
-3. Check API client is calling correct endpoint path
-4. Test with manual HTTP request
-
-**Affected Components:**
-- `api/host/extendRound/index.ts`
-- `client/src/api-client.ts`
-- `client/src/host-manager.ts`
+*No critical issues at this time.*
 
 ---
 
-##  High Priority Issues
+## 🟡 High Priority Issues
 
 ### Bug #3: Host Controls Shows "undefined/17"
 **Priority:** 🟡 High  
@@ -670,6 +637,57 @@ This ensures all walls are exactly 2-7 tiles from their nearest corner.
 
 **Affected Components:**
 - `shared/l-shape-utils.ts` (addOuterEdgeWalls function)
+
+---
+
+### Bug #1: Extend Round Returns 404
+**Priority:** 🔴 Critical  
+**Status:** ✅ Fixed  
+**Location:** API endpoint `/host/extendRound`  
+**Discovered:** E2E Testing Phase 4  
+**Fixed:** 2025-10-12
+
+**Description:**  
+When clicking the "Extend Deadline" button and submitting a custom hour value, the API returned a 404 error instead of extending the round deadline.
+
+**Root Cause:**  
+HTTP method mismatch between client and server:
+- **Server (hostExtendRound.ts):** Configured to accept `POST` requests
+- **Client (api-client.ts):** Sending `PUT` requests
+
+The Azure Functions routing couldn't match the endpoint because the HTTP method was incorrect, resulting in a 404 Not Found error.
+
+**Fix Implementation:**  
+Changed the API client to use the correct HTTP method:
+
+**File:** `client/src/api-client.ts` (extendRound method)
+```typescript
+// BEFORE:
+method: 'PUT',
+
+// AFTER:
+method: 'POST',
+```
+
+**Rationale for POST:**
+- Maintains consistency with other host endpoints (startRound, endRound all use POST)
+- These are command-style operations rather than pure REST resource updates
+- POST is appropriate for operations with complex business logic and side effects
+
+**Files Modified:**
+1. `client/src/api-client.ts` - Changed HTTP method from PUT to POST
+2. `doc/api-specification.md` - Updated documentation to reflect POST method
+
+**Verification:**
+- ✅ Client now sends POST requests to `/api/host/extendRound`
+- ✅ Server accepts POST requests on the same route
+- ✅ HTTP method mismatch resolved
+- ✅ Ready for E2E testing
+
+**Affected Components:**
+- `client/src/api-client.ts` (extendRound method)
+- `api/src/functions/hostExtendRound.ts` (already correct)
+- `client/src/host-manager.ts` (no changes needed - uses api-client)
 
 ---
 
