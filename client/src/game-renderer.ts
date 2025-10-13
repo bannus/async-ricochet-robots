@@ -241,10 +241,16 @@ export class GameRenderer {
     fromPos: Position,
     toPos: Position,
     puzzle: Puzzle,
-    activeGoalIndex: number,
-    duration: number = 300
+    activeGoalIndex: number
   ): Promise<void> {
     return new Promise((resolve) => {
+      // Calculate Manhattan distance
+      const distance = Math.abs(toPos.x - fromPos.x) + Math.abs(toPos.y - fromPos.y);
+      
+      // Duration proportional to distance (30ms per tile)
+      const msPerTile = 30;
+      const duration = distance * msPerTile;
+      
       const startTime = Date.now();
       const tempRobots = { ...puzzle.robots };
       

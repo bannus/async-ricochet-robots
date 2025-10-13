@@ -197,8 +197,7 @@ export class GameController {
             robots: this.currentState,
             allGoals: this.puzzle.allGoals
           },
-          this.goalIndex,
-          300
+          this.goalIndex
         );
         
         // Update current state
