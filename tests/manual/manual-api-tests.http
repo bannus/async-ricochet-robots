@@ -15,7 +15,7 @@
 ###############################################################################
 
 ### CONFIGURATION
-@baseUrl = http://localhost:7076/api
+@baseUrl = http://localhost:7071/api
 
 # These will be populated from responses - update as you test
 @gameId = 
