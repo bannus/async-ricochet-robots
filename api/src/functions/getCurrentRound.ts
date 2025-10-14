@@ -49,13 +49,45 @@ async function getCurrentRoundHandler(
     const activeRound = await Storage.rounds.getActiveRound(gameId);
 
     if (!activeRound) {
-      // No active round - waiting for host to start
+      // No active round - find the most recently completed round
+      const allRounds = await Storage.rounds.getAllRounds(gameId);
+      const completedRounds = allRounds.filter(r => r.status === 'completed');
+      const lastCompletedRound = completedRounds.length > 0 
+        ? completedRounds[completedRounds.length - 1] 
+        : null;
+
+      // If we have a completed round, return its full data for replay
+      if (lastCompletedRound) {
+        return successResponse({
+          gameId: game.gameId,
+          gameName: game.gameName,
+          roundId: lastCompletedRound.roundId,
+          roundNumber: lastCompletedRound.roundNumber,
+          puzzle: {
+            walls: game.board.walls,
+            robots: lastCompletedRound.robotPositions, // Starting positions for that round
+            allGoals: game.board.allGoals,
+            goalColor: lastCompletedRound.goal.color,
+            goalPosition: lastCompletedRound.goal.position,
+            completedGoalIndices: game.board.completedGoalIndices
+          },
+          startTime: lastCompletedRound.startTime,
+          endTime: lastCompletedRound.endTime,
+          durationMs: lastCompletedRound.durationMs,
+          status: 'completed',
+          hasActiveRound: false,
+          goalsCompleted: game.board.completedGoalIndices.length,
+          goalsRemaining: 17 - game.board.completedGoalIndices.length,
+          message: 'Round complete - waiting for next round'
+        });
+      }
+
+      // No rounds at all yet
       return successResponse({
         gameId: game.gameId,
         gameName: game.gameName,
         hasActiveRound: false,
         message: 'No active round. Waiting for host to start next round.',
-        lastRoundId: game.currentRoundId || undefined,
         goalsCompleted: game.board.completedGoalIndices.length,
         goalsRemaining: 17 - game.board.completedGoalIndices.length
       });

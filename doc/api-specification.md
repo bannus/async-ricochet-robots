@@ -112,7 +112,47 @@ GET /api/getCurrentRound?gameId=game_abc123xyz
 }
 ```
 
-### Response 200 (No Active Round)
+### Response 200 (Between Rounds - Last Completed Round)
+When no active round exists but a completed round is available for replay:
+
+```json
+{
+  "success": true,
+  "data": {
+    "gameId": "game_abc123xyz",
+    "gameName": "Friday Night Puzzle",
+    "roundId": "game_abc123xyz_round4",
+    "roundNumber": 4,
+    "puzzle": {
+      "walls": { /* same structure as active round */ },
+      "robots": {
+        "red": { "x": 3, "y": 5 },
+        "yellow": { "x": 12, "y": 2 },
+        "green": { "x": 8, "y": 14 },
+        "blue": { "x": 1, "y": 9 }
+      },
+      "allGoals": [ /* all 17 goals */ ],
+      "goalColor": "red",
+      "goalPosition": { "x": 7, "y": 7 },
+      "completedGoalIndices": [0, 3, 7, 12]
+    },
+    "startTime": 1704067200000,
+    "endTime": 1704153600000,
+    "durationMs": 86400000,
+    "status": "completed",
+    "hasActiveRound": false,
+    "goalsCompleted": 4,
+    "goalsRemaining": 13,
+    "message": "Round complete - waiting for next round"
+  }
+}
+```
+
+**Note:** Robot positions reflect the **starting positions** for that round (before any solutions were applied). This allows for solution replay functionality.
+
+### Response 200 (No Rounds Yet)
+When no active round exists and no completed rounds are available:
+
 ```json
 {
   "success": true,
@@ -121,9 +161,8 @@ GET /api/getCurrentRound?gameId=game_abc123xyz
     "gameName": "Friday Night Puzzle",
     "hasActiveRound": false,
     "message": "No active round. Waiting for host to start next round.",
-    "lastRoundId": "game_abc123xyz_round4",
-    "goalsCompleted": 4,
-    "goalsRemaining": 13
+    "goalsCompleted": 0,
+    "goalsRemaining": 17
   }
 }
 ```
@@ -277,7 +316,7 @@ When round has ended, solution data is included:
         "winningRobot": "red",
         "submittedAt": 1704070000000,
         "rank": 1,
-        "solutionData": [
+        "moves": [
           { "robot": "blue", "direction": "up" },
           { "robot": "red", "direction": "right" },
           { "robot": "blue", "direction": "right" },
@@ -294,13 +333,13 @@ When round has ended, solution data is included:
         "winningRobot": "blue",
         "submittedAt": 1704071000000,
         "rank": 4,
-        "solutionData": [
+        "moves": [
           { "robot": "blue", "direction": "down" },
           { "robot": "blue", "direction": "right" },
           // ... 7 more moves
         ]
       }
-      // ... other solutions with solutionData
+      // ... other solutions with moves
     ]
   }
 }
@@ -951,6 +990,13 @@ Allowed headers:
 ---
 
 # Changelog
+
+## v1.2.0 (Solution Replay)
+- **Between-rounds replay**: `getCurrentRound` now returns full completed round data when `hasActiveRound === false`
+- **Robot starting positions**: Round data includes starting positions (before solutions applied) to enable replay
+- **Seamless transitions**: Players can view and replay solutions immediately after round ends
+- **Persistent display**: Last completed round remains visible until host starts new round
+- **Enhanced player experience**: No downtime between rounds - board and leaderboard stay visible
 
 ## v1.1.0 (Multiple Submissions)
 - **Multiple submissions per player**: Players can submit unlimited solutions per round

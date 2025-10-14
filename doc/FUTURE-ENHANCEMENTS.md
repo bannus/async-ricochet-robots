@@ -104,23 +104,117 @@ Optimize canvas rendering for better performance on lower-end devices.
 
 ## Feature Additions
 
+### Backend Solution Replay (Alternative Implementation)
+**Priority:** Low  
+**Effort:** Medium (~6 hours)
+
+**Description:**
+Alternative backend approach to solution replay that was considered but not implemented in favor of the simpler frontend approach.
+
+**Proposed Features:**
+1. Backend stores complete puzzle state for each round (walls, starting robot positions, goals)
+2. New API endpoint: `GET /api/getRoundDetails?gameId=X&roundId=Y`
+   - Returns full puzzle data for any completed round
+   - Includes starting positions and goal information
+3. Players can request any historical round data
+4. Supports deep linking to specific rounds
+
+**Why Not Implemented:**
+- Current implementation (v1.2.0) solves the problem more simply
+- Frontend already has all data needed from `getCurrentRound`
+- No additional API calls required
+- Less backend complexity
+
+**When to Consider:**
+- If we need historical round access beyond just the last completed round
+- If we want to support "round archives" or "greatest hits"
+- If players want to replay rounds from days/weeks ago
+
+**Implementation Notes:**
+- Would require additional storage access patterns
+- Could increase API costs for historical data retrieval
+- Frontend already caches completed round data during gameplay
+
+---
+
+### Advanced Replay Controls
+**Priority:** Low  
+**Effort:** Medium (~6 hours)
+
+**Description:**
+Enhanced replay functionality with more interactive controls.
+
+**Proposed Features:**
+1. **Playback speed control**
+   - Slider: 0.5x, 1x, 2x, 4x speed
+   - Keyboard shortcuts: `-` to slow down, `+` to speed up
+
+2. **Step-by-step navigation**
+   - Previous/Next move buttons
+   - Keyboard shortcuts: `←` previous, `→` next
+   - Move list with clickable steps
+
+3. **Auto-replay**
+   - Automatically play next solution when current finishes
+   - Queue multiple solutions for continuous viewing
+
+4. **Visual enhancements**
+   - Trail showing robot path
+   - Highlight which walls were used for stops
+   - Move annotations (e.g., "Red bounces off wall")
+
+5. **Comparison mode**
+   - Side-by-side replay of two solutions
+   - Synchronized playback
+   - Highlight where strategies differ
+
+**Benefits:**
+- Better learning from other solutions
+- Easier to understand complex strategies
+- More engaging spectator experience
+- Useful for teaching puzzle-solving techniques
+
+**UI Mockup:**
+```
+┌─────────────────────────────────┐
+│ Replaying: Alice's solution     │
+│ Move 3 of 7                      │
+│                                  │
+│ [◄◄] [||] [►] [►►]    Speed: 1x │
+│                                  │
+│ Moves:                           │
+│ 1. Blue → Up                     │
+│ 2. Red → Right                   │
+│ 3. Blue → Right ◄ (current)      │
+│ 4. Red → Down                    │
+│ ...                              │
+└─────────────────────────────────┘
+```
+
+---
+
 ### Move Animation Playback
 **Priority:** Medium  
 **Effort:** High (~8 hours)
+**Status:** ✅ IMPLEMENTED in v1.2.0
 
 **Description:**
 Animate robot movements when viewing solutions from the leaderboard.
 
 **Features:**
-1. Click on leaderboard entry to play back solution
-2. Step-by-step animation showing each move
-3. Playback controls (play, pause, step forward/back, speed)
-4. Highlight current move in move list
+1. ✅ Click on leaderboard entry to play back solution
+2. ✅ Step-by-step animation showing each move
+3. ❌ Playback controls (play, pause, step forward/back, speed) - See "Advanced Replay Controls" above
+4. ❌ Highlight current move in move list - See "Advanced Replay Controls" above
 
 **Benefits:**
-- Educational - learn from other solutions
-- Verification - confirm solutions work correctly
-- Entertainment value
+- ✅ Educational - learn from other solutions
+- ✅ Verification - confirm solutions work correctly
+- ✅ Entertainment value
+
+**Implementation Notes:**
+- Basic replay functionality completed
+- Advanced controls can be added later (see "Advanced Replay Controls")
 
 ---
 

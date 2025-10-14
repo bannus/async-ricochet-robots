@@ -8,6 +8,7 @@ import { GameRenderer } from './game-renderer.js';
 import { GameController } from './game-controller.js';
 import { CreateGameManager } from './create-game.js';
 import { HostManager } from './host-manager.js';
+import { ReplayController } from './replay-controller.js';
 
 export class PlayerApp {
   private apiClient!: ApiClient;
@@ -15,10 +16,12 @@ export class PlayerApp {
   private controller!: GameController;
   private createGameManager?: CreateGameManager;
   private hostManager?: HostManager;
+  private replayController!: ReplayController;
   
   private gameId: string = '';
   private currentRound: any = null;
   private pollingInterval: number | null = null;
+  private isInReplayMode: boolean = false;
 
   constructor() {
     // Get gameId from URL parameters
@@ -41,6 +44,7 @@ export class PlayerApp {
     const cellSize = this.calculateCellSize();
     this.renderer = new GameRenderer('game-board', cellSize);
     this.controller = new GameController(this.renderer, this.apiClient);
+    this.replayController = new ReplayController(this.renderer);
     
     // Case 3: Host mode detection (from localStorage only)
     const storedKey = localStorage.getItem(`hostKey_${this.gameId}`);
@@ -132,6 +136,21 @@ export class PlayerApp {
       });
     }
     
+    // Exit replay button
+    const exitReplayBtn = document.getElementById('exit-replay-btn');
+    if (exitReplayBtn) {
+      exitReplayBtn.addEventListener('click', () => {
+        this.exitReplayMode();
+      });
+    }
+    
+    // ESC key to exit replay
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.isInReplayMode) {
+        this.exitReplayMode();
+      }
+    });
+    
     // Handle window resize for responsive canvas
     let resizeTimeout: number | null = null;
     window.addEventListener('resize', () => {
@@ -165,12 +184,13 @@ export class PlayerApp {
         return;
       }
       
-      if (data.status !== 'active') {
+      // Show "no active round" only when there's truly no round data
+      if (data.hasActiveRound === false && !data.roundId) {
         this.showNoActiveRound(data);
         return;
       }
       
-      // Active round exists
+      // Active or completed round exists - display it
       this.currentRound = data;
       this.displayActiveRound(data);
       
@@ -240,6 +260,23 @@ export class PlayerApp {
         goalPosition: data.puzzle.goalPosition,
         goalColor: data.puzzle.goalColor
       }, goalIndex);
+    }
+    
+    // Disable/hide controls if round has ended
+    if (data.status === 'completed') {
+      this.disablePlayerControls();
+      this.hidePlayerControls();
+      
+      // Show "Round ended" message
+      const goalStatus = document.getElementById('goal-status');
+      if (goalStatus) {
+        goalStatus.className = 'success';
+        goalStatus.textContent = 'Round ended - Click leaderboard entries to replay solutions';
+      }
+    } else {
+      // Enable and show controls for active rounds
+      this.enablePlayerControls();
+      this.showPlayerControls();
     }
     
     // Start timer countdown
@@ -355,6 +392,9 @@ export class PlayerApp {
       
       tbody.appendChild(row);
     });
+    
+    // Setup click handlers if round ended
+    this.setupLeaderboardClickHandlers(data);
   }
 
   /**
@@ -522,6 +562,218 @@ export class PlayerApp {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  /**
+   * Setup click handlers for leaderboard entries (replay mode)
+   */
+  private setupLeaderboardClickHandlers(data: any): void {
+    // Only enable when round has ended
+    if (data.roundStatus !== 'completed') {
+      return;
+    }
+    
+    const leaderboardRows = document.querySelectorAll('#leaderboard-body tr');
+    leaderboardRows.forEach((row, index) => {
+      row.classList.add('clickable');
+      row.addEventListener('click', () => {
+        this.handleLeaderboardClick(index, data.solutions);
+      });
+      
+      // Add replay icon
+      const replayIcon = document.createElement('span');
+      replayIcon.className = 'replay-icon';
+      replayIcon.textContent = ' ▶';
+      replayIcon.style.opacity = '0.5';
+      replayIcon.style.marginLeft = '8px';
+      const playerCell = row.querySelector('td:nth-child(2)');
+      if (playerCell) {
+        playerCell.appendChild(replayIcon);
+      }
+    });
+  }
+
+  /**
+   * Handle click on leaderboard entry
+   */
+  private async handleLeaderboardClick(solutionIndex: number, solutions: any[]): Promise<void> {
+    if (this.isInReplayMode) {
+      return; // Already replaying
+    }
+    
+    const solution = solutions[solutionIndex];
+    
+    if (!solution.moves) {
+      alert('Solution data not available');
+      return;
+    }
+    
+    await this.playReplay(solution);
+  }
+
+  /**
+   * Play a solution replay
+   */
+  private async playReplay(solution: any): Promise<void> {
+    // Enter replay mode
+    this.isInReplayMode = true;
+    this.disablePlayerControls();
+    this.showReplayControls(solution.playerName, solution.moveCount);
+    
+    // Highlight selected leaderboard entry
+    const rows = document.querySelectorAll('#leaderboard-body tr');
+    rows.forEach(row => {
+      const playerCell = row.querySelector('td:nth-child(2)');
+      if (playerCell?.textContent?.includes(solution.playerName)) {
+        row.classList.add('replaying');
+      }
+    });
+    
+    try {
+      // Get starting positions from current round data
+      const startingPositions = this.currentRound.puzzle.robots;
+      
+      // Find goal index
+      const goalIndex = this.currentRound.puzzle.allGoals.findIndex((g: any) =>
+        g.position.x === this.currentRound.puzzle.goalPosition.x &&
+        g.position.y === this.currentRound.puzzle.goalPosition.y
+      );
+      
+      // Play replay
+      await this.replayController.replaySolution(
+        solution,
+        {
+          walls: this.currentRound.puzzle.walls,
+          robots: startingPositions,
+          allGoals: this.currentRound.puzzle.allGoals
+        },
+        startingPositions,
+        goalIndex
+      );
+      
+    } catch (error) {
+      console.error('Replay error:', error);
+      alert('Failed to replay solution');
+    }
+  }
+
+  /**
+   * Exit replay mode
+   */
+  private exitReplayMode(): void {
+    this.isInReplayMode = false;
+    this.replayController.stopReplay();
+    this.enablePlayerControls();
+    this.hideReplayControls();
+    
+    // Remove highlighting
+    document.querySelectorAll('#leaderboard-body tr').forEach(row => {
+      row.classList.remove('replaying');
+    });
+    
+    // Restore current round state
+    if (this.currentRound && this.currentRound.status === 'active') {
+      const goalIndex = this.currentRound.puzzle.allGoals.findIndex((g: any) =>
+        g.position.x === this.currentRound.puzzle.goalPosition.x &&
+        g.position.y === this.currentRound.puzzle.goalPosition.y
+      );
+      
+      this.controller.loadPuzzle({
+        walls: this.currentRound.puzzle.walls,
+        robots: this.currentRound.puzzle.robots,
+        allGoals: this.currentRound.puzzle.allGoals,
+        goalPosition: this.currentRound.puzzle.goalPosition,
+        goalColor: this.currentRound.puzzle.goalColor
+      }, goalIndex);
+    }
+  }
+
+  /**
+   * Disable player controls during replay
+   */
+  private disablePlayerControls(): void {
+    document.querySelectorAll('.robot-selector, #undo-btn, #reset-btn, #submit-btn').forEach(el => {
+      (el as HTMLButtonElement).disabled = true;
+    });
+  }
+
+  /**
+   * Enable player controls after replay
+   */
+  private enablePlayerControls(): void {
+    document.querySelectorAll('.robot-selector, #undo-btn, #reset-btn, #submit-btn').forEach(el => {
+      (el as HTMLButtonElement).disabled = false;
+    });
+  }
+
+  /**
+   * Hide player controls when round ends
+   */
+  private hidePlayerControls(): void {
+    const robotSelectors = document.querySelector('.robot-selectors') as HTMLElement;
+    const moveControls = document.querySelector('.move-controls') as HTMLElement;
+    const solutionInfo = document.querySelector('.solution-info') as HTMLElement;
+    
+    if (robotSelectors) {
+      robotSelectors.style.display = 'none';
+    }
+    if (moveControls) {
+      moveControls.style.display = 'none';
+    }
+    if (solutionInfo) {
+      solutionInfo.style.display = 'none';
+    }
+  }
+
+  /**
+   * Show player controls when round is active
+   */
+  private showPlayerControls(): void {
+    const robotSelectors = document.querySelector('.robot-selectors') as HTMLElement;
+    const moveControls = document.querySelector('.move-controls') as HTMLElement;
+    const solutionInfo = document.querySelector('.solution-info') as HTMLElement;
+    
+    if (robotSelectors) {
+      robotSelectors.style.display = '';
+    }
+    if (moveControls) {
+      moveControls.style.display = '';
+    }
+    if (solutionInfo) {
+      solutionInfo.style.display = '';
+    }
+  }
+
+  /**
+   * Show replay control UI
+   */
+  private showReplayControls(playerName: string, moveCount: number): void {
+    const controls = document.getElementById('replay-controls');
+    const replayInfo = document.getElementById('replay-info');
+    
+    if (controls) {
+      controls.style.display = 'block';
+    }
+    
+    if (replayInfo) {
+      replayInfo.textContent = `Replaying: ${playerName}'s solution (${moveCount} moves)`;
+    }
+  }
+
+  /**
+   * Hide replay control UI
+   */
+  private hideReplayControls(): void {
+    const controls = document.getElementById('replay-controls');
+    const replayInfo = document.getElementById('replay-info');
+    
+    if (controls) {
+      controls.style.display = 'none';
+    }
+    
+    if (replayInfo) {
+      replayInfo.textContent = 'Replaying solution...';
+    }
   }
 }
 

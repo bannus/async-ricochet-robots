@@ -97,6 +97,14 @@
     <div class="main-content">
       <!-- Left: Game Board -->
       <div class="game-section">
+        <!-- Replay Controls (hidden by default) -->
+        <div id="replay-controls" style="display: none;">
+          <div class="replay-banner">
+            <span id="replay-info">Replaying solution...</span>
+            <button id="exit-replay-btn" class="btn-secondary">Exit Replay</button>
+          </div>
+        </div>
+
         <div class="goal-info">
           <h2>Goal: <span id="goal-description"></span></h2>
           <div id="goal-status"></div>
