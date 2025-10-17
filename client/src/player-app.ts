@@ -597,8 +597,13 @@ export class PlayerApp {
    * Handle click on leaderboard entry
    */
   private async handleLeaderboardClick(solutionIndex: number, solutions: any[]): Promise<void> {
+    // If already replaying, stop current replay first
     if (this.isInReplayMode) {
-      return; // Already replaying
+      this.replayController.stopReplay();
+      // Remove highlighting from all rows
+      document.querySelectorAll('#leaderboard-body tr').forEach(row => {
+        row.classList.remove('replaying');
+      });
     }
     
     const solution = solutions[solutionIndex];
@@ -671,19 +676,18 @@ export class PlayerApp {
       row.classList.remove('replaying');
     });
     
-    // Restore current round state
-    if (this.currentRound && this.currentRound.status === 'active') {
+    // Restore robots to starting positions
+    if (this.currentRound) {
       const goalIndex = this.currentRound.puzzle.allGoals.findIndex((g: any) =>
         g.position.x === this.currentRound.puzzle.goalPosition.x &&
         g.position.y === this.currentRound.puzzle.goalPosition.y
       );
       
-      this.controller.loadPuzzle({
+      // Render board with starting positions
+      this.renderer.render({
         walls: this.currentRound.puzzle.walls,
         robots: this.currentRound.puzzle.robots,
-        allGoals: this.currentRound.puzzle.allGoals,
-        goalPosition: this.currentRound.puzzle.goalPosition,
-        goalColor: this.currentRound.puzzle.goalColor
+        allGoals: this.currentRound.puzzle.allGoals
       }, goalIndex);
     }
   }

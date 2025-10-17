@@ -23,13 +23,42 @@ interface Puzzle {
 export class ReplayController {
   private isPlaying: boolean = false;
   private currentMoveIndex: number = 0;
+  private currentReplayPromise: Promise<void> | null = null;
   
   constructor(private renderer: GameRenderer) {}
 
   /**
    * Replay a complete solution with animations
+   * If a replay is already running, waits for it to finish before starting the new one
    */
   async replaySolution(
+    solution: Solution,
+    puzzle: Puzzle,
+    startingPositions: Robots,
+    activeGoalIndex: number
+  ): Promise<void> {
+    // If a replay is already running, stop it and wait for it to finish
+    if (this.currentReplayPromise) {
+      this.stopReplay();
+      await this.currentReplayPromise;
+    }
+    
+    // Now start the new replay
+    this.currentReplayPromise = this.executeReplay(
+      solution,
+      puzzle,
+      startingPositions,
+      activeGoalIndex
+    );
+    
+    await this.currentReplayPromise;
+    this.currentReplayPromise = null;
+  }
+
+  /**
+   * Execute the replay (private implementation)
+   */
+  private async executeReplay(
     solution: Solution,
     puzzle: Puzzle,
     startingPositions: Robots,

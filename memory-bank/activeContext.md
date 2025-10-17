@@ -7,12 +7,23 @@
 **Completion:** ~90%  
 **Next Milestone:** Final testing and polish
 
-## Active Work (Last Session - October 14, 2025)
+## Active Work (Last Session - October 16, 2025)
 
-### Solution Replay Feature ✅ (COMPLETED)
+### Solution Replay UX Improvements ✅ (COMPLETED)
+- **Feature**: Two UX improvements to replay feature after user testing
+- **Status**: Both issues fixed and working
+- **Time**: ~30 minutes
+- **Files**: 
+  - MODIFIED: `client/src/player-app.ts`
+  - DOCS: `doc/implementation/solution-replay.md`
+- **Issues Fixed**:
+  1. **Exit Replay Not Resetting**: Robots now return to starting positions when exiting replay
+  2. **Cannot Switch Replays**: Users can now click different leaderboard entries during replay without manual exit
+
+### Solution Replay Feature ✅ (COMPLETED October 14, 2025)
 - **Feature**: Animated solution replay after round ends
-- **Status**: Fully implemented and working
-- **Time**: ~3 hours (estimated 6.5-8 hours)
+- **Status**: Fully implemented and working, with UX improvements added
+- **Time**: ~3 hours initial + 30 min improvements
 - **Files**: 
   - NEW: `client/src/replay-controller.ts`
   - MODIFIED: `client/src/player-app.ts`, `client/index.html`, `client/css/game.css`
@@ -20,7 +31,8 @@
 - **Key Features**:
   - Click leaderboard entries to watch animated replays
   - 500ms pauses between moves
-  - Exit with button or ESC key
+  - Exit with button or ESC key (resets to starting positions)
+  - Seamlessly switch between different replays with single clicks
   - Clean UI with DOM-based replay banner
   - Player controls hidden when round ends
 - **Bugs Fixed During Implementation**:
@@ -28,6 +40,8 @@
   2. API field mismatch (`solutionData` → `moves`)
   3. ReplayController interface field mismatch
   4. Removed redundant canvas overlays
+  5. Exit replay not resetting robot positions
+  6. Cannot switch between replays without manual exit
 
 ### Previous: Mobile Robot Movement ✅ (October 13, 2025)
 - **Issue**: Game unusable on mobile - no touch controls + desktop clicks broken
@@ -86,9 +100,10 @@
 ## Recent Accomplishments (Last Week)
 
 ### New Features Implemented
-- ✅ **Solution Replay** (October 14) - Animated playback of solutions after round ends
+- ✅ **Solution Replay** (October 14, improved October 16) - Animated playback of solutions after round ends
   - Click leaderboard entries to watch replays
-  - Exit with button or ESC key
+  - Exit with button or ESC key (resets board to starting positions)
+  - Seamlessly switch between different replays
   - Player controls hidden when round ends
   - Clean DOM-based UI (no canvas overlays)
 
@@ -98,7 +113,7 @@
 - ✅ Extend Round 404 error (HTTP method mismatch)
 - ✅ Mobile robot movement (touch controls + click coordinates)
 - ✅ Outer wall distance bug (wall placement ranges)
-- ✅ Replay feature bugs (field name mismatches, click handler logic)
+- ✅ Replay feature bugs (field name mismatches, click handler logic, exit reset, replay switching)
 
 ### Infrastructure Complete
 - ✅ VS Code F5 debugging setup
@@ -150,18 +165,19 @@
 
 ## Notes for Next Session
 
-1. **Replay feature testing** - Verify end-to-end replay functionality
-2. **UI state management** - Confirm controls hide/show correctly when round ends/starts
-3. **Mobile replay testing** - Test replay controls on mobile devices
-4. **E2E gameplay flow** - Complete round → submit → replay → new round
-5. **Production readiness** - Final checks before Phase 5
+1. **Final testing** - Complete end-to-end testing of all features
+2. **Production readiness** - Final checks before Phase 5
+3. **Performance validation** - Ensure smooth operation under load
+4. **Documentation review** - Verify all docs are current
+5. **Phase 5 planning** - Polish, accessibility, production deployment
 
 ## Context for AI Assistant
 
 When resuming work:
-- Project is ~90% complete, Phase 4+ enhancements done
-- **Solution replay feature COMPLETE** - Fully working, documented
+- Project is ~95% complete, Phase 4+ enhancements done and polished
+- **Solution replay feature COMPLETE + UX IMPROVED** - Fully working, user-tested, documented
 - All major features implemented (player UI, host panel, API, game engine, replay)
+- Recent improvements: Exit replay resets board, seamless replay switching
 - Focus should be on final testing and moving toward Phase 5 (polish & production)
 - Memory bank restructured with systemPatterns.md and techContext.md
-- Key files: `client/src/replay-controller.ts`, `doc/implementation/solution-replay.md`
+- Key files: `client/src/replay-controller.ts`, `client/src/player-app.ts`, `doc/implementation/solution-replay.md`

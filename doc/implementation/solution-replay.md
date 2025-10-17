@@ -941,9 +941,27 @@ All core functionality implemented successfully:
 ✅ Controls hidden when round ends  
 ✅ Bug fixes verified  
 
+### UX Improvements (October 16, 2025)
+
+After initial user testing, two UX issues were identified and fixed:
+
+**Issue #1: Exit Replay Not Resetting Robot Positions**
+- **Problem:** When exiting replay, robots stayed in their final replay positions instead of returning to starting positions
+- **Root Cause:** `exitReplayMode()` had conditional logic checking `status === 'active'`, but replay only works on completed rounds
+- **Fix:** Removed unnecessary conditional, now always renders starting positions on exit
+- **Impact:** Users see clean board reset when exiting any replay
+
+**Issue #2: Cannot Switch Between Replays**
+- **Problem:** Clicking a different leaderboard entry during replay was blocked, requiring manual "Exit Replay" click first
+- **Root Cause:** `handleLeaderboardClick()` had early return when `isInReplayMode === true`
+- **Fix:** Stop current replay and remove highlighting before starting new replay
+- **Impact:** Users can seamlessly switch between different solutions with single clicks
+
+Both fixes improved the replay UX significantly with minimal code changes.
+
 ---
 
-**Document Version:** 2.0  
-**Last Updated:** October 14, 2025  
-**Status:** Implementation Complete  
+**Document Version:** 2.1  
+**Last Updated:** October 16, 2025  
+**Status:** Implementation Complete + UX Improvements  
 **Author:** Cline (AI Assistant)
