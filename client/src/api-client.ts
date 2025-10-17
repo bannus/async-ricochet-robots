@@ -100,7 +100,7 @@ export class ApiClient {
     gameId: string,
     roundId: string,
     playerName: string,
-    solutionData: Array<{ robot: string; direction: string }>
+    moves: Array<{ robot: string; direction: string }>
   ): Promise<ApiResponse> {
     const url = `${this.baseUrl}/submitSolution`;
     
@@ -113,7 +113,7 @@ export class ApiClient {
         gameId,
         roundId,
         playerName,
-        solutionData
+        moves
       })
     });
   }

@@ -363,7 +363,7 @@ Submit a solution for the current round.
   "gameId": "game_abc123xyz",
   "roundId": "game_abc123xyz_round1",
   "playerName": "Alice",
-  "solutionData": [
+  "moves": [
     { "robot": "blue", "direction": "up" },
     { "robot": "red", "direction": "right" },
     { "robot": "blue", "direction": "right" },
@@ -375,7 +375,7 @@ Submit a solution for the current round.
 }
 ```
 
-### Solution Data Format
+### Moves Format
 - Array of moves in sequential order
 - Each move object:
   - `robot`: `"red"`, `"yellow"`, `"green"`, or `"blue"`

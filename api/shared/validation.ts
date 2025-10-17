@@ -329,31 +329,31 @@ export function validateDuration(durationMs: any): void {
 }
 
 /**
- * Validate solution data array
+ * Validate moves array
  */
-export function validateSolutionData(solutionData: any): void {
+export function validateMoves(moves: any): void {
   // Check if array
-  if (!Array.isArray(solutionData)) {
+  if (!Array.isArray(moves)) {
     throw new ValidationException([{
-      field: 'solutionData',
-      message: 'Solution data must be an array of moves',
+      field: 'moves',
+      message: 'Moves must be an array',
       code: 'INVALID_TYPE'
     }]);
   }
 
   // Check not empty
-  if (solutionData.length === 0) {
+  if (moves.length === 0) {
     throw new ValidationException([{
-      field: 'solutionData',
+      field: 'moves',
       message: 'Solution must contain at least one move',
       code: 'EMPTY_SOLUTION'
     }]);
   }
 
   // Check max length (reasonable limit)
-  if (solutionData.length > 1000) {
+  if (moves.length > 1000) {
     throw new ValidationException([{
-      field: 'solutionData',
+      field: 'moves',
       message: 'Solution cannot exceed 1000 moves',
       code: 'SOLUTION_TOO_LONG'
     }]);
@@ -362,13 +362,13 @@ export function validateSolutionData(solutionData: any): void {
   // Validate each move
   const errors: ValidationError[] = [];
   
-  for (let i = 0; i < solutionData.length; i++) {
-    const move = solutionData[i];
+  for (let i = 0; i < moves.length; i++) {
+    const move = moves[i];
 
     // Check if object
     if (typeof move !== 'object' || move === null) {
       errors.push({
-        field: `solutionData[${i}]`,
+        field: `moves[${i}]`,
         message: `Move at index ${i} must be an object`,
         code: 'INVALID_MOVE'
       });
@@ -378,13 +378,13 @@ export function validateSolutionData(solutionData: any): void {
     // Check robot field
     if (!move.robot || typeof move.robot !== 'string') {
       errors.push({
-        field: `solutionData[${i}].robot`,
+        field: `moves[${i}].robot`,
         message: `Move at index ${i} missing valid robot`,
         code: 'INVALID_MOVE'
       });
     } else if (!isValidRobotColor(move.robot)) {
       errors.push({
-        field: `solutionData[${i}].robot`,
+        field: `moves[${i}].robot`,
         message: `Move at index ${i} has invalid robot: ${move.robot}. Must be 'red', 'yellow', 'green', or 'blue'`,
         code: 'INVALID_ROBOT'
       });
@@ -393,13 +393,13 @@ export function validateSolutionData(solutionData: any): void {
     // Check direction field
     if (!move.direction || typeof move.direction !== 'string') {
       errors.push({
-        field: `solutionData[${i}].direction`,
+        field: `moves[${i}].direction`,
         message: `Move at index ${i} missing valid direction`,
         code: 'INVALID_MOVE'
       });
     } else if (!isValidDirection(move.direction)) {
       errors.push({
-        field: `solutionData[${i}].direction`,
+        field: `moves[${i}].direction`,
         message: `Move at index ${i} has invalid direction: ${move.direction}. Must be 'up', 'down', 'left', or 'right'`,
         code: 'INVALID_DIRECTION'
       });
@@ -469,7 +469,7 @@ export function validateSubmitSolutionRequest(body: any): void {
   validateGameId(body.gameId);
   validateRoundId(body.roundId);
   validatePlayerName(body.playerName);
-  validateSolutionData(body.solutionData);
+  validateMoves(body.moves);
 }
 
 /**

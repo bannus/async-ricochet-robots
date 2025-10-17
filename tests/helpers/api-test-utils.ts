@@ -162,7 +162,7 @@ export async function submitTestSolution(
   gameId: string,
   roundId: string,
   playerName: string,
-  solutionData: Array<{ robot: string; direction: string }>
+  moves: Array<{ robot: string; direction: string }>
 ): Promise<{ rank: number; moveCount: number }> {
   const response = await makeRequest('/submitSolution', {
     method: 'POST',
@@ -170,7 +170,7 @@ export async function submitTestSolution(
       gameId,
       roundId,
       playerName,
-      solutionData,
+      moves,
     },
   });
 

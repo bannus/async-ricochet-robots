@@ -26,7 +26,7 @@ async function submitSolutionHandler(
     const body = await request.json() as any;
     validateSubmitSolutionRequest(body);
 
-    const { gameId, roundId, playerName, solutionData } = body;
+    const { gameId, roundId, playerName, moves } = body;
 
     context.log(`submitSolution: gameId=${gameId}, roundId=${roundId}, player=${playerName}`);
 
@@ -56,7 +56,7 @@ async function submitSolutionHandler(
     const validationResult = validateSolution(
       round.robotPositions,  // initialRobots
       game.board.walls,      // walls
-      solutionData,          // moves
+      moves,                 // moves
       round.goal             // goal
     );
 
@@ -75,9 +75,9 @@ async function submitSolutionHandler(
       playerName,
       {
         displayName: playerName,
-        moveCount: solutionData.length,  // Move count is the array length
+        moveCount: moves.length,  // Move count is the array length
         winningRobot: validationResult.winningRobot!,
-        moves: solutionData
+        moves: moves
       }
     );
 

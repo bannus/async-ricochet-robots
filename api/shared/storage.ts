@@ -518,7 +518,7 @@ export class SolutionsStorage extends BaseStorageClient {
     gameId: string,
     roundId: string,
     playerName: string,
-    solutionData: {
+    solution: {
       displayName: string;
       moveCount: number;
       winningRobot: RobotColorValue;
@@ -532,10 +532,10 @@ export class SolutionsStorage extends BaseStorageClient {
       const entity: SolutionEntity & TableEntity = {
         partitionKey: `${gameId}_${roundId}`,
         rowKey: `${normalizedName}_${submittedAt}`,
-        displayName: solutionData.displayName,
-        moveCount: solutionData.moveCount,
-        winningRobot: solutionData.winningRobot,
-        solutionData: JSON.stringify(solutionData.moves),
+        displayName: solution.displayName,
+        moveCount: solution.moveCount,
+        winningRobot: solution.winningRobot,
+        solutionData: JSON.stringify(solution.moves),
         submittedAt
       };
 
