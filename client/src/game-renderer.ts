@@ -39,8 +39,7 @@ export class GameRenderer {
     this.ctx = ctx;
     
     this.cellSize = cellSize;
-    this.canvas.width = 16 * this.cellSize;
-    this.canvas.height = 16 * this.cellSize;
+    this.setupCanvas();
   }
 
   /**
@@ -325,12 +324,31 @@ export class GameRenderer {
   }
 
   /**
+   * Setup canvas with proper high-DPI support
+   */
+  private setupCanvas(): void {
+    const dpr = window.devicePixelRatio || 1;
+    const cssWidth = 16 * this.cellSize;
+    const cssHeight = 16 * this.cellSize;
+    
+    // Set buffer size (actual pixels) for high-DPI displays
+    this.canvas.width = cssWidth * dpr;
+    this.canvas.height = cssHeight * dpr;
+    
+    // Set CSS size (display size)
+    this.canvas.style.width = `${cssWidth}px`;
+    this.canvas.style.height = `${cssHeight}px`;
+    
+    // Scale context to match device pixel ratio
+    this.ctx.scale(dpr, dpr);
+  }
+
+  /**
    * Resize canvas (for responsive design)
    */
   resize(newCellSize: number): void {
     this.cellSize = newCellSize;
-    this.canvas.width = 16 * this.cellSize;
-    this.canvas.height = 16 * this.cellSize;
+    this.setupCanvas();
   }
 
   /**
