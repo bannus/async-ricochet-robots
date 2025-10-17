@@ -173,6 +173,17 @@
   background: #C0392B;
 }
 
+.warning-btn {
+  background: #F39C12;
+  color: white;
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-weight: 600;
+}
+
+.warning-btn:hover:not(:disabled) {
+  background: #E67E22;
+}
+
 /* Current leaderboard */
 .current-leaderboard {
   margin-top: var(--spacing-lg);

@@ -36,15 +36,20 @@ export class HostManager {
    */
   private setupEventListeners(): void {
     const startBtn = document.getElementById('host-start-round');
-    const endBtn = document.getElementById('host-end-round');
+    const completeBtn = document.getElementById('host-complete-round');
+    const skipBtn = document.getElementById('host-skip-goal');
     const extendBtn = document.getElementById('host-extend-round');
     
     if (startBtn) {
       startBtn.addEventListener('click', () => this.startRound());
     }
     
-    if (endBtn) {
-      endBtn.addEventListener('click', () => this.endRound());
+    if (completeBtn) {
+      completeBtn.addEventListener('click', () => this.completeRound());
+    }
+    
+    if (skipBtn) {
+      skipBtn.addEventListener('click', () => this.skipGoal());
     }
     
     if (extendBtn) {
@@ -146,54 +151,89 @@ export class HostManager {
   }
 
   /**
-   * End the current round
+   * Complete the current round (mark goal as completed)
    */
-  private async endRound(): Promise<void> {
-    const skip = confirm(
-      'Skip this goal (it will be available again)?\n\n' +
-      'Click OK to skip, Cancel to mark as completed.'
-    );
-    
-    if (!confirm(`End this round${skip ? ' and skip goal' : ''}?`)) {
+  private async completeRound(): Promise<void> {
+    if (!confirm('Complete this round and mark the goal as solved?')) {
       return;
     }
     
     try {
-      // Get current round ID from the page
-      const roundNumberElem = document.getElementById('round-number');
-      if (!roundNumberElem) {
+      const roundId = this.getCurrentRoundId();
+      if (!roundId) {
         alert('Cannot determine current round');
         return;
       }
-      
-      // Extract round number and construct round ID
-      const roundText = roundNumberElem.textContent || '';
-      const match = roundText.match(/Round (\d+)/);
-      if (!match) {
-        alert('Cannot determine current round');
-        return;
-      }
-      
-      const roundId = `${this.gameId}_round${match[1]}`;
       
       const result = await this.apiClient.endRound(
         this.gameId,
         this.hostKey,
         roundId,
-        skip
+        false // skipGoal = false
       );
       
       if (result.success) {
-        alert('Round ended successfully');
-        // Trigger page reload
+        alert('Round completed successfully!');
         window.location.reload();
       } else {
-        alert('Failed to end round: ' + (result.error || 'Unknown error'));
+        alert('Failed to complete round: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
-      console.error('End round error:', error);
-      alert('Error ending round: ' + (error as Error).message);
+      console.error('Complete round error:', error);
+      alert('Error completing round: ' + (error as Error).message);
     }
+  }
+
+  /**
+   * Skip the current goal (return it to the pool)
+   */
+  private async skipGoal(): Promise<void> {
+    if (!confirm('Skip this goal? It will be available again in a future round.')) {
+      return;
+    }
+    
+    try {
+      const roundId = this.getCurrentRoundId();
+      if (!roundId) {
+        alert('Cannot determine current round');
+        return;
+      }
+      
+      const result = await this.apiClient.endRound(
+        this.gameId,
+        this.hostKey,
+        roundId,
+        true // skipGoal = true
+      );
+      
+      if (result.success) {
+        alert('Goal skipped successfully!');
+        window.location.reload();
+      } else {
+        alert('Failed to skip goal: ' + (result.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Skip goal error:', error);
+      alert('Error skipping goal: ' + (error as Error).message);
+    }
+  }
+
+  /**
+   * Get the current round ID from the page
+   */
+  private getCurrentRoundId(): string | null {
+    const roundNumberElem = document.getElementById('round-number');
+    if (!roundNumberElem) {
+      return null;
+    }
+    
+    const roundText = roundNumberElem.textContent || '';
+    const match = roundText.match(/Round (\d+)/);
+    if (!match) {
+      return null;
+    }
+    
+    return `${this.gameId}_round${match[1]}`;
   }
 
   /**
@@ -210,22 +250,11 @@ export class HostManager {
     }
     
     try {
-      // Get current round ID from the page
-      const roundNumberElem = document.getElementById('round-number');
-      if (!roundNumberElem) {
+      const roundId = this.getCurrentRoundId();
+      if (!roundId) {
         alert('Cannot determine current round');
         return;
       }
-      
-      // Extract round number and construct round ID
-      const roundText = roundNumberElem.textContent || '';
-      const match = roundText.match(/Round (\d+)/);
-      if (!match) {
-        alert('Cannot determine current round');
-        return;
-      }
-      
-      const roundId = `${this.gameId}_round${match[1]}`;
       
       const result = await this.apiClient.extendRound(
         this.gameId,
@@ -236,7 +265,6 @@ export class HostManager {
       
       if (result.success) {
         alert(`Deadline extended by ${hours} hours`);
-        // Trigger page reload to update timer
         window.location.reload();
       } else {
         alert('Failed to extend deadline: ' + (result.error || 'Unknown error'));
