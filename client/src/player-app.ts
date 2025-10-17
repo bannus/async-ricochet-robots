@@ -192,6 +192,13 @@ export class PlayerApp {
       
       // Active or completed round exists - display it
       this.currentRound = data;
+      
+      // Cache the active goal index to avoid recalculating it everywhere
+      this.currentRound.activeGoalIndex = data.puzzle.allGoals.findIndex((g: any) =>
+        g.position.x === data.puzzle.goalPosition.x &&
+        g.position.y === data.puzzle.goalPosition.y
+      );
+      
       this.displayActiveRound(data);
       
       // Load leaderboard
@@ -239,12 +246,6 @@ export class PlayerApp {
       goalDesc.textContent = goalText;
     }
     
-    // Find goal index in allGoals array
-    const goalIndex = data.puzzle.allGoals.findIndex((g: any) =>
-      g.position.x === data.puzzle.goalPosition.x &&
-      g.position.y === data.puzzle.goalPosition.y
-    );
-    
     // Only load puzzle if it's a new round (or first load)
     // This prevents resetting player's progress during polling
     const isNewRound = this.controller.roundId !== data.roundId;
@@ -259,7 +260,7 @@ export class PlayerApp {
         allGoals: data.puzzle.allGoals,
         goalPosition: data.puzzle.goalPosition,
         goalColor: data.puzzle.goalColor
-      }, goalIndex);
+      }, this.currentRound.activeGoalIndex);
     }
     
     // Disable/hide controls if round has ended
@@ -551,8 +552,12 @@ export class PlayerApp {
     const newCellSize = this.calculateCellSize();
     this.renderer.resize(newCellSize);
     
-    // Re-render the current puzzle
-    this.renderer.render(this.currentRound, this.currentRound.activeGoalIndex || 0);
+    // Re-render the current puzzle with correct data structure
+    this.renderer.render({
+      walls: this.currentRound.puzzle.walls,
+      robots: this.currentRound.puzzle.robots,
+      allGoals: this.currentRound.puzzle.allGoals
+    }, this.currentRound.activeGoalIndex);
   }
 
   /**
@@ -638,12 +643,6 @@ export class PlayerApp {
       // Get starting positions from current round data
       const startingPositions = this.currentRound.puzzle.robots;
       
-      // Find goal index
-      const goalIndex = this.currentRound.puzzle.allGoals.findIndex((g: any) =>
-        g.position.x === this.currentRound.puzzle.goalPosition.x &&
-        g.position.y === this.currentRound.puzzle.goalPosition.y
-      );
-      
       // Play replay
       await this.replayController.replaySolution(
         solution,
@@ -653,7 +652,7 @@ export class PlayerApp {
           allGoals: this.currentRound.puzzle.allGoals
         },
         startingPositions,
-        goalIndex
+        this.currentRound.activeGoalIndex
       );
       
     } catch (error) {
@@ -678,17 +677,12 @@ export class PlayerApp {
     
     // Restore robots to starting positions
     if (this.currentRound) {
-      const goalIndex = this.currentRound.puzzle.allGoals.findIndex((g: any) =>
-        g.position.x === this.currentRound.puzzle.goalPosition.x &&
-        g.position.y === this.currentRound.puzzle.goalPosition.y
-      );
-      
       // Render board with starting positions
       this.renderer.render({
         walls: this.currentRound.puzzle.walls,
         robots: this.currentRound.puzzle.robots,
         allGoals: this.currentRound.puzzle.allGoals
-      }, goalIndex);
+      }, this.currentRound.activeGoalIndex);
     }
   }
 
