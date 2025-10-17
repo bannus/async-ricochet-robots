@@ -552,12 +552,8 @@ export class PlayerApp {
     const newCellSize = this.calculateCellSize();
     this.renderer.resize(newCellSize);
     
-    // Re-render the current puzzle with correct data structure
-    this.renderer.render({
-      walls: this.currentRound.puzzle.walls,
-      robots: this.currentRound.puzzle.robots,
-      allGoals: this.currentRound.puzzle.allGoals
-    }, this.currentRound.activeGoalIndex);
+    // Re-render the current puzzle
+    this.renderer.render(this.currentRound.puzzle, this.currentRound.activeGoalIndex);
   }
 
   /**
@@ -646,11 +642,7 @@ export class PlayerApp {
       // Play replay
       await this.replayController.replaySolution(
         solution,
-        {
-          walls: this.currentRound.puzzle.walls,
-          robots: startingPositions,
-          allGoals: this.currentRound.puzzle.allGoals
-        },
+        this.currentRound.puzzle,
         startingPositions,
         this.currentRound.activeGoalIndex
       );
@@ -678,11 +670,7 @@ export class PlayerApp {
     // Restore robots to starting positions
     if (this.currentRound) {
       // Render board with starting positions
-      this.renderer.render({
-        walls: this.currentRound.puzzle.walls,
-        robots: this.currentRound.puzzle.robots,
-        allGoals: this.currentRound.puzzle.allGoals
-      }, this.currentRound.activeGoalIndex);
+      this.renderer.render(this.currentRound.puzzle, this.currentRound.activeGoalIndex);
     }
   }
 
