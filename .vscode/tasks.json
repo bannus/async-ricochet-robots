@@ -36,8 +36,8 @@
         },
         "background": {
           "activeOnStart": true,
-          "beginsPattern": "Azure Static Web Apps emulator started",
-          "endsPattern": "listening on port"
+          "beginsPattern": ".*Welcome to Azure Static Web Apps CLI.*",
+          "endsPattern": "Azure Static Web Apps emulator started",
         }
       },
       "presentation": {
