@@ -552,8 +552,14 @@ export class PlayerApp {
     const newCellSize = this.calculateCellSize();
     this.renderer.resize(newCellSize);
     
-    // Re-render the current puzzle
-    this.renderer.render(this.currentRound.puzzle, this.currentRound.activeGoalIndex);
+    // Re-render using controller to preserve current robot positions
+    // If controller exists (not on create game screen), use it to render current state
+    if (this.controller) {
+      this.controller.rerender();
+    } else {
+      // Fallback for cases where controller doesn't exist (shouldn't happen in practice)
+      this.renderer.render(this.currentRound.puzzle, this.currentRound.activeGoalIndex);
+    }
   }
 
   /**

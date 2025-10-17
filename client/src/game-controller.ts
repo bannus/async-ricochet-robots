@@ -503,4 +503,12 @@ export class GameController {
   canSubmit(): boolean {
     return this.moveHistory.length > 0;
   }
+
+  /**
+   * Re-render the current game state
+   * Used when canvas needs to be redrawn (e.g., after resize)
+   */
+  rerender(): void {
+    this.render();
+  }
 }
