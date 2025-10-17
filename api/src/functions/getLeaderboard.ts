@@ -121,8 +121,7 @@ async function getLeaderboardHandler(
       totalSolutions: rankedSolutions.length,
       topScore: rankedSolutions[0].moveCount,
       ...(round.status !== 'active' && {
-        endTime: round.endTime,
-        finalizedAt: round.endTime
+        endTime: round.endTime
       })
     });
 

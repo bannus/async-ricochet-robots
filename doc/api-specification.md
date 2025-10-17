@@ -255,7 +255,6 @@ GET /api/getLeaderboard?gameId=game_abc123xyz&roundId=game_abc123xyz_round1
     "roundNumber": 5,
     "goalColor": "multi",
     "roundStatus": "active",
-    "roundEnded": false,
     "solutions": [
       {
         "playerName": "Alice",
@@ -306,7 +305,6 @@ When round has ended, solution data is included:
     "roundNumber": 5,
     "goalColor": "multi",
     "roundStatus": "completed",
-    "roundEnded": true,
     "endTime": 1704153600000,
     "solutions": [
       {
@@ -723,33 +721,103 @@ X-Host-Key: host_9f8e7d6c5b4a
 {
   "success": true,
   "data": {
-    "roundId": "game_abc123xyz_round1",
-    "endTime": 1704100000000,
-    "status": "completed",
-    "solutionCount": 12,
-    "winningMoveCount": 7,
-    "goalsCompleted": 8,
-    "goalsRemaining": 9,
-    "message": "Round ended successfully. Start a new round when ready."
+    "message": "Round ended! Winner: Alice with 7 moves.",
+    "round": {
+      "roundId": "game_abc123xyz_round1",
+      "roundNumber": 1,
+      "gameId": "game_abc123xyz",
+      "goal": {
+        "color": "red",
+        "position": { "x": 7, "y": 7 }
+      },
+      "status": "completed",
+      "finalizedAt": 1704100000000
+    },
+    "winner": {
+      "playerName": "Alice",
+      "moveCount": 7,
+      "winningRobot": "red",
+      "submittedAt": 1704070000000
+    },
+    "leaderboard": {
+      "totalSolutions": 12,
+      "solutions": [
+        {
+          "rank": 1,
+          "playerName": "Alice",
+          "moveCount": 7,
+          "winningRobot": "red",
+          "submittedAt": 1704070000000,
+          "moves": [ /* ... */ ]
+        }
+        // ... more solutions
+      ]
+    },
+    "gameProgress": {
+      "roundsCompleted": 8,
+      "totalGoals": 17,
+      "roundsRemaining": 9,
+      "gameComplete": false
+    },
+    "updatedRobotPositions": {
+      "red": { "x": 7, "y": 7 },
+      "yellow": { "x": 12, "y": 2 },
+      "green": { "x": 8, "y": 14 },
+      "blue": { "x": 1, "y": 9 }
+    },
+    "nextSteps": [
+      "Start the next round when ready",
+      "Robot positions have been updated for the next round"
+    ]
   }
 }
 ```
 
-### Response 200 (Skipped)
+**Note:** The `finalizedAt` field in this response represents the actual moment the host manually ended the round, which may differ from the scheduled `endTime`. This is different from `getLeaderboard` where only `endTime` is returned.
+
+### Response 200 (Skipped - No Solutions)
 ```json
 {
   "success": true,
   "data": {
-    "roundId": "game_abc123xyz_round1",
-    "endTime": 1704100000000,
-    "status": "skipped",
-    "solutionCount": 0,
-    "goalsCompleted": 7,
-    "goalsRemaining": 10,
-    "message": "Round skipped. This goal will be available again in future rounds."
+    "message": "Round ended with no solutions submitted.",
+    "round": {
+      "roundId": "game_abc123xyz_round1",
+      "roundNumber": 1,
+      "gameId": "game_abc123xyz",
+      "goal": {
+        "color": "red",
+        "position": { "x": 7, "y": 7 }
+      },
+      "status": "completed",
+      "finalizedAt": 1704100000000
+    },
+    "winner": null,
+    "leaderboard": {
+      "totalSolutions": 0,
+      "solutions": []
+    },
+    "gameProgress": {
+      "roundsCompleted": 8,
+      "totalGoals": 17,
+      "roundsRemaining": 9,
+      "gameComplete": false
+    },
+    "updatedRobotPositions": {
+      "red": { "x": 3, "y": 5 },
+      "yellow": { "x": 12, "y": 2 },
+      "green": { "x": 8, "y": 14 },
+      "blue": { "x": 1, "y": 9 }
+    },
+    "nextSteps": [
+      "Start the next round when ready",
+      "Robot positions have been updated for the next round"
+    ]
   }
 }
 ```
+
+**Note:** Even with no solutions, the round is still marked as "completed" and the goal is consumed (added to `completedGoalIndices`). Robot positions remain unchanged.
 
 ### Response 400 (Round Already Ended)
 ```json
@@ -990,6 +1058,12 @@ Allowed headers:
 ---
 
 # Changelog
+
+## v1.2.1 (API Cleanup)
+- **Removed redundant fields**: Removed `roundEnded` and `finalizedAt` from `getLeaderboard` responses
+- **Simplified API**: `roundStatus` provides all necessary state information ('active', 'completed', 'skipped')
+- **Breaking change**: Clients checking `roundEnded` should now check `roundStatus !== 'active'` instead
+- **Note**: `finalizedAt` remains in `hostEndRound` response where it has distinct semantic value
 
 ## v1.2.0 (Solution Replay)
 - **Between-rounds replay**: `getCurrentRound` now returns full completed round data when `hasActiveRound === false`
