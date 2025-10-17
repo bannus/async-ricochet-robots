@@ -90,7 +90,7 @@ export class GameRenderer {
    */
   private drawWalls(walls: Walls): void {
     this.ctx.strokeStyle = '#2C3E50';
-    this.ctx.lineWidth = 4;
+    this.ctx.lineWidth = this.cellSize * 0.1;
     this.ctx.lineCap = 'square';
     
     // Draw horizontal walls (below each row)
@@ -140,7 +140,7 @@ export class GameRenderer {
   private drawGoal(position: Position, color: string, isActive: boolean): void {
     const x = position.x * this.cellSize + this.cellSize / 2;
     const y = position.y * this.cellSize + this.cellSize / 2;
-    const radius = isActive ? 14 : 6;
+    const radius = isActive ? this.cellSize * 0.35 : this.cellSize * 0.15;
     
     // Set color and opacity
     this.ctx.fillStyle = this.colors[color as keyof typeof this.colors];
@@ -159,7 +159,7 @@ export class GameRenderer {
     // Draw outline for active goal
     if (isActive) {
       this.ctx.strokeStyle = '#2C3E50';
-      this.ctx.lineWidth = 2;
+      this.ctx.lineWidth = this.cellSize * 0.05;
       this.ctx.globalAlpha = 1.0;
       this.ctx.stroke();
     }
@@ -222,12 +222,12 @@ export class GameRenderer {
     
     // Draw outline
     this.ctx.strokeStyle = '#2C3E50';
-    this.ctx.lineWidth = 2;
+    this.ctx.lineWidth = this.cellSize * 0.05;
     this.ctx.stroke();
     
     // Draw label (first letter of color)
     this.ctx.fillStyle = '#FFFFFF';
-    this.ctx.font = 'bold 16px Arial';
+    this.ctx.font = `bold ${this.cellSize * 0.4}px Arial`;
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
     this.ctx.fillText(color[0].toUpperCase(), x, y);
@@ -304,7 +304,7 @@ export class GameRenderer {
     
     // Draw pulsing highlight ring
     this.ctx.strokeStyle = '#2C3E50';
-    this.ctx.lineWidth = 3;
+    this.ctx.lineWidth = this.cellSize * 0.075;
     this.ctx.beginPath();
     this.ctx.arc(x, y, radius, 0, Math.PI * 2);
     this.ctx.stroke();
