@@ -131,10 +131,7 @@ export async function startTestRound(
   hostKey: string,
   durationMs?: number
 ): Promise<RoundData> {
-  const body: any = {
-    gameId,
-    hostKey,
-  };
+  const body: any = {};
 
   // Only include customDurationMs if provided
   if (durationMs !== undefined) {
@@ -143,6 +140,10 @@ export async function startTestRound(
 
   const response = await makeRequest('/host/startRound', {
     method: 'POST',
+    headers: {
+      'x-game-id': gameId,
+      'x-host-key': hostKey,
+    },
     body,
   });
 
@@ -194,9 +195,11 @@ export async function endTestRound(
 ): Promise<any> {
   const response = await makeRequest('/host/endRound', {
     method: 'POST',
+    headers: {
+      'x-game-id': gameId,
+      'x-host-key': hostKey,
+    },
     body: {
-      gameId,
-      hostKey,
       roundId,
       skipGoal,
     },
