@@ -237,6 +237,30 @@ export async function getLeaderboard(
 }
 
 /**
+ * Get host dashboard data
+ */
+export async function getDashboard(
+  gameId: string,
+  hostKey: string
+): Promise<any> {
+  const response = await makeRequest('/host/dashboard', {
+    method: 'GET',
+    headers: {
+      'x-game-id': gameId,
+      'x-host-key': hostKey,
+    },
+  });
+
+  const result = await parseResponse(response);
+
+  if (!result.success || !result.data) {
+    throw new Error(`Failed to get dashboard: ${result.error}`);
+  }
+
+  return result.data;
+}
+
+/**
  * Craft a valid solution that reaches a goal
  * This is a simple helper - actual solutions depend on board state
  */
