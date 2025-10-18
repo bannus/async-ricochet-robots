@@ -11,6 +11,100 @@ This file contains all bugs that have been resolved and verified. For active bug
 
 ## Fixed Bugs (Newest First)
 
+### Bug #13: Skip Goal Not Working
+**Priority:** 🔴 Critical  
+**Status:** ✅ Fixed  
+**Location:** `api/src/functions/hostEndRound.ts`  
+**Discovered:** User Testing (2025-10-17)  
+**Fixed:** 2025-10-17
+
+**Description:**  
+The "Skip Goal" button was incrementing the goals counter, suggesting the goal was being removed from the pool permanently. This was the opposite of the intended behavior - skipped goals should remain available for future rounds.
+
+**Expected Behavior:**  
+- **Complete Round** button: Ends round and marks goal as completed → goal removed from pool, counter increments
+- **Skip Goal** button: Ends round but returns goal to pool → goal stays available, counter stays same
+
+**Actual Behavior:**  
+- Both buttons incremented the goals counter
+- Skipped goals were being marked as completed
+- Goals were permanently removed from pool regardless of skip/complete choice
+
+**Root Cause:**  
+The `skipGoal` parameter was received by the API endpoint and logged, but never actually used in the business logic. The code always added the current goal index to `completedGoalIndices`, regardless of whether `skipGoal` was true or false:
+
+```typescript
+// BUG: Always adds goal to completed list
+const updatedCompletedGoalIndices = [
+  ...game.board.completedGoalIndices,
+  round.goalIndex  // Always added!
+];
+```
+
+**Fix Implementation:**
+Added conditional logic to only mark goals as completed when `skipGoal` is false:
+
+```typescript
+// FIXED: Conditional logic based on skipGoal parameter
+const updatedCompletedGoalIndices = skipGoal 
+  ? game.board.completedGoalIndices  // Skip: don't add to completed
+  : [...game.board.completedGoalIndices, round.goalIndex];  // Complete: add to completed
+
+context.log(`Goal ${skipGoal ? 'skipped' : 'completed'}: goalIndex=${round.goalIndex}`);
+```
+
+**Changes Made:**
+1. Added ternary conditional to `updatedCompletedGoalIndices` assignment
+2. Added logging to track whether goal was skipped or completed
+3. Preserved all other round-ending logic (status update, robot positions, etc.)
+
+**Behavior After Fix:**
+- **Complete Round** (`skipGoal: false`):
+  - Goal index added to `completedGoalIndices`
+  - Goal removed from available pool
+  - Goals counter increments (e.g., 5/17 → 6/17)
+  - Goal cannot appear in future rounds
+  
+- **Skip Goal** (`skipGoal: true`):
+  - Goal index NOT added to `completedGoalIndices`
+  - Goal remains in available pool
+  - Goals counter stays same (e.g., stays at 5/17)
+  - Goal can appear again in future rounds
+
+**Round Behavior (Common to Both):**
+- Round status set to 'completed'
+- Robot positions updated from winning solution (if any)
+- Leaderboard finalized with rankings
+- Round total incremented
+- Page reloads to show updated state
+
+**Files Modified:**
+- `api/src/functions/hostEndRound.ts` - Added conditional logic for skipGoal parameter
+- `doc/BUGS-FIXED.md` - Documented fix
+
+**Verification:**
+- TypeScript build successful ✅
+- Logic: skipGoal parameter now properly controls goal completion behavior
+- Logging: Added debug log to track skip vs complete operations
+- Ready for E2E testing
+
+**Related Changes (2025-10-17):**
+This fix was implemented after adding separate "Complete Round" and "Skip Goal" buttons to replace the previous nested dialog flow. The UI improvements included:
+- `client/index.html` - Added two distinct buttons with visual icons
+- `client/src/host-manager.ts` - Created `completeRound()` and `skipGoal()` methods
+- `client/css/host.css` - Added `.warning-btn` styling for Skip Goal button
+
+**Testing Recommendations:**
+1. Start a new round with a goal
+2. Click "Skip Goal" button
+3. Verify goals counter doesn't increment
+4. Start another round
+5. Verify the skipped goal can appear again
+6. Click "Complete Round" button
+7. Verify goals counter increments and goal doesn't reappear
+
+---
+
 ### Bug #9: No Mobile Robot Movement
 **Priority:** 🟡 High  
 **Status:** ✅ Fixed  

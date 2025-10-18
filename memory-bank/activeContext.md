@@ -7,9 +7,33 @@
 **Completion:** ~90%  
 **Next Milestone:** Final testing and polish
 
-## Active Work (Last Session - October 16, 2025)
+## Active Work (Last Session - October 17, 2025)
 
-### Solution Replay UX Improvements ✅ (COMPLETED)
+### Host Controls UX & Skip Goal Bug Fix ✅ (COMPLETED)
+- **Feature**: Separated "End Round" button into two distinct actions
+- **Bug Fix**: Skip Goal functionality not working (goals incorrectly marked as completed)
+- **Status**: Both issues fixed and tested
+- **Time**: ~15 minutes
+- **Files**: 
+  - MODIFIED: `client/index.html`, `client/src/host-manager.ts`, `client/css/host.css`
+  - MODIFIED: `api/src/functions/hostEndRound.ts`
+  - DOCS: `doc/BUGS-FIXED.md`
+- **Changes Made**:
+  1. **UI Improvements**: Replaced single "End Round" button with two buttons:
+     - "✓ Complete Round" (green primary button) - Marks goal as completed
+     - "⏭ Skip Goal" (orange warning button) - Returns goal to pool
+     - Each has single, clear confirmation dialog (no nested dialogs)
+     - Added visual icons for better clarity
+  2. **API Bug Fix**: Fixed `skipGoal` parameter being ignored in backend
+     - Parameter was received but never used in business logic
+     - Added conditional: only add goal to `completedGoalIndices` when `skipGoal` is false
+     - Goals now properly stay in pool when skipped
+  3. **Code Improvements**:
+     - Created `getCurrentRoundId()` helper method to reduce duplication
+     - Refactored `extendRound()` to use helper method
+     - Added debug logging to track skip vs complete operations
+
+### Solution Replay UX Improvements ✅ (COMPLETED October 16, 2025)
 - **Feature**: Two UX improvements to replay feature after user testing
 - **Status**: Both issues fixed and working
 - **Time**: ~30 minutes

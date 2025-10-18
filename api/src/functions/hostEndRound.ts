@@ -85,11 +85,14 @@ async function endRoundHandler(
       endTime: Date.now() // Update to actual end time
     });
 
-    // Update game: mark goal as completed and update robot positions
-    const updatedCompletedGoalIndices = [
-      ...game.board.completedGoalIndices,
-      round.goalIndex
-    ];
+    // Update game: conditionally mark goal as completed based on skipGoal
+    // If skipGoal is true, don't add to completed list (goal stays in pool)
+    // If skipGoal is false, add to completed list (goal is removed from pool)
+    const updatedCompletedGoalIndices = skipGoal 
+      ? game.board.completedGoalIndices  // Skip: don't add to completed
+      : [...game.board.completedGoalIndices, round.goalIndex];  // Complete: add to completed
+    
+    context.log(`Goal ${skipGoal ? 'skipped' : 'completed'}: goalIndex=${round.goalIndex}`);
 
     await Storage.games.updateGame(gameId, {
       board: {
