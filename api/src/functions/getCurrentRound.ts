@@ -73,7 +73,6 @@ async function getCurrentRoundHandler(
           },
           startTime: lastCompletedRound.startTime,
           endTime: lastCompletedRound.endTime,
-          durationMs: lastCompletedRound.durationMs,
           status: 'completed',
           hasActiveRound: false,
           goalsCompleted: game.board.completedGoalIndices.length,
@@ -109,7 +108,6 @@ async function getCurrentRoundHandler(
       },
       startTime: activeRound.startTime,
       endTime: activeRound.endTime,
-      durationMs: activeRound.durationMs,
       status: activeRound.status,
       goalsRemaining: 17 - game.board.completedGoalIndices.length
     });

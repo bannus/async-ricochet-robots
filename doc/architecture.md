@@ -99,8 +99,8 @@ Async Ricochet Robots is a multiplayer online implementation of the classic Rico
    - `createGame`: Initializes new game instance with host key
 
 3. **Host Functions** (HTTP triggered, requires authentication)
-   - `startRound`: Creates new round with generated puzzle
-   - `extendRound`: Modifies round deadline
+   - `startRound`: Creates new round with generated puzzle and host-specified deadline
+   - `extendRound`: Modifies round deadline to new absolute time
    - `endRound`: Manually completes round
    - `getDashboard`: Returns host analytics
 

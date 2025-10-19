@@ -53,12 +53,11 @@ async function createGameHandler(
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   try {
-    // Parse and validate request body (gameName and defaultRoundDurationMs are optional)
+    // Parse and validate request body (gameName is optional)
     const body = await request.json() as any;
     validateCreateGameRequest(body);
 
     const gameName = body.gameName;
-    const defaultRoundDurationMs = body.defaultRoundDurationMs || 86400000; // Default: 24 hours
 
     context.log('createGame: Generating new game...');
 
@@ -86,7 +85,6 @@ async function createGameHandler(
       gameId,
       hostKey,
       boardData,
-      defaultRoundDurationMs,
       gameName
     );
 
@@ -106,7 +104,6 @@ async function createGameHandler(
       gameId,
       hostKey,
       gameName: gameName || 'Untitled Game',
-      defaultRoundDurationMs,
       createdAt: game.createdAt,
       totalGoals: 17,
       goalsCompleted: 0,

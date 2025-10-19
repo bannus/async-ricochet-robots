@@ -203,8 +203,8 @@
 ### 🔄 Phase 4: Frontend UI (IN PROGRESS)
 **Status:** In Progress  
 **Target Duration:** 12-16 hours  
-**Completion:** 85%  
-**Actual Time:** ~10 hours (October 8-11, 2025)
+**Completion:** 90%  
+**Actual Time:** ~12 hours (October 8-18, 2025)
 
 #### Completed Tasks
 - [x] Create project structure (client/ folder with TypeScript)
@@ -230,10 +230,24 @@
   - [x] Smooth state transitions and animations
   - [x] Leaderboard row fade-in animations
   - [x] Document future enhancements (loading animations)
+- [x] **Solution Replay Feature (October 14-16, 2025)**
+  - [x] Implement ReplayController for animated solution playback
+  - [x] Click leaderboard entries to watch replays
+  - [x] Exit replay with button or ESC key
+  - [x] UX improvements: Reset on exit, seamless replay switching
+- [x] **Host Controls UX & Skip Goal Bug Fix (October 17, 2025)**
+  - [x] Separate "End Round" into two distinct buttons
+  - [x] Fix skip goal functionality (was incorrectly completing goals)
+- [x] **Deadline-Based Round Management (October 18, 2025)**
+  - [x] Migrate from duration-based to deadline-based system
+  - [x] Implement datetime pickers for setting absolute deadlines
+  - [x] Update all API endpoints and tests
+  - [x] Update frontend UI with datetime-local inputs
+  - [x] Comprehensive validation and error handling
 
 #### Remaining Tasks
-- [ ] Test end-to-end gameplay
-- [ ] Mobile responsive testing
+- [ ] Final end-to-end testing
+- [ ] Mobile datetime picker testing
 - [ ] Cross-browser testing
 
 #### Deliverables
@@ -245,7 +259,7 @@
 - ✅ `/client/src/player-app.ts` - Main player application
 - ✅ `/client/css/shared.css` - Base styles
 - ✅ `/client/css/game.css` - Player UI styles (partial)
-- ✅ `/client/css/host.css` - Host panel styles (partial)
+- ✅ `/client/css/host.css` - Host panel styles
 - ✅ `/client/staticwebapp.config.json` - Azure configuration
 - ✅ `/client/src/host-manager.ts` - Host panel logic (complete)
 - ✅ `/client/src/create-game.ts` - Game creation workflow
@@ -281,7 +295,29 @@
    - Solution: Added empty array handling with message
    - Status: Fixed and verified
 
-#### Recent Bug Fixes
+#### Recent Enhancements & Bug Fixes
+
+- ✅ **Deadline-Based Round Management** - Implemented 2025-10-18
+  - Feature: Replaced duration dropdowns with datetime pickers
+  - Impact: Better control, clearer deadlines, more flexible scheduling
+  - API Changes: createGame, startRound, extendRound all updated
+  - UI Changes: Native HTML5 datetime-local inputs with validation
+  - Files: 16 files modified (docs, API, tests, frontend)
+  - Tests: All 214 tests passing (195 unit + 19 integration)
+
+- ✅ **Host Controls UX & Skip Goal Bug** - Fixed 2025-10-17
+  - Issue: Single "End Round" button caused confusion, skip goal not working
+  - Fix: Split into "Complete Round" and "Skip Goal" buttons with clear confirmations
+  - Bug: skipGoal parameter received but ignored in backend logic
+  - Files: `client/index.html`, `client/src/host-manager.ts`, `api/src/functions/hostEndRound.ts`
+
+- ✅ **Solution Replay Feature** - Implemented 2025-10-14, UX improved 2025-10-16
+  - Feature: Animated playback of submitted solutions after round ends
+  - Implementation: New ReplayController with 500ms move delays
+  - UX: Click leaderboard entries to watch, exit with button/ESC
+  - Improvements: Reset on exit, seamless replay switching
+  - Files: `client/src/replay-controller.ts`, `client/src/player-app.ts`
+
 - ✅ **Bug #9: No Mobile Robot Movement** - Fixed 2025-10-13
   - Issue: Game completely unusable on mobile (no touch controls) + desktop clicks not working
   - Cause: No touch handlers implemented + double coordinate conversion in click handler
@@ -302,12 +338,13 @@
 - ✅ TypeScript compilation working
 - ✅ API client communicates with backend
 - ✅ Canvas renders game board correctly
-- ✅ Game controller handles input
+- ✅ Game controller handles input (keyboard, mouse, touch)
 - ✅ Player app loads and displays state
 - ✅ Polling detects round changes (verified working)
-- ✅ Host panel implemented
-- ⏳ Complete CSS styling applied
-- ⏳ End-to-end testing complete
+- ✅ Host panel implemented with deadline management
+- ✅ Solution replay feature working
+- ✅ Complete CSS styling applied
+- ⏳ Final end-to-end testing
 
 ---
 
@@ -413,14 +450,15 @@
 ### Time Spent
 - Phase 1 (Design): ~4 hours of planning discussion and documentation
 - Phase 2 (Core Engine): ~8 hours of implementation and testing
-- Phase 3 (Backend API): ~6 hours of implementation and documentation
+- Phase 3 (Backend API): ~8 hours of implementation and documentation
+- Phase 4 (Frontend UI): ~12 hours of implementation and features (90% complete)
 
 ### Time Remaining (Estimated)
-- Phase 4: 12-16 hours
-- Phase 5: 4-6 hours
-- Phase 6: 2-4 hours
+- Phase 4: 1-2 hours (final testing)
+- Phase 5: 4-6 hours (polish & accessibility)
+- Phase 6: Already deployed ✅
 
-**Total Remaining:** 18-26 hours
+**Total Remaining:** 5-8 hours
 
 ## Risk Tracking
 
@@ -442,9 +480,10 @@
 
 ### Current
 - Documentation: Comprehensive ✅
-- Test Coverage: 96.46% (Phase 2), N/A for Phase 3
+- Test Coverage: Excellent (195 unit + 19 integration tests, all passing) ✅
 - Code Quality: TypeScript strict mode ✅
 - API Implementation: Complete ✅
+- Frontend Implementation: 90% Complete ✅
 
 ### Targets
 - Documentation: Keep updated ✅
@@ -483,8 +522,8 @@
 6. Test rendering in browser
 
 ### This Week
-- Complete Phase 4 (Frontend UI) - Player view
-- Begin host panel implementation
+- Complete Phase 4 final testing
+- Begin Phase 5 (Polish & Production)
 
 ### This Month
 - Complete MVP (Phases 4-5)

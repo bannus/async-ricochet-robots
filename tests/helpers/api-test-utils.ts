@@ -47,7 +47,6 @@ export interface RoundData {
   robotPositions: any;
   startTime: number;
   endTime: number;
-  durationMs: number;
 }
 
 export interface LeaderboardEntry {
@@ -103,14 +102,12 @@ export async function parseResponse<T = any>(response: Response): Promise<ApiRes
  * Create a test game and return credentials
  */
 export async function createTestGame(
-  gameName: string = 'Test Game',
-  defaultRoundDurationMs: number = 3600000
+  gameName: string = 'Test Game'
 ): Promise<GameCreationResponse> {
   const response = await makeRequest('/createGame', {
     method: 'POST',
     body: {
       gameName,
-      defaultRoundDurationMs,
     },
   });
 
@@ -129,14 +126,10 @@ export async function createTestGame(
 export async function startTestRound(
   gameId: string,
   hostKey: string,
-  durationMs?: number
+  hoursFromNow: number = 1
 ): Promise<RoundData> {
-  const body: any = {};
-
-  // Only include customDurationMs if provided
-  if (durationMs !== undefined) {
-    body.customDurationMs = durationMs;
-  }
+  // Calculate endTime as Unix timestamp in milliseconds
+  const endTime = Date.now() + (hoursFromNow * 60 * 60 * 1000);
 
   const response = await makeRequest('/host/startRound', {
     method: 'POST',
@@ -144,7 +137,9 @@ export async function startTestRound(
       'x-game-id': gameId,
       'x-host-key': hostKey,
     },
-    body,
+    body: {
+      endTime,
+    },
   });
 
   const result = await parseResponse<any>(response);
@@ -318,7 +313,7 @@ export async function isAzureFunctionsRunning(): Promise<boolean> {
  */
 export async function isAzuriteRunning(): Promise<boolean> {
   try {
-    await createTestGame('Azurite Check', 1000);
+    await createTestGame('Azurite Check');
     return true;
   } catch (error) {
     return false;

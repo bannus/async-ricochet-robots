@@ -40,6 +40,9 @@ export class HostManager {
     const skipBtn = document.getElementById('host-skip-goal');
     const extendBtn = document.getElementById('host-extend-round');
     
+    // Initialize datetime inputs with default values
+    this.initializeDatetimeInputs();
+    
     if (startBtn) {
       startBtn.addEventListener('click', () => this.startRound());
     }
@@ -124,21 +127,37 @@ export class HostManager {
    * Start a new round
    */
   private async startRound(): Promise<void> {
-    const durationSelect = document.getElementById('host-round-duration') as HTMLSelectElement;
-    if (!durationSelect) return;
+    const deadlineInput = document.getElementById('host-round-deadline') as HTMLInputElement;
+    if (!deadlineInput) return;
     
-    const duration = parseInt(durationSelect.value);
-    const hours = duration / 3600000;
+    const deadlineValue = deadlineInput.value;
+    if (!deadlineValue) {
+      alert('Please select a deadline for the round');
+      return;
+    }
     
-    if (!confirm(`Start a new round with ${hours} hour duration?`)) {
+    // Convert datetime-local string to Unix timestamp
+    const endTime = new Date(deadlineValue).getTime();
+    
+    // Validate that deadline is in the future
+    if (endTime <= Date.now()) {
+      alert('Deadline must be in the future');
+      return;
+    }
+    
+    // Format deadline for confirmation
+    const deadlineDate = new Date(endTime);
+    const formattedDeadline = deadlineDate.toLocaleString();
+    
+    if (!confirm(`Start a new round with deadline: ${formattedDeadline}?`)) {
       return;
     }
     
     try {
-      const result = await this.apiClient.startRound(this.gameId, this.hostKey, duration);
+      const result = await this.apiClient.startRound(this.gameId, this.hostKey, endTime);
       
       if (result.success) {
-        alert(`Round ${result.data.roundNumber} started successfully!`);
+        alert(`Round ${result.data.round.roundNumber} started successfully!`);
         // Trigger page reload to show new round
         window.location.reload();
       } else {
@@ -237,15 +256,35 @@ export class HostManager {
   }
 
   /**
-   * Extend the current round deadline
+   * Change the current round deadline
    */
   private async extendRound(): Promise<void> {
-    const hours = prompt('Extend deadline by how many hours?', '6');
-    if (!hours) return;
+    const deadlineInput = document.getElementById('host-change-deadline') as HTMLInputElement;
+    if (!deadlineInput) {
+      alert('Deadline input not found');
+      return;
+    }
     
-    const extendByMs = parseInt(hours) * 3600000;
-    if (isNaN(extendByMs) || extendByMs <= 0) {
-      alert('Please enter a valid number of hours');
+    const newDeadlineValue = deadlineInput.value;
+    if (!newDeadlineValue) {
+      alert('Please select a new deadline');
+      return;
+    }
+    
+    // Convert datetime-local string to Unix timestamp
+    const newEndTime = new Date(newDeadlineValue).getTime();
+    
+    // Validate that new deadline is in the future
+    if (newEndTime <= Date.now()) {
+      alert('New deadline must be in the future');
+      return;
+    }
+    
+    // Format new deadline for confirmation
+    const newDeadlineDate = new Date(newEndTime);
+    const formattedDeadline = newDeadlineDate.toLocaleString();
+    
+    if (!confirm(`Change round deadline to: ${formattedDeadline}?`)) {
       return;
     }
     
@@ -260,18 +299,51 @@ export class HostManager {
         this.gameId,
         this.hostKey,
         roundId,
-        extendByMs
+        newEndTime
       );
       
       if (result.success) {
-        alert(`Deadline extended by ${hours} hours`);
+        alert(`Deadline updated successfully`);
         window.location.reload();
       } else {
-        alert('Failed to extend deadline: ' + (result.error || 'Unknown error'));
+        alert('Failed to change deadline: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
-      console.error('Extend round error:', error);
-      alert('Error extending deadline: ' + (error as Error).message);
+      console.error('Change deadline error:', error);
+      alert('Error changing deadline: ' + (error as Error).message);
+    }
+  }
+
+  /**
+   * Initialize datetime inputs with sensible defaults
+   */
+  private initializeDatetimeInputs(): void {
+    // Set default deadline to 24 hours from now, rounded to next hour
+    const now = new Date();
+    const defaultDeadline = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    defaultDeadline.setMinutes(0, 0, 0); // Round to hour
+    defaultDeadline.setHours(defaultDeadline.getHours() + 1); // Next hour
+    
+    // Format as datetime-local string (YYYY-MM-DDTHH:mm)
+    const formatDatetimeLocal = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    };
+    
+    // Set default for start round
+    const deadlineInput = document.getElementById('host-round-deadline') as HTMLInputElement;
+    if (deadlineInput) {
+      deadlineInput.value = formatDatetimeLocal(defaultDeadline);
+    }
+    
+    // Set default for change deadline (also 24h from now)
+    const changeDeadlineInput = document.getElementById('host-change-deadline') as HTMLInputElement;
+    if (changeDeadlineInput) {
+      changeDeadlineInput.value = formatDatetimeLocal(defaultDeadline);
     }
   }
 

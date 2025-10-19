@@ -42,6 +42,7 @@ No authentication required. Players are identified by username only.
 - `ROUND_ENDED`: Cannot submit solution to ended round
 - `INVALID_SOLUTION`: Solution does not reach goal
 - `VALIDATION_ERROR`: Input validation failed
+- `INVALID_DEADLINE`: Deadline is not in the future or is invalid
 - `ALL_GOALS_EXHAUSTED`: All 17 goals completed, game is finished
 
 ---
@@ -105,7 +106,6 @@ GET /api/getCurrentRound?gameId=game_abc123xyz
     },
     "startTime": 1704067200000,
     "endTime": 1704153600000,
-    "durationMs": 86400000,
     "status": "active",
     "goalsRemaining": 13
   }
@@ -138,7 +138,6 @@ When no active round exists but a completed round is available for replay:
     },
     "startTime": 1704067200000,
     "endTime": 1704153600000,
-    "durationMs": 86400000,
     "status": "completed",
     "hasActiveRound": false,
     "goalsCompleted": 4,
@@ -487,14 +486,12 @@ Create a new game instance with a complete board containing 17 goals.
 ### Request Body
 ```json
 {
-  "gameName": "Friday Night Puzzle",
-  "defaultRoundDurationMs": 86400000
+  "gameName": "Friday Night Puzzle"
 }
 ```
 
 ### Request Body Parameters
 - `gameName` (optional): Display name for the game (default: "Ricochet Robots Game")
-- `defaultRoundDurationMs` (optional): Default duration for rounds in milliseconds (default: 86400000 = 24 hours)
 
 ### Response 200
 ```json
@@ -504,7 +501,6 @@ Create a new game instance with a complete board containing 17 goals.
     "gameId": "game_abc123xyz",
     "hostKey": "host_9f8e7d6c5b4a",
     "gameName": "Friday Night Puzzle",
-    "defaultRoundDurationMs": 86400000,
     "createdAt": 1704000000000,
     "totalGoals": 17,
     "goalsCompleted": 0,
@@ -521,6 +517,7 @@ Create a new game instance with a complete board containing 17 goals.
 - Game URL (for players) only includes gameId
 - Board is generated once with 17 goals and persists for all rounds
 - Game ends after 17 goals are completed
+- Round deadlines are set individually when starting each round
 
 ---
 
@@ -532,7 +529,7 @@ All host endpoints require authentication headers:
 
 ## POST /api/host/startRound
 
-Start a new round by selecting an incomplete goal from the board.
+Start a new round by selecting an incomplete goal from the board with a specific deadline.
 
 ### Headers
 ```http
@@ -543,12 +540,12 @@ X-Host-Key: host_9f8e7d6c5b4a
 ### Request Body
 ```json
 {
-  "durationMs": 86400000
+  "endTime": 1704153600000
 }
 ```
 
 ### Request Body Parameters
-- `durationMs` (optional): Duration for this round in milliseconds. If not provided, uses game's default duration.
+- `endTime` (required): Unix timestamp in milliseconds when the round should end. Must be in the future.
 
 ### Response 200
 ```json
@@ -568,7 +565,6 @@ X-Host-Key: host_9f8e7d6c5b4a
     },
     "startTime": 1704067200000,
     "endTime": 1704153600000,
-    "durationMs": 86400000,
     "status": "active",
     "goalsCompleted": 0,
     "goalsRemaining": 17,
@@ -590,7 +586,6 @@ X-Host-Key: host_9f8e7d6c5b4a
     "robots": { /* current positions */ },
     "startTime": 1704067200000,
     "endTime": 1704153600000,
-    "durationMs": 86400000,
     "status": "active",
     "goalsCompleted": 7,
     "goalsRemaining": 10,
@@ -606,6 +601,15 @@ X-Host-Key: host_9f8e7d6c5b4a
   "error": "A round is already active. End it before starting a new one.",
   "code": "ROUND_ALREADY_ACTIVE",
   "currentRoundId": "game_abc123xyz_round1"
+}
+```
+
+### Response 400 (Invalid Deadline)
+```json
+{
+  "success": false,
+  "error": "Deadline must be in the future",
+  "code": "INVALID_DEADLINE"
 }
 ```
 
@@ -639,7 +643,7 @@ X-Host-Key: host_9f8e7d6c5b4a
 
 ## POST /api/host/extendRound
 
-Extend or modify the deadline of the current round.
+Set a new deadline for the current round.
 
 ### Headers
 ```http
@@ -647,7 +651,7 @@ X-Game-Id: game_abc123xyz
 X-Host-Key: host_9f8e7d6c5b4a
 ```
 
-### Request Body (Option 1: Absolute Time)
+### Request Body
 ```json
 {
   "roundId": "game_abc123xyz_round1",
@@ -655,19 +659,9 @@ X-Host-Key: host_9f8e7d6c5b4a
 }
 ```
 
-### Request Body (Option 2: Relative Extension)
-```json
-{
-  "roundId": "game_abc123xyz_round1",
-  "extendByMs": 7200000
-}
-```
-
 ### Request Body Parameters
 - `roundId` (required): Round to modify
-- `newEndTime` (optional): New absolute end timestamp
-- `extendByMs` (optional): Milliseconds to add to current end time
-- Provide either `newEndTime` OR `extendByMs`, not both
+- `newEndTime` (required): New absolute end timestamp in milliseconds. Must be in the future and after the current endTime.
 
 ### Response 200
 ```json
@@ -677,9 +671,17 @@ X-Host-Key: host_9f8e7d6c5b4a
     "roundId": "game_abc123xyz_round1",
     "oldEndTime": 1704153600000,
     "newEndTime": 1704160000000,
-    "extensionMs": 7200000,
-    "message": "Round deadline extended by 2 hours"
+    "message": "Round deadline updated successfully"
   }
+}
+```
+
+### Response 400 (Invalid Deadline)
+```json
+{
+  "success": false,
+  "error": "New deadline must be after current deadline",
+  "code": "INVALID_DEADLINE"
 }
 ```
 
@@ -858,7 +860,6 @@ None
     "gameId": "game_abc123xyz",
     "gameName": "Friday Night Puzzle",
     "createdAt": 1704000000000,
-    "defaultRoundDurationMs": 86400000,
     "totalRounds": 8,
     "goalsCompleted": 7,
     "goalsRemaining": 10,
@@ -950,7 +951,6 @@ None
     "gameId": "game_abc123xyz",
     "gameName": "Friday Night Puzzle",
     "createdAt": 1704000000000,
-    "defaultRoundDurationMs": 86400000,
     "totalRounds": 7,
     "goalsCompleted": 7,
     "goalsRemaining": 10,
@@ -1058,6 +1058,16 @@ Allowed headers:
 ---
 
 # Changelog
+
+## v1.3.0 (Deadline-Based Round Management)
+- **Breaking Change**: Removed duration-based round management in favor of absolute deadline timestamps
+- **createGame**: Removed `defaultRoundDurationMs` parameter and field
+- **startRound**: Replaced optional `durationMs` with required `endTime` (Unix timestamp)
+- **extendRound**: Removed `extendByMs` parameter, now only accepts `newEndTime` (absolute timestamp)
+- **Round responses**: Removed `durationMs` field from all round objects (still includes `startTime` and `endTime`)
+- **New error code**: `INVALID_DEADLINE` for deadline validation failures
+- **Benefit**: Hosts can now set exact deadlines (e.g., "Friday 5pm") rather than relative durations
+- **Migration**: Frontend updated to use datetime-local input with smart defaults (24h from now, rounded to nearest hour)
 
 ## v1.2.1 (API Cleanup)
 - **Removed redundant fields**: Removed `roundEnded` and `finalizedAt` from `getLeaderboard` responses

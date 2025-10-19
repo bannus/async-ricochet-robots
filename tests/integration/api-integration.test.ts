@@ -30,7 +30,7 @@ import {
 describe('API Integration Tests', () => {
   describe('Game Creation', () => {
     test('creates game with valid parameters', async () => {
-      const game = await createTestGame('Integration Test Game', 86400000);
+      const game = await createTestGame('Integration Test Game');
 
       expect(game.gameId).toMatch(/^game_[a-f0-9]+$/);
       expect(game.hostKey).toMatch(/^host_[a-f0-9]+$/);
@@ -71,7 +71,7 @@ describe('Skip Goal Regression Test (Bug #13)', () => {
 
   test('skipGoal=false removes goal from pool permanently', async () => {
     // Create a test game
-    const game = await createTestGame('Skip Goal Test - Complete', 3600000);
+    const game = await createTestGame('Skip Goal Test - Complete');
 
     // Start first round and note the goal
     const round1 = await startTestRound(game.gameId, game.hostKey);
@@ -105,7 +105,7 @@ describe('Skip Goal Regression Test (Bug #13)', () => {
 
   test('skipGoal=true keeps goal in pool for future rounds', async () => {
     // Create a test game
-    const game = await createTestGame('Skip Goal Test - Skip', 3600000);
+    const game = await createTestGame('Skip Goal Test - Skip');
 
     // Start first round and note the goal - this will be the one we skip  
     const round1 = await startTestRound(game.gameId, game.hostKey);

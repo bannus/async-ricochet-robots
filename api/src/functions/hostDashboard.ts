@@ -48,7 +48,6 @@ async function getDashboardHandler(
           status: round.status,
           startTime: round.startTime,
           endTime: round.endTime,
-          durationMs: round.durationMs,
           solutionCount: solutions.length,
           winner: solutions.length > 0 ? {
             playerName: solutions[0].displayName,
@@ -89,7 +88,6 @@ async function getDashboardHandler(
         gameId: game.gameId,
         gameName: game.gameName,
         createdAt: game.createdAt,
-        defaultRoundDurationMs: game.defaultRoundDurationMs,
         totalRounds: game.totalRounds
       },
       progress: {

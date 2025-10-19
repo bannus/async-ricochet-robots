@@ -30,7 +30,6 @@ Stores game metadata, host authentication keys, and board state.
 | hostKey | String | Yes | Secret key for host authentication (e.g., "host_9f8e7d6c5b4a") |
 | gameName | String | No | Display name for the game |
 | createdAt | Int64 | Yes | Unix timestamp (milliseconds) |
-| defaultRoundDurationMs | Int64 | Yes | Default duration for rounds in milliseconds |
 | currentRoundId | String | No | Reference to currently active round |
 | totalRounds | Int32 | Yes | Counter of total rounds created |
 | boardData | String | Yes | JSON string containing persistent board configuration |
@@ -90,7 +89,6 @@ The board persists across all rounds in a game. Robots accumulate in their posit
   "hostKey": "host_9f8e7d6c5b4a",
   "gameName": "Friday Night Puzzle",
   "createdAt": 1704000000000,
-  "defaultRoundDurationMs": 86400000,
   "currentRoundId": "round_1704067200000",
   "totalRounds": 5,
   "boardData": "{\"walls\":{\"horizontal\":[[0,5,8],...],\"vertical\":[[0,3,7],...]},\"robots\":{\"red\":{\"x\":3,\"y\":5},\"yellow\":{\"x\":12,\"y\":2},\"green\":{\"x\":8,\"y\":14},\"blue\":{\"x\":1,\"y\":9}},\"allGoals\":[{\"position\":{\"x\":2,\"y\":3},\"color\":\"red\"},...],\"completedGoalIndices\":[0,3,7,12]}",
@@ -131,7 +129,6 @@ Stores round metadata and goal selection for each game round.
 | robotPositions | String | Yes | JSON string: robot positions at start of round |
 | startTime | Int64 | Yes | Unix timestamp (milliseconds) |
 | endTime | Int64 | Yes | Unix timestamp (milliseconds) |
-| durationMs | Int64 | Yes | Round duration in milliseconds |
 | status | String | Yes | "active", "completed", or "skipped" |
 | createdBy | String | Yes | "host" or "timer" |
 
@@ -170,7 +167,6 @@ Robot positions at the START of this round (snapshot for replay purposes):
   "robotPositions": "{\"red\":{\"x\":3,\"y\":5},\"yellow\":{\"x\":12,\"y\":2},\"green\":{\"x\":8,\"y\":14},\"blue\":{\"x\":1,\"y\":9}}",
   "startTime": 1704067200000,
   "endTime": 1704153600000,
-  "durationMs": 86400000,
   "status": "active",
   "createdBy": "host",
   "Timestamp": "2024-01-01T12:00:00.000Z"
@@ -198,6 +194,7 @@ Robot positions at the START of this round (snapshot for replay purposes):
 - Round does NOT store walls (always use boardData.walls from Game entity)
 - `goalColor` determines win condition: 'multi' means any robot can win
 - `robotPositions` snapshot allows accurate solution replay even if board state changes
+- `durationMs` can be calculated if needed: `endTime - startTime`
 - Timer function must scan all active rounds across all games (acceptable for small scale)
 
 ---
@@ -420,10 +417,10 @@ Display: Show completed goals (17 - completedGoalIndices.length remaining)
    → boardData contains: walls (17 L-shapes), robots (initial positions), 
      allGoals (17 goals), completedGoalIndices ([])
 
-2. Host starts round
+2. Host starts round (with specific endTime)
    → Check completedGoalIndices.length < 17
    → Select random goalIndex from incomplete goals
-   → Insert into Rounds table with goalIndex, goalColor, goalPosition
+   → Insert into Rounds table with goalIndex, goalColor, goalPosition, endTime
    → Update Games.currentRoundId
 
 3. Player submits solution
@@ -620,7 +617,6 @@ const gameEntity = {
   hostKey: `host_${generateSecureToken()}`,
   gameName: 'Friday Night Puzzle',
   createdAt: Date.now(),
-  defaultRoundDurationMs: 86400000,
   currentRoundId: null,
   totalRounds: 0,
   boardData: JSON.stringify(boardData)
@@ -653,6 +649,9 @@ for (let i = 0; i < 17; i++) {
 const goalIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
 const goal = board.allGoals[goalIndex];
 
+// endTime provided by host (e.g., from datetime picker in UI)
+const endTime = requestBody.endTime; // Unix timestamp in milliseconds
+
 // Create round
 const roundEntity = {
   partitionKey: gameId,
@@ -663,8 +662,7 @@ const roundEntity = {
   goalPosition: JSON.stringify(goal.position),
   robotPositions: JSON.stringify(board.robots),
   startTime: Date.now(),
-  endTime: Date.now() + game.defaultRoundDurationMs,
-  durationMs: game.defaultRoundDurationMs,
+  endTime: endTime,
   status: 'active',
   createdBy: 'host'
 };

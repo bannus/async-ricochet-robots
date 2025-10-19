@@ -45,13 +45,7 @@
         </div>
         
         <div class="form-group">
-          <label for="new-game-duration">Default Round Duration:</label>
-          <select id="new-game-duration" aria-label="Round duration">
-            <option value="3600000">1 hour</option>
-            <option value="21600000">6 hours</option>
-            <option value="86400000" selected>24 hours</option>
-            <option value="172800000">48 hours</option>
-          </select>
+          <p><em>Note: You'll set the deadline when starting each round.</em></p>
         </div>
         
         <button type="submit" class="primary-btn">Create Game</button>
@@ -205,19 +199,24 @@
       
       <div class="host-actions">
         <div class="action-group">
-          <label for="host-round-duration">Round Duration:</label>
-          <select id="host-round-duration" aria-label="Round duration">
-            <option value="3600000">1 hour</option>
-            <option value="21600000">6 hours</option>
-            <option value="86400000" selected>24 hours</option>
-            <option value="172800000">48 hours</option>
-          </select>
+          <label for="host-round-deadline">Round Deadline:</label>
+          <input 
+            type="datetime-local" 
+            id="host-round-deadline" 
+            aria-label="Round deadline"
+          >
           <button id="host-start-round" class="primary-btn">Start New Round</button>
         </div>
         
         <div class="action-group">
+          <label for="host-change-deadline">Change Deadline:</label>
+          <input 
+            type="datetime-local" 
+            id="host-change-deadline" 
+            aria-label="New deadline"
+          >
           <button id="host-extend-round" class="secondary-btn">
-            Extend Deadline (+6h)
+            Change Deadline
           </button>
           <button id="host-complete-round" class="primary-btn">
             ✓ Complete Round

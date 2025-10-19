@@ -24,8 +24,7 @@ Host creates a new game instance to start playing with friends.
 
 3. **Configure Game (Optional)**
    - Enter game name (e.g., "Friday Night Puzzle")
-   - Set default round duration (default: 24 hours)
-   - Can leave fields blank to use defaults
+   - Can leave field blank to use default name
 
 4. **Submit Creation**
    - Click "Create Game" button
@@ -81,13 +80,14 @@ Host starts a new round with a fresh puzzle for players.
    - View previous round history (if any)
    - See total players who have participated
 
-3. **Configure Round**
-   - Select round duration (dropdown or custom input)
-   - Options: 1 hour, 6 hours, 12 hours, 24 hours, 48 hours, custom
-   - Default: Game's default duration
+3. **Set Round Deadline**
+   - Date/time picker for round deadline
+   - Default: 24 hours from now, rounded to nearest hour
+   - Shows preview: "Round will end: Friday, Oct 20, 5:00 PM"
+   - Can adjust to any future date/time
 
 4. **Click "Start Round"**
-   - Confirmation: "Start Round #X with Y hour duration?"
+   - Confirmation: "Start Round #X ending at [date/time]?"
    - Click "Confirm"
 
 5. **Round Starts**
@@ -148,10 +148,10 @@ Host tracks player participation and solutions during active round.
 
 ---
 
-## 4. Extending Round Deadline
+## 4. Changing Round Deadline
 
 ### Objective
-Host extends round deadline to give players more time.
+Host changes round deadline to give players more or less time.
 
 ### Prerequisites
 - Round is currently active
@@ -160,25 +160,25 @@ Host extends round deadline to give players more time.
 ### Steps
 
 1. **Access Active Round Section**
-   - See "Extend Deadline" button
+   - See "Change Deadline" button
+   - Current deadline displayed: "Ends: Friday, Oct 20, 5:00 PM"
 
-2. **Click "Extend Deadline"**
-   - Modal appears with options:
-     - Add 1 hour
-     - Add 6 hours
-     - Add 12 hours
-     - Custom date/time picker
+2. **Click "Change Deadline"**
+   - Modal appears with:
+     - Current deadline shown
+     - Date/time picker for new deadline
+     - Must be in the future and after current deadline
 
-3. **Select Extension**
-   - Choose option or set custom time
-   - Preview shows new end time
+3. **Select New Deadline**
+   - Choose new date/time
+   - Preview shows: "Change from [old time] to [new time]"
 
-4. **Confirm Extension**
+4. **Confirm Change**
    - Click "Confirm"
    - Loading indicator
 
-5. **Extension Applied**
-   - Success message: "Deadline extended by X hours"
+5. **Deadline Updated**
+   - Success message: "Deadline changed to [new date/time]"
    - Timer updates to show new remaining time
    - Players see updated deadline on next poll
 
@@ -188,8 +188,8 @@ Host extends round deadline to give players more time.
 - No solutions lost
 
 ### Error Handling
-- **Round Already Ended**: "Cannot extend a completed round"
-- **Invalid Time**: "Extension time must be in the future"
+- **Round Already Ended**: "Cannot change deadline for a completed round"
+- **Invalid Time**: "New deadline must be in the future and after current deadline"
 
 ---
 
@@ -550,16 +550,16 @@ Player stays engaged between rounds.
 ## Journey 4: Host Managing Extended Session
 
 ```
-1. Start round (24h duration)
-2. After 12h: Only 3 submissions
-3. Extend deadline by 12 hours
+1. Start round (deadline: Friday 5pm)
+2. Friday 11am: Only 3 submissions
+3. Change deadline to Saturday 5pm
 4. Share reminder with players
 5. Monitor new submissions
-6. After 30h: 15 submissions
+6. Saturday 3pm: 15 submissions
 7. Manually end round
 8. Review results
 9. Start new round immediately
-10. Shorter duration (12h) for urgency
+10. Set shorter deadline (Saturday 11pm) for urgency
 ```
 
 ---

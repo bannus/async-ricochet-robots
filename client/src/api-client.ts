@@ -126,8 +126,7 @@ export class ApiClient {
    * Create a new game
    */
   async createGame(
-    gameName: string,
-    defaultRoundDurationMs: number = 86400000 // 24 hours default
+    gameName: string
   ): Promise<ApiResponse> {
     const url = `${this.baseUrl}/createGame`;
     
@@ -137,8 +136,7 @@ export class ApiClient {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        gameName,
-        defaultRoundDurationMs
+        gameName
       })
     });
   }
@@ -153,14 +151,9 @@ export class ApiClient {
   async startRound(
     gameId: string,
     hostKey: string,
-    durationMs?: number
+    endTime: number
   ): Promise<ApiResponse> {
     const url = `${this.baseUrl}/host/startRound`;
-    
-    const body: any = {};
-    if (durationMs !== undefined) {
-      body.durationMs = durationMs;
-    }
     
     return this.fetchWithErrorHandling(url, {
       method: 'POST',
@@ -169,18 +162,20 @@ export class ApiClient {
         'X-Game-Id': gameId,
         'X-Host-Key': hostKey
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify({
+        endTime
+      })
     });
   }
 
   /**
-   * Extend current round deadline (host only)
+   * Change current round deadline (host only)
    */
   async extendRound(
     gameId: string,
     hostKey: string,
     roundId: string,
-    extendByMs: number
+    newEndTime: number
   ): Promise<ApiResponse> {
     const url = `${this.baseUrl}/host/extendRound`;
     
@@ -193,7 +188,7 @@ export class ApiClient {
       },
       body: JSON.stringify({
         roundId,
-        extendByMs
+        newEndTime
       })
     });
   }

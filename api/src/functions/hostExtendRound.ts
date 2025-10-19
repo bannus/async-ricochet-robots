@@ -1,9 +1,9 @@
 /**
  * POST /api/host/extendRound
  * 
- * Extend the deadline of an active round.
+ * Change the deadline of an active round to a new absolute time.
  * Host-only endpoint - requires valid hostKey for authentication.
- * Adds additional time to the current round's end time.
+ * Sets a new end time for the current round.
  */
 
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
@@ -33,9 +33,9 @@ async function extendRoundHandler(
     const body = await request.json() as any;
     validateExtendRoundRequest(body);
 
-    const { roundId, extendByMs } = body;
+    const { roundId, newEndTime } = body;
 
-    context.log(`extendRound: gameId=${gameId}, roundId=${roundId}, extendBy=${extendByMs}ms`);
+    context.log(`extendRound: gameId=${gameId}, roundId=${roundId}, newEndTime=${newEndTime}`);
 
     // Get round data
     const round = await Storage.rounds.getRound(gameId, roundId);
@@ -49,9 +49,24 @@ async function extendRoundHandler(
       );
     }
 
-    // Calculate new end time
-    const newEndTime = round.endTime + extendByMs;
+    // Validate new end time
     const now = Date.now();
+    
+    if (newEndTime <= now) {
+      return errorResponse(
+        'New deadline must be in the future',
+        'INVALID_DEADLINE',
+        400
+      );
+    }
+
+    if (newEndTime <= round.endTime) {
+      return errorResponse(
+        'New deadline must be after current deadline',
+        'INVALID_DEADLINE',
+        400
+      );
+    }
 
     context.log(`Current endTime: ${round.endTime}, New endTime: ${newEndTime}`);
 
@@ -61,30 +76,23 @@ async function extendRoundHandler(
     });
 
     const timeRemaining = newEndTime - now;
-    const hoursAdded = Math.round(extendByMs / (1000 * 60 * 60) * 10) / 10;
+    const timeAdded = newEndTime - round.endTime;
+    const hoursAdded = Math.round(timeAdded / (1000 * 60 * 60) * 10) / 10;
 
-    context.log(`Round ${roundId} extended by ${hoursAdded} hours`);
+    context.log(`Round ${roundId} deadline changed to ${new Date(newEndTime).toISOString()}`);
 
     // Return success with updated timing
     return successResponse({
-      message: `Round deadline extended by ${hoursAdded} hours.`,
+      message: `Round deadline updated successfully.`,
       round: {
         roundId: round.roundId,
         roundNumber: round.roundNumber,
         gameId: round.gameId,
         goal: round.goal,
-        originalEndTime: round.endTime,
+        oldEndTime: round.endTime,
         newEndTime: newEndTime,
-        timeAdded: extendByMs,
         timeRemaining: timeRemaining,
         status: 'active'
-      },
-      timing: {
-        previousDeadline: new Date(round.endTime).toISOString(),
-        newDeadline: new Date(newEndTime).toISOString(),
-        extensionHours: hoursAdded,
-        remainingMs: timeRemaining,
-        remainingHours: Math.round(timeRemaining / (1000 * 60 * 60) * 10) / 10
       },
       nextSteps: [
         'Players now have more time to submit solutions',

@@ -84,10 +84,8 @@ export class CreateGameManager {
    */
   private async handleCreateGame(): Promise<void> {
     const nameInput = document.getElementById('new-game-name') as HTMLInputElement;
-    const durationSelect = document.getElementById('new-game-duration') as HTMLSelectElement;
     
     const gameName = nameInput.value.trim();
-    const duration = parseInt(durationSelect.value);
     
     if (!gameName) {
       alert('Please enter a game name');
@@ -95,7 +93,7 @@ export class CreateGameManager {
     }
     
     try {
-      const result = await this.apiClient.createGame(gameName, duration);
+      const result = await this.apiClient.createGame(gameName);
       
       if (result.success) {
         const gameId = result.data.gameId;

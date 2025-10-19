@@ -451,7 +451,6 @@ export function validateCreateGameRequest(body: any): void {
   }
 
   validateGameName(body.gameName);
-  validateDuration(body.defaultRoundDurationMs);
 }
 
 /**
@@ -484,8 +483,8 @@ export function validateStartRoundRequest(body: any): void {
     }]);
   }
 
-  // durationMs is optional - uses game default if not provided
-  validateDuration(body.durationMs);
+  // endTime is required
+  validateTimestamp(body.endTime, 'endTime', true);
 }
 
 /**
@@ -502,14 +501,8 @@ export function validateExtendRoundRequest(body: any): void {
 
   validateRoundId(body.roundId);
   
-  // extendByMs is required
-  validateNumber(body.extendByMs, 'extendByMs', {
-    min: 1000, // At least 1 second
-    max: 7 * 24 * 60 * 60 * 1000, // At most 1 week
-    integer: true,
-    message: 'Extension must be between 1 second and 1 week',
-    required: true
-  });
+  // newEndTime is required
+  validateTimestamp(body.newEndTime, 'newEndTime', true);
 }
 
 /**

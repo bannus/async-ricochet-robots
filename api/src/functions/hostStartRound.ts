@@ -34,7 +34,7 @@ async function startRoundHandler(
     const body = await request.json() as any;
     validateStartRoundRequest(body);
     
-    const { durationMs } = body;
+    const { endTime } = body;
 
     // Get game data
     const game = await Storage.games.getGame(gameId);
@@ -82,10 +82,15 @@ async function startRoundHandler(
 
     context.log(`Selected goal index ${nextGoalIndex}: ${selectedGoal.color} at (${selectedGoal.position.x}, ${selectedGoal.position.y})`);
 
-    // Determine round duration (use provided or game default)
-    const roundDurationMs = durationMs || game.defaultRoundDurationMs;
+    // Validate endTime is in the future
     const startTime = Date.now();
-    const endTime = startTime + roundDurationMs;
+    if (endTime <= startTime) {
+      return errorResponse(
+        'Deadline must be in the future',
+        'INVALID_DEADLINE',
+        400
+      );
+    }
 
     // Calculate round number (total completed + 1)
     const roundNumber = game.board.completedGoalIndices.length + 1;
@@ -104,7 +109,6 @@ async function startRoundHandler(
         robotPositions: game.board.robots,
         startTime,
         endTime,
-        durationMs,
         createdBy: 'host'
       }
     );
@@ -125,7 +129,6 @@ async function startRoundHandler(
         robotPositions: round.robotPositions,
         startTime: round.startTime,
         endTime: round.endTime,
-        durationMs: roundDurationMs,
         status: 'active'
       },
       gameProgress: {

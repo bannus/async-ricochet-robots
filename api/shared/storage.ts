@@ -35,7 +35,6 @@ export interface GameEntity {
   hostKey: string;
   gameName?: string;
   createdAt: number;
-  defaultRoundDurationMs: number;
   currentRoundId?: string;
   totalRounds: number;
   boardData: string;     // JSON stringified BoardData
@@ -54,7 +53,6 @@ export interface RoundEntity {
   robotPositions: string; // JSON stringified Robots
   startTime: number;
   endTime: number;
-  durationMs: number;
   status: 'active' | 'completed' | 'skipped';
   createdBy: 'host' | 'timer';
 }
@@ -80,7 +78,6 @@ export interface Game {
   hostKey: string;
   gameName?: string;
   createdAt: number;
-  defaultRoundDurationMs: number;
   currentRoundId?: string;
   totalRounds: number;
   board: BoardData;
@@ -98,7 +95,6 @@ export interface Round {
   robotPositions: Robots;
   startTime: number;
   endTime: number;
-  durationMs: number;
   status: 'active' | 'completed' | 'skipped';
   createdBy: 'host' | 'timer';
 }
@@ -222,7 +218,6 @@ export class GamesStorage extends BaseStorageClient {
     gameId: string,
     hostKey: string,
     boardData: BoardData,
-    defaultRoundDurationMs: number,
     gameName?: string
   ): Promise<Game> {
     try {
@@ -232,7 +227,6 @@ export class GamesStorage extends BaseStorageClient {
         hostKey,
         gameName,
         createdAt: Date.now(),
-        defaultRoundDurationMs,
         totalRounds: 0,
         boardData: JSON.stringify(boardData)
       };
@@ -317,7 +311,6 @@ export class GamesStorage extends BaseStorageClient {
       hostKey: entity.hostKey,
       gameName: entity.gameName,
       createdAt: entity.createdAt,
-      defaultRoundDurationMs: entity.defaultRoundDurationMs,
       currentRoundId: entity.currentRoundId,
       totalRounds: entity.totalRounds,
       board: JSON.parse(entity.boardData)
@@ -347,7 +340,6 @@ export class RoundsStorage extends BaseStorageClient {
       robotPositions: Robots;
       startTime: number;
       endTime: number;
-      durationMs: number;
       createdBy: 'host' | 'timer';
     }
   ): Promise<Round> {
@@ -362,7 +354,6 @@ export class RoundsStorage extends BaseStorageClient {
         robotPositions: JSON.stringify(roundData.robotPositions),
         startTime: roundData.startTime,
         endTime: roundData.endTime,
-        durationMs: roundData.durationMs,
         status: 'active',
         createdBy: roundData.createdBy
       };
@@ -495,7 +486,6 @@ export class RoundsStorage extends BaseStorageClient {
       robotPositions: JSON.parse(entity.robotPositions),
       startTime: entity.startTime,
       endTime: entity.endTime,
-      durationMs: entity.durationMs,
       status: entity.status,
       createdBy: entity.createdBy
     };

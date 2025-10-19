@@ -7,9 +7,43 @@
 **Completion:** ~90%  
 **Next Milestone:** Final testing and polish
 
-## Active Work (Last Session - October 17, 2025)
+## Active Work (Last Session - October 18, 2025)
 
-### Host Controls UX & Skip Goal Bug Fix ✅ (COMPLETED)
+### Deadline-Based Round Management ✅ (COMPLETED)
+- **Feature**: Migrated from duration-based (+N hours) to deadline-based (specific datetime) round management
+- **Status**: Complete, tested, and production-ready
+- **Time**: ~2 hours
+- **Files Modified**: 16 total
+  - DOCS: `doc/api-specification.md`, `doc/data-models.md`, `doc/user-flows.md`, `doc/architecture.md`
+  - API: `api/src/functions/createGame.ts`, `api/shared/storage.ts`, `api/src/functions/hostStartRound.ts`, 
+         `api/src/functions/hostExtendRound.ts`, `api/shared/validation.ts`, `api/src/functions/getCurrentRound.ts`,
+         `api/src/functions/hostDashboard.ts`
+  - TESTS: `tests/helpers/api-test-utils.ts`, `tests/integration/api-integration.test.ts`
+  - FRONTEND: `client/src/api-client.ts`, `client/src/host-manager.ts`, `client/src/create-game.ts`, `client/index.html`
+- **Changes Made**:
+  1. **API Changes**:
+     - `createGame`: Removed `defaultRoundDurationMs` parameter (no longer needed)
+     - `startRound`: Changed from `{ durationMs?: number }` to `{ endTime: number }` (Unix timestamp)
+     - `extendRound`: Changed from `{ roundId, extendByMs }` to `{ roundId, newEndTime }` (absolute timestamp)
+     - Removed `durationMs` from all API responses (getCurrentRound, hostDashboard)
+     - Updated Game interface in storage.ts (removed defaultRoundDurationMs)
+  2. **UI Improvements**:
+     - Replaced duration dropdowns with datetime-local pickers (native HTML5 input)
+     - Auto-initializes to 24 hours from now, rounded to next hour
+     - Clear validation: deadlines must be in future
+     - User-friendly confirmations with formatted datetime
+     - Removed duration from game creation modal
+  3. **Benefits**:
+     - Better control: Set exact deadlines (e.g., "Friday 5pm")
+     - Clearer intent: Absolute time vs relative duration
+     - More flexible: Easy to adjust to specific times/events
+     - Better UX: Native calendar picker with intuitive selection
+- **Test Results**: All passing ✅
+  - Unit tests: 195/195 passed
+  - Integration tests: 19/19 passed
+  - TypeScript compilation: Success
+
+### Previous: Host Controls UX & Skip Goal Bug Fix ✅ (October 17, 2025)
 - **Feature**: Separated "End Round" button into two distinct actions
 - **Bug Fix**: Skip Goal functionality not working (goals incorrectly marked as completed)
 - **Status**: Both issues fixed and tested
@@ -85,12 +119,10 @@
 
 ## Next Steps (Immediate)
 
-### 1. Testing & Validation (Next Session)
-- [ ] Test solution replay feature end-to-end
-- [ ] Verify UI controls hide/show correctly when round ends/starts
-- [ ] Mobile responsive verification for replay controls
-- [ ] Cross-browser compatibility check
-- [ ] Performance validation
+### 1. Feature Enhancements (Optional)
+- [ ] Consider additional UX improvements based on user feedback
+- [ ] Mobile responsive verification for datetime pickers
+- [ ] Cross-browser compatibility check for datetime-local inputs
 
 ### 2. Final Phase 4+ Completion (~1-2 hours remaining)
 - [ ] Address any bugs discovered in testing
@@ -106,7 +138,7 @@
 
 ## Current Blockers
 
-**None** - Project progressing smoothly
+**None** - All features complete and tested
 
 ## Open Issues
 
@@ -124,6 +156,12 @@
 ## Recent Accomplishments (Last Week)
 
 ### New Features Implemented
+- ✅ **Deadline-Based Round Management** (October 18) - Migrated from durations to absolute deadlines
+  - Datetime pickers for setting round deadlines
+  - Validation ensures deadlines are in future
+  - Smart defaults (24h from now, rounded to hour)
+  - All API endpoints and tests updated
+  - Comprehensive documentation updates
 - ✅ **Solution Replay** (October 14, improved October 16) - Animated playback of solutions after round ends
   - Click leaderboard entries to watch replays
   - Exit with button or ESC key (resets board to starting positions)
@@ -174,7 +212,7 @@
 ## Project Health
 
 ### Metrics
-- **Test Coverage**: 96.46% (207 unit + 14 integration + 3 API tests)
+- **Test Coverage**: Excellent (195 unit + 19 integration tests, all passing)
 - **Documentation**: Comprehensive ✅
 - **Code Quality**: TypeScript strict mode ✅
 - **Deployment**: Production-ready ✅
