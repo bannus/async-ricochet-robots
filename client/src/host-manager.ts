@@ -1,11 +1,18 @@
 /**
  * Host Manager
  * Handles all host-specific functionality and UI
+ * 
+ * NEW WORKFLOW (v1.4.0):
+ * 1. Click "Preview Goal" → Creates pending round, shows goal
+ * 2. Click "Skip" → Updates pending round with new random goal
+ * 3. Click "Publish" → Sets deadline and makes round active
  */
 
 import { ApiClient } from './api-client.js';
 
 export class HostManager {
+  private pendingRoundId: string | null = null;
+
   constructor(
     private gameId: string,
     private hostKey: string,
@@ -35,24 +42,29 @@ export class HostManager {
    * Setup host-specific event listeners
    */
   private setupEventListeners(): void {
-    const startBtn = document.getElementById('host-start-round');
-    const completeBtn = document.getElementById('host-complete-round');
+    const previewBtn = document.getElementById('host-preview-goal');
     const skipBtn = document.getElementById('host-skip-goal');
+    const publishBtn = document.getElementById('host-publish-round');
+    const completeBtn = document.getElementById('host-complete-round');
     const extendBtn = document.getElementById('host-extend-round');
     
     // Initialize datetime inputs with default values
     this.initializeDatetimeInputs();
     
-    if (startBtn) {
-      startBtn.addEventListener('click', () => this.startRound());
-    }
-    
-    if (completeBtn) {
-      completeBtn.addEventListener('click', () => this.completeRound());
+    if (previewBtn) {
+      previewBtn.addEventListener('click', () => this.previewGoal());
     }
     
     if (skipBtn) {
       skipBtn.addEventListener('click', () => this.skipGoal());
+    }
+    
+    if (publishBtn) {
+      publishBtn.addEventListener('click', () => this.publishRound());
+    }
+    
+    if (completeBtn) {
+      completeBtn.addEventListener('click', () => this.completeRound());
     }
     
     if (extendBtn) {
@@ -92,6 +104,7 @@ export class HostManager {
       
       if (result.success) {
         this.displayStats(result.data);
+        this.updateButtonStates(result.data);
       } else {
         console.error('Failed to load host dashboard:', result.error);
       }
@@ -124,11 +137,129 @@ export class HostManager {
   }
 
   /**
-   * Start a new round
+   * Update button states based on game state
    */
-  private async startRound(): Promise<void> {
+  private updateButtonStates(data: any): void {
+    const previewBtn = document.getElementById('host-preview-goal') as HTMLButtonElement;
+    const skipBtn = document.getElementById('host-skip-goal') as HTMLButtonElement;
+    const publishBtn = document.getElementById('host-publish-round') as HTMLButtonElement;
+    const completeBtn = document.getElementById('host-complete-round') as HTMLButtonElement;
+    
+    const hasPending = data.currentState?.hasPendingRound;
+    const hasActive = data.currentState?.hasActiveRound;
+    
+    // Store pending round ID if exists
+    if (hasPending && data.currentState.pendingRound) {
+      this.pendingRoundId = data.currentState.pendingRound.roundId;
+    } else {
+      this.pendingRoundId = null;
+    }
+    
+    // Preview: Only enabled when no active or pending round
+    if (previewBtn) {
+      previewBtn.disabled = hasActive || hasPending;
+      previewBtn.textContent = hasPending ? 'Previewing...' : 'Preview Goal';
+    }
+    
+    // Skip/Publish: Only enabled when pending round exists
+    if (skipBtn) {
+      skipBtn.disabled = !hasPending;
+    }
+    
+    if (publishBtn) {
+      publishBtn.disabled = !hasPending;
+    }
+    
+    // Complete: Only enabled when active round exists
+    if (completeBtn) {
+      completeBtn.disabled = !hasActive;
+    }
+  }
+
+  /**
+   * Preview a new goal (creates pending round)
+   * NEW WORKFLOW: Step 1 - Create pending round for preview
+   */
+  private async previewGoal(): Promise<void> {
+    if (!confirm('Generate a random goal to preview?')) {
+      return;
+    }
+    
+    try {
+      const result = await this.apiClient.startRound(this.gameId, this.hostKey);
+      
+      if (result.success) {
+        this.pendingRoundId = result.data.roundId;
+        
+        const goal = result.data.goalColor;
+        const pos = result.data.goalPosition;
+        alert(`Goal Preview:\n${goal} robot to (${pos.x}, ${pos.y})\n\nClick "Skip" for a different goal, or "Publish" to make it active.`);
+        
+        // Reload to show preview
+        window.location.reload();
+      } else {
+        alert('Failed to preview goal: ' + (result.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Preview goal error:', error);
+      alert('Error previewing goal: ' + (error as Error).message);
+    }
+  }
+
+  /**
+   * Skip the current preview (get a different goal)
+   * NEW WORKFLOW: Call startRound again to update pending round
+   */
+  private async skipGoal(): Promise<void> {
+    if (!this.pendingRoundId) {
+      alert('No pending round to skip');
+      return;
+    }
+    
+    if (!confirm('Skip this goal and get a different one?')) {
+      return;
+    }
+    
+    try {
+      // Call startRound again - it will update the existing pending round
+      const result = await this.apiClient.startRound(this.gameId, this.hostKey);
+      
+      if (result.success) {
+        const goal = result.data.goalColor;
+        const pos = result.data.goalPosition;
+        const wasUpdate = result.data.isUpdate;
+        
+        if (wasUpdate) {
+          alert(`New Goal:\n${goal} robot to (${pos.x}, ${pos.y})\n\nClick "Skip" again for another, or "Publish" to make it active.`);
+        } else {
+          alert(`Goal:\n${goal} robot to (${pos.x}, ${pos.y})`);
+        }
+        
+        window.location.reload();
+      } else {
+        alert('Failed to skip goal: ' + (result.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Skip goal error:', error);
+      alert('Error skipping goal: ' + (error as Error).message);
+    }
+  }
+
+  /**
+   * Publish the pending round (makes it active with deadline)
+   * NEW WORKFLOW: Step 3 - Publish with deadline
+   */
+  private async publishRound(): Promise<void> {
+    if (!this.pendingRoundId) {
+      alert('No pending round to publish');
+      return;
+    }
+    
     const deadlineInput = document.getElementById('host-round-deadline') as HTMLInputElement;
-    if (!deadlineInput) return;
+    if (!deadlineInput) {
+      alert('Deadline input not found');
+      return;
+    }
     
     const deadlineValue = deadlineInput.value;
     if (!deadlineValue) {
@@ -149,23 +280,28 @@ export class HostManager {
     const deadlineDate = new Date(endTime);
     const formattedDeadline = deadlineDate.toLocaleString();
     
-    if (!confirm(`Start a new round with deadline: ${formattedDeadline}?`)) {
+    if (!confirm(`Publish this round with deadline: ${formattedDeadline}?`)) {
       return;
     }
     
     try {
-      const result = await this.apiClient.startRound(this.gameId, this.hostKey, endTime);
+      const result = await this.apiClient.publishRound(
+        this.gameId,
+        this.hostKey,
+        this.pendingRoundId,
+        endTime
+      );
       
       if (result.success) {
-        alert(`Round ${result.data.round.roundNumber} started successfully!`);
-        // Trigger page reload to show new round
+        alert(`Round published successfully!\nPlayers can now submit solutions.`);
+        this.pendingRoundId = null;
         window.location.reload();
       } else {
-        alert('Failed to start round: ' + (result.error || 'Unknown error'));
+        alert('Failed to publish round: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
-      console.error('Start round error:', error);
-      alert('Error starting round: ' + (error as Error).message);
+      console.error('Publish round error:', error);
+      alert('Error publishing round: ' + (error as Error).message);
     }
   }
 
@@ -187,8 +323,7 @@ export class HostManager {
       const result = await this.apiClient.endRound(
         this.gameId,
         this.hostKey,
-        roundId,
-        false // skipGoal = false
+        roundId
       );
       
       if (result.success) {
@@ -200,40 +335,6 @@ export class HostManager {
     } catch (error) {
       console.error('Complete round error:', error);
       alert('Error completing round: ' + (error as Error).message);
-    }
-  }
-
-  /**
-   * Skip the current goal (return it to the pool)
-   */
-  private async skipGoal(): Promise<void> {
-    if (!confirm('Skip this goal? It will be available again in a future round.')) {
-      return;
-    }
-    
-    try {
-      const roundId = this.getCurrentRoundId();
-      if (!roundId) {
-        alert('Cannot determine current round');
-        return;
-      }
-      
-      const result = await this.apiClient.endRound(
-        this.gameId,
-        this.hostKey,
-        roundId,
-        true // skipGoal = true
-      );
-      
-      if (result.success) {
-        alert('Goal skipped successfully!');
-        window.location.reload();
-      } else {
-        alert('Failed to skip goal: ' + (result.error || 'Unknown error'));
-      }
-    } catch (error) {
-      console.error('Skip goal error:', error);
-      alert('Error skipping goal: ' + (error as Error).message);
     }
   }
 
@@ -334,7 +435,7 @@ export class HostManager {
       return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
     
-    // Set default for start round
+    // Set default for publish deadline
     const deadlineInput = document.getElementById('host-round-deadline') as HTMLInputElement;
     if (deadlineInput) {
       deadlineInput.value = formatDatetimeLocal(defaultDeadline);

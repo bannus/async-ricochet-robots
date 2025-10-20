@@ -61,8 +61,8 @@ async function getDashboardHandler(
 
     // Calculate statistics
     const activeRound = roundsSummary.find(r => r.status === 'active');
+    const pendingRound = roundsSummary.find(r => r.status === 'pending');
     const completedRounds = roundsSummary.filter(r => r.status === 'completed');
-    const skippedRounds = roundsSummary.filter(r => r.status === 'skipped');
 
     const totalSolutions = roundsSummary.reduce((sum, r) => sum + r.solutionCount, 0);
     const avgSolutionsPerRound = completedRounds.length > 0
@@ -99,22 +99,28 @@ async function getDashboardHandler(
       },
       currentState: {
         hasActiveRound: !!activeRound,
+        hasPendingRound: !!pendingRound,
         activeRound: activeRound ? {
           roundId: activeRound.roundId,
           roundNumber: activeRound.roundNumber,
           goal: activeRound.goal,
           startTime: activeRound.startTime,
           endTime: activeRound.endTime,
-          timeRemaining: Math.max(0, activeRound.endTime - Date.now()),
+          timeRemaining: activeRound.endTime ? Math.max(0, activeRound.endTime - Date.now()) : null,
           solutionCount: activeRound.solutionCount,
           leader: activeRound.winner
+        } : null,
+        pendingRound: pendingRound ? {
+          roundId: pendingRound.roundId,
+          roundNumber: pendingRound.roundNumber,
+          goal: pendingRound.goal
         } : null,
         robotPositions: game.board.robots
       },
       statistics: {
         totalRoundsPlayed: allRounds.length,
         roundsCompleted: completedRounds.length,
-        roundsSkipped: skippedRounds.length,
+        roundsPending: pendingRound ? 1 : 0,
         activeRounds: activeRound ? 1 : 0,
         totalSolutions,
         averageSolutionsPerRound: avgSolutionsPerRound,
@@ -126,9 +132,11 @@ async function getDashboardHandler(
       rounds: roundsSummary.sort((a, b) => b.roundNumber - a.roundNumber), // Most recent first
       nextSteps: isGameComplete
         ? ['Game complete! All goals have been solved.', 'Review final statistics', 'Archive or share results']
-        : activeRound
-          ? ['Monitor current round progress', 'View leaderboard', 'End round when ready or wait for timer']
-          : ['Start the next round', `${totalGoals - goalsCompleted} goals remaining`]
+        : pendingRound
+          ? ['Review pending goal', 'Publish round to make it active', 'Or skip to select a different goal']
+          : activeRound
+            ? ['Monitor current round progress', 'View leaderboard', 'End round when ready or wait for timer']
+            : ['Start the next round', `${totalGoals - goalsCompleted} goals remaining`]
     });
 
   } catch (error: any) {

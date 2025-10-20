@@ -473,6 +473,7 @@ export function validateSubmitSolutionRequest(body: any): void {
 
 /**
  * Validate startRound request body
+ * NEW: No parameters required - creates pending round
  */
 export function validateStartRoundRequest(body: any): void {
   if (!body || typeof body !== 'object') {
@@ -483,8 +484,7 @@ export function validateStartRoundRequest(body: any): void {
     }]);
   }
 
-  // endTime is required
-  validateTimestamp(body.endTime, 'endTime', true);
+  // No parameters required for creating pending rounds
 }
 
 /**
@@ -507,6 +507,7 @@ export function validateExtendRoundRequest(body: any): void {
 
 /**
  * Validate endRound request body
+ * NEW: Removed skipGoal parameter - skip now happens during preview via startRound
  */
 export function validateEndRoundRequest(body: any): void {
   if (!body || typeof body !== 'object') {
@@ -518,7 +519,7 @@ export function validateEndRoundRequest(body: any): void {
   }
 
   validateRoundId(body.roundId);
-  validateBoolean(body.skipGoal, 'skipGoal', false);
+  // skipGoal parameter removed - skip during preview instead
 }
 
 // ============================================================================

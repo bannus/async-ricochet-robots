@@ -49,6 +49,15 @@ async function extendRoundHandler(
       );
     }
 
+    // Ensure round has an endTime (active rounds should always have one)
+    if (!round.endTime) {
+      return errorResponse(
+        'Cannot extend round: round has no deadline set',
+        'INVALID_ROUND_STATE',
+        400
+      );
+    }
+
     // Validate new end time
     const now = Date.now();
     

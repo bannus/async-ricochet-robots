@@ -529,7 +529,13 @@ All host endpoints require authentication headers:
 
 ## POST /api/host/startRound
 
-Start a new round by selecting an incomplete goal from the board with a specific deadline.
+Start a new round by selecting an incomplete goal from the board with a specific deadline. Creates the round in 'pending' status, allowing the host to preview and optionally skip goals before publishing to players.
+
+**Workflow:**
+1. Host calls `startRound` → Round created in 'pending' status (host-only visibility)
+2. Host previews the goal
+3. If satisfied: Call `publishRound` → Round becomes 'active' (players can see and submit)
+4. If not satisfied: Call `startRound` again → Updates same round with new goal (same roundId)
 
 ### Headers
 ```http
@@ -539,15 +545,12 @@ X-Host-Key: host_9f8e7d6c5b4a
 
 ### Request Body
 ```json
-{
-  "endTime": 1704153600000
-}
+{}
 ```
 
-### Request Body Parameters
-- `endTime` (required): Unix timestamp in milliseconds when the round should end. Must be in the future.
+**Note:** No parameters required. The round is created in 'pending' status without a deadline. The deadline will be set when the host publishes the round.
 
-### Response 200
+### Response 200 (New Round Created)
 ```json
 {
   "success": true,
@@ -563,12 +566,36 @@ X-Host-Key: host_9f8e7d6c5b4a
       "green": { "x": 8, "y": 14 },
       "blue": { "x": 1, "y": 9 }
     },
-    "startTime": 1704067200000,
-    "endTime": 1704153600000,
-    "status": "active",
+    "status": "pending",
     "goalsCompleted": 0,
     "goalsRemaining": 17,
-    "message": "Round started successfully!"
+    "message": "Round created in preview mode. Review the goal and click 'Publish' to make it available to players, or 'Skip' to try a different goal.",
+    "isUpdate": false
+  }
+}
+```
+
+### Response 200 (Goal Skipped - Round Updated)
+When calling `startRound` while a pending round exists, the same round is updated with a new goal:
+
+```json
+{
+  "success": true,
+  "data": {
+    "roundId": "game_abc123xyz_round1",
+    "roundNumber": 1,
+    "goalIndex": 8,
+    "goalColor": "blue",
+    "goalPosition": { "x": 3, "y": 11 },
+    "robots": { /* same as before */ },
+    "startTime": 1704067200000,
+    "endTime": 1704153600000,
+    "status": "pending",
+    "goalsCompleted": 0,
+    "goalsRemaining": 17,
+    "message": "Goal updated. Review the new goal and click 'Publish' to make it available to players, or 'Skip' to try another goal.",
+    "isUpdate": true,
+    "previousGoalIndex": 5
   }
 }
 ```
@@ -586,23 +613,26 @@ X-Host-Key: host_9f8e7d6c5b4a
     "robots": { /* current positions */ },
     "startTime": 1704067200000,
     "endTime": 1704153600000,
-    "status": "active",
+    "status": "pending",
     "goalsCompleted": 7,
     "goalsRemaining": 10,
-    "message": "Round started successfully! Multi-color goal - any robot can win."
+    "message": "Round created in preview mode. Multi-color goal - any robot can win. Click 'Publish' to make it available to players.",
+    "isUpdate": false
   }
 }
 ```
 
-### Response 400 (Round Already Active)
+### Response 400 (Active Round Exists)
 ```json
 {
   "success": false,
-  "error": "A round is already active. End it before starting a new one.",
+  "error": "An active round is already in progress. End it before starting a new one.",
   "code": "ROUND_ALREADY_ACTIVE",
   "currentRoundId": "game_abc123xyz_round1"
 }
 ```
+
+**Note:** This error only occurs when an `active` round exists. If a `pending` round exists, `startRound` will update it with a new goal instead.
 
 ### Response 400 (Invalid Deadline)
 ```json
@@ -635,9 +665,91 @@ X-Host-Key: host_9f8e7d6c5b4a
 
 ### Goal Selection Logic
 - Random selection from incomplete goals (not in `completedGoalIndices`)
-- Skipped goals remain available for future rounds
+- Pending round reuse: If a pending round exists, updates it with a new goal (same roundId/roundNumber)
 - Robot positions reflect accumulated state from previous rounds
 - Game ends when all 17 goals are completed
+
+### Round Status Flow
+```
+pending  →  active  →  completed
+   ↑          
+   └─ (skip: call startRound again to update with new goal)
+```
+
+---
+
+## POST /api/host/publishRound
+
+Publish a pending round, making it visible and active for players to submit solutions.
+
+### Headers
+```http
+X-Game-Id: game_abc123xyz
+X-Host-Key: host_9f8e7d6c5b4a
+```
+
+### Request Body
+```json
+{
+  "roundId": "game_abc123xyz_round1",
+  "endTime": 1704153600000
+}
+```
+
+### Request Body Parameters
+- `roundId` (required): Round to publish (must be in 'pending' status)
+- `endTime` (required): Unix timestamp in milliseconds when the round should end. Must be in the future.
+
+### Response 200
+```json
+{
+  "success": true,
+  "data": {
+    "roundId": "game_abc123xyz_round1",
+    "roundNumber": 1,
+    "goalColor": "red",
+    "goalPosition": { "x": 7, "y": 7 },
+    "status": "active",
+    "startTime": 1704067250000,
+    "endTime": 1704153600000,
+    "message": "Round published successfully! Players can now view and submit solutions.",
+    "solutionCount": 0
+  }
+}
+```
+
+### Response 400 (Round Not Pending)
+```json
+{
+  "success": false,
+  "error": "Can only publish pending rounds. This round has status: active",
+  "code": "INVALID_ROUND_STATUS"
+}
+```
+
+### Response 404 (Round Not Found)
+```json
+{
+  "success": false,
+  "error": "Round not found",
+  "code": "ROUND_NOT_FOUND"
+}
+```
+
+### Response 401 (Invalid Host Key)
+```json
+{
+  "success": false,
+  "error": "Invalid host key",
+  "code": "INVALID_HOST_KEY"
+}
+```
+
+### Behavior
+- Changes round status from `pending` to `active`
+- Sets actual start time (may differ from initial creation time)
+- Round becomes visible to players via `getCurrentRound`
+- Players can now submit solutions
 
 ---
 
@@ -694,11 +806,20 @@ X-Host-Key: host_9f8e7d6c5b4a
 }
 ```
 
+### Response 400 (Round Still Pending)
+```json
+{
+  "success": false,
+  "error": "Cannot extend a pending round. Publish the round first.",
+  "code": "INVALID_ROUND_STATUS"
+}
+```
+
 ---
 
 ## POST /api/host/endRound
 
-Manually end the current round. If solutions exist, marks as completed and updates board. If no solutions, can mark as skipped.
+Manually end an active round and finalize results. Updates board with winning solution and marks goal as completed.
 
 ### Headers
 ```http
@@ -709,14 +830,12 @@ X-Host-Key: host_9f8e7d6c5b4a
 ### Request Body
 ```json
 {
-  "roundId": "game_abc123xyz_round1",
-  "skipGoal": false
+  "roundId": "game_abc123xyz_round1"
 }
 ```
 
 ### Request Body Parameters
-- `roundId` (required): Round to end
-- `skipGoal` (optional, default: false): If true, marks round as "skipped" and goal remains available for future rounds
+- `roundId` (required): Round to end (must be in 'active' status)
 
 ### Response 200 (Completed)
 ```json
@@ -825,17 +944,26 @@ X-Host-Key: host_9f8e7d6c5b4a
 ```json
 {
   "success": false,
-  "error": "Round is already completed",
+  "error": "This round has already ended with status: completed",
   "code": "ROUND_ALREADY_ENDED"
 }
 ```
 
-### Skip Behavior
-- When `skipGoal: true`: Round status becomes "skipped"
-- Goal NOT added to `completedGoalIndices`
-- Robot positions remain unchanged
-- Goal returns to available pool for future rounds
-- Useful when a goal is too easy or has no submissions
+### Response 400 (Round Still Pending)
+```json
+{
+  "success": false,
+  "error": "Cannot end a pending round. Publish it first or call startRound again to skip this goal.",
+  "code": "INVALID_ROUND_STATUS"
+}
+```
+
+### Goal Skipping
+To skip a goal during preview (before publishing):
+1. Call `startRound` again while round is in 'pending' status
+2. Same round will be updated with a new randomly selected goal
+3. Round number and roundId remain the same
+4. No need to end the round - just keep calling `startRound` until satisfied
 
 ---
 
@@ -899,17 +1027,6 @@ None
         }
       },
       {
-        "roundId": "game_abc123xyz_round6",
-        "roundNumber": 6,
-        "goalIndex": 5,
-        "goalColor": "multi",
-        "startTime": 1703894400000,
-        "endTime": 1703980800000,
-        "status": "skipped",
-        "solutionCount": 0,
-        "skippedReason": "No submissions"
-      },
-      {
         "roundId": "game_abc123xyz_round5",
         "roundNumber": 5,
         "goalIndex": 14,
@@ -930,8 +1047,7 @@ None
       "totalPlayers": 28,
       "totalSolutions": 67,
       "averageSolutionsPerRound": 11.2,
-      "completedRounds": 6,
-      "skippedRounds": 1,
+      "completedRounds": 7,
       "bestEverSolution": {
         "playerName": "Alice",
         "moveCount": 7,
@@ -984,7 +1100,6 @@ None
       "totalSolutions": 289,
       "averageSolutionsPerRound": 17.0,
       "completedRounds": 17,
-      "skippedRounds": 0,
       "bestEverSolution": {
         "playerName": "Alice",
         "moveCount": 6,
@@ -1006,7 +1121,7 @@ None
 **Type:** Internal function (not exposed as HTTP endpoint)
 
 ### Function Behavior
-1. Queries all active rounds
+1. Queries all rounds with status 'active'
 2. Checks if current time > endTime
 3. For expired rounds:
    - Updates status to "completed"
@@ -1014,6 +1129,7 @@ None
    - Adds goalIndex to completedGoalIndices
    - Logs round end event
 4. Does NOT automatically create new rounds (host controlled)
+5. Ignores rounds with status 'pending' (host preview mode)
 
 ### Logging
 ```javascript
@@ -1058,6 +1174,22 @@ Allowed headers:
 ---
 
 # Changelog
+
+## v1.4.0 (Round Preview and Publish Workflow)
+- **New workflow**: Rounds created in 'pending' status for host preview
+- **Host preview**: Host can review goal before publishing to players
+- **Goal skipping**: Call `startRound` again while pending to try different goals
+- **New endpoint**: `POST /api/host/publishRound` - Publish pending round to players
+- **Status flow**: `pending → active → completed` (removed 'skipped' status)
+- **Breaking changes**:
+  - `startRound` now creates rounds in 'pending' status (not 'active')
+  - `startRound` updates existing pending round instead of erroring
+  - `endRound` removed `skipGoal` parameter (use startRound to skip during preview)
+  - `getCurrentRound` filters out 'pending' rounds (host-only visibility)
+  - `submitSolution` rejects solutions for 'pending' rounds
+  - Timer function ignores 'pending' rounds
+- **New error code**: `INVALID_ROUND_STATUS` for operations on wrong status
+- **Benefit**: Host can ensure interesting goals before exposing to players
 
 ## v1.3.0 (Deadline-Based Round Management)
 - **Breaking Change**: Removed duration-based round management in favor of absolute deadline timestamps

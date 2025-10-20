@@ -35,16 +35,24 @@ async function endRoundHandler(
     const body = await request.json() as any;
     validateEndRoundRequest(body);
 
-    const { roundId, skipGoal } = body;
+    const { roundId } = body;
 
-    context.log(`endRound: gameId=${gameId}, roundId=${roundId}, skipGoal=${skipGoal || false}`);
+    context.log(`endRound: gameId=${gameId}, roundId=${roundId}`);
 
     // Get game and round data
     const game = await Storage.games.getGame(gameId);
     const round = await Storage.rounds.getRound(gameId, roundId);
 
-    // Check if round is still active
-    if (round.status !== 'active') {
+    // Check if round is active (not pending or already completed)
+    if (round.status === 'pending') {
+      return errorResponse(
+        'Cannot end a pending round. Publish it first or call startRound again to skip this goal.',
+        'INVALID_ROUND_STATUS',
+        400
+      );
+    }
+
+    if (round.status === 'completed') {
       return errorResponse(
         `This round has already ended with status: ${round.status}`,
         'ROUND_ALREADY_ENDED',
@@ -85,22 +93,19 @@ async function endRoundHandler(
       endTime: Date.now() // Update to actual end time
     });
 
-    // Update game: conditionally mark goal as completed based on skipGoal
-    // If skipGoal is true, don't add to completed list (goal stays in pool)
-    // If skipGoal is false, add to completed list (goal is removed from pool)
-    const updatedCompletedGoalIndices = skipGoal 
-      ? game.board.completedGoalIndices  // Skip: don't add to completed
-      : [...game.board.completedGoalIndices, round.goalIndex];  // Complete: add to completed
+    // Mark goal as completed (always - no more skip workflow during end)
+    // Skip now happens during preview by calling startRound again
+    const updatedCompletedGoalIndices = [...game.board.completedGoalIndices, round.goalIndex];
     
-    context.log(`Goal ${skipGoal ? 'skipped' : 'completed'}: goalIndex=${round.goalIndex}`);
+    context.log(`Goal completed: goalIndex=${round.goalIndex}`);
 
     await Storage.games.updateGame(gameId, {
       board: {
         ...game.board,
         robots: newRobotPositions,
         completedGoalIndices: updatedCompletedGoalIndices
-      },
-      totalRounds: game.totalRounds + 1
+      }
+      // Note: totalRounds already incremented when round was published
     });
 
     context.log(`Round ${roundId} ended successfully`);

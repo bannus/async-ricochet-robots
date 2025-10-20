@@ -1,15 +1,19 @@
 /**
  * POST /api/host/startRound
  * 
- * Start a new round by selecting the next goal.
+ * Create or update a pending round by selecting a random incomplete goal.
  * Host-only endpoint - requires valid hostKey for authentication.
- * Selects next uncompleted goal and creates an active round.
+ * 
+ * NEW WORKFLOW (v1.4.0):
+ * - Creates round in 'pending' status (no endTime yet)
+ * - If pending round exists, UPDATES it with new random goal (skip workflow)
+ * - Host previews goal, then calls publishRound to make it active
+ * - Fixes Bug #14: No more "entity already exists" errors when skipping
  */
 
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { Storage } from '../../shared/storage';
 import {
-  validateStartRoundRequest,
   successResponse,
   errorResponse,
   handleError
@@ -30,47 +34,48 @@ async function startRoundHandler(
     const { gameId } = authResult;
     context.log(`startRound: gameId=${gameId}`);
 
-    // Parse and validate request body
-    const body = await request.json() as any;
-    validateStartRoundRequest(body);
-    
-    const { endTime } = body;
-
     // Get game data
     const game = await Storage.games.getGame(gameId);
 
-    // Check if there's already an active round
-    const existingRound = await Storage.rounds.getActiveRound(gameId);
-    if (existingRound) {
+    // Check if there's already an ACTIVE round (not pending)
+    const existingActiveRound = await Storage.rounds.getActiveRound(gameId);
+    if (existingActiveRound) {
       return errorResponse(
-        'A round is already in progress. End the current round before starting a new one.',
-        'ROUND_IN_PROGRESS',
-        409
+        'An active round is already in progress. End it before starting a new one.',
+        'ROUND_ALREADY_ACTIVE',
+        400,
+        { currentRoundId: existingActiveRound.roundId }
       );
     }
 
     // Check if all goals have been completed
     if (game.board.completedGoalIndices.length >= game.board.allGoals.length) {
       return errorResponse(
-        'All goals have been completed! This game is finished.',
-        'GAME_COMPLETE',
-        400
+        'All goals exhausted. This game has completed all 17 rounds. Please create a new game.',
+        'ALL_GOALS_EXHAUSTED',
+        400,
+        {
+          goalsCompleted: game.board.completedGoalIndices.length,
+          totalRoundsPlayed: game.board.completedGoalIndices.length
+        }
       );
     }
 
-    // Select next goal (first uncompleted goal)
+    // Check if there's a pending round (for skip workflow)
+    const existingPendingRound = await Storage.rounds.getPendingRound(gameId);
+    
+    // Select random incomplete goal
     const completedSet = new Set(game.board.completedGoalIndices);
-    let nextGoalIndex = -1;
+    const availableGoalIndices: number[] = [];
     
     for (let i = 0; i < game.board.allGoals.length; i++) {
       if (!completedSet.has(i)) {
-        nextGoalIndex = i;
-        break;
+        availableGoalIndices.push(i);
       }
     }
 
-    if (nextGoalIndex === -1) {
-      // This shouldn't happen if the check above works, but safety check
+    if (availableGoalIndices.length === 0) {
+      // Safety check - shouldn't happen if check above works
       return errorResponse(
         'No available goals remaining.',
         'NO_GOALS_AVAILABLE',
@@ -78,69 +83,66 @@ async function startRoundHandler(
       );
     }
 
-    const selectedGoal = game.board.allGoals[nextGoalIndex];
+    // Randomly select from available goals
+    const randomIndex = Math.floor(Math.random() * availableGoalIndices.length);
+    const selectedGoalIndex = availableGoalIndices[randomIndex];
+    const selectedGoal = game.board.allGoals[selectedGoalIndex];
 
-    context.log(`Selected goal index ${nextGoalIndex}: ${selectedGoal.color} at (${selectedGoal.position.x}, ${selectedGoal.position.y})`);
+    context.log(`Selected goal index ${selectedGoalIndex}: ${selectedGoal.color} at (${selectedGoal.position.x}, ${selectedGoal.position.y})`);
 
-    // Validate endTime is in the future
-    const startTime = Date.now();
-    if (endTime <= startTime) {
-      return errorResponse(
-        'Deadline must be in the future',
-        'INVALID_DEADLINE',
-        400
-      );
+    let roundNumber: number;
+    let roundId: string;
+    let isUpdate = false;
+    let previousGoalIndex: number | undefined;
+
+    if (existingPendingRound) {
+      // SKIP WORKFLOW: Update existing pending round with new goal
+      roundNumber = existingPendingRound.roundNumber;
+      roundId = existingPendingRound.roundId;
+      previousGoalIndex = existingPendingRound.goalIndex;
+      isUpdate = true;
+
+      context.log(`Updating existing pending round ${roundId} with new goal (skip workflow)`);
+    } else {
+      // NEW ROUND: Calculate round number and ID
+      roundNumber = game.board.completedGoalIndices.length + 1;
+      roundId = `${gameId}_round${roundNumber}`;
+
+      context.log(`Creating new pending round ${roundId}`);
     }
 
-    // Calculate round number (total completed + 1)
-    const roundNumber = game.board.completedGoalIndices.length + 1;
-
-    // Generate round ID
-    const roundId = `${gameId}_round${roundNumber}`;
-
-    // Create round in storage
-    const round = await Storage.rounds.createRound(
+    // Upsert pending round (create or update)
+    const round = await Storage.rounds.upsertPendingRound(
       gameId,
       roundId,
       {
         roundNumber,
-        goalIndex: nextGoalIndex,
+        goalIndex: selectedGoalIndex,
         goal: selectedGoal,
         robotPositions: game.board.robots,
-        startTime,
-        endTime,
         createdBy: 'host'
       }
     );
 
-    context.log(`Round ${roundNumber} created: roundId=${round.roundId}`);
+    // Prepare response message
+    const message = isUpdate
+      ? 'Goal updated. Review the new goal and click \'Publish\' to make it available to players, or \'Skip\' to try another goal.'
+      : 'Round created in preview mode. Review the goal and click \'Publish\' to make it available to players, or \'Skip\' to try a different goal.';
 
     // Return success with round details
     return successResponse({
-      message: 'Round started successfully!',
-      round: {
-        roundId: round.roundId,
-        roundNumber: round.roundNumber,
-        gameId: round.gameId,
-        goal: {
-          color: round.goal.color,
-          position: round.goal.position
-        },
-        robotPositions: round.robotPositions,
-        startTime: round.startTime,
-        endTime: round.endTime,
-        status: 'active'
-      },
-      gameProgress: {
-        roundsCompleted: game.board.completedGoalIndices.length,
-        totalGoals: game.board.allGoals.length,
-        roundsRemaining: game.board.allGoals.length - game.board.completedGoalIndices.length - 1 // -1 for current round
-      },
-      nextSteps: [
-        'Players can now view the round and submit solutions',
-        'Monitor the leaderboard to see submissions',
-        'End the round when time expires or when ready'
-      ]
+      message,
+      roundId: round.roundId,
+      roundNumber: round.roundNumber,
+      goalIndex: selectedGoalIndex,
+      goalColor: round.goal.color,
+      goalPosition: round.goal.position,
+      robots: round.robotPositions,
+      status: 'pending',
+      goalsCompleted: game.board.completedGoalIndices.length,
+      goalsRemaining: game.board.allGoals.length - game.board.completedGoalIndices.length,
+      isUpdate,
+      ...(isUpdate && { previousGoalIndex })
     });
 
   } catch (error: any) {

@@ -45,11 +45,16 @@ async function getCurrentRoundHandler(
       });
     }
 
-    // Get active round (if exists)
-    const activeRound = await Storage.rounds.getActiveRound(gameId);
+    // Get active round, or pending round if no active round exists
+    let currentRound = await Storage.rounds.getActiveRound(gameId);
+    
+    if (!currentRound) {
+      // Try to get pending round (for host preview)
+      currentRound = await Storage.rounds.getPendingRound(gameId);
+    }
 
-    if (!activeRound) {
-      // No active round - find the most recently completed round
+    if (!currentRound) {
+      // No active or pending round - find the most recently completed round
       const allRounds = await Storage.rounds.getAllRounds(gameId);
       const completedRounds = allRounds.filter(r => r.status === 'completed');
       const lastCompletedRound = completedRounds.length > 0 
@@ -92,23 +97,24 @@ async function getCurrentRoundHandler(
       });
     }
 
-    // Active round exists - return full puzzle data
+    // Current round exists (active or pending) - return full puzzle data
     return successResponse({
       gameId: game.gameId,
       gameName: game.gameName,
-      roundId: activeRound.roundId,
-      roundNumber: activeRound.roundNumber,
+      roundId: currentRound.roundId,
+      roundNumber: currentRound.roundNumber,
       puzzle: {
         walls: game.board.walls,
         robots: game.board.robots,
         allGoals: game.board.allGoals,
-        goalColor: activeRound.goal.color,
-        goalPosition: activeRound.goal.position,
+        goalColor: currentRound.goal.color,
+        goalPosition: currentRound.goal.position,
         completedGoalIndices: game.board.completedGoalIndices
       },
-      startTime: activeRound.startTime,
-      endTime: activeRound.endTime,
-      status: activeRound.status,
+      startTime: currentRound.startTime,
+      endTime: currentRound.endTime,
+      status: currentRound.status,
+      hasActiveRound: currentRound.status === 'active',
       goalsRemaining: 17 - game.board.completedGoalIndices.length
     });
 

@@ -199,16 +199,33 @@
       
       <div class="host-actions">
         <div class="action-group">
-          <label for="host-round-deadline">Round Deadline:</label>
+          <h3>Step 1: Preview Goal</h3>
+          <button id="host-preview-goal" class="primary-btn">🎲 Preview Goal</button>
+          <p class="hint">Generate a random goal to preview before publishing</p>
+        </div>
+        
+        <div class="action-group">
+          <h3>Step 2: Review & Publish</h3>
+          <button id="host-skip-goal" class="warning-btn" disabled>
+            ⏭ Skip (Try Different Goal)
+          </button>
+          <label for="host-round-deadline">Set Deadline:</label>
           <input 
             type="datetime-local" 
             id="host-round-deadline" 
             aria-label="Round deadline"
           >
-          <button id="host-start-round" class="primary-btn">Start New Round</button>
+          <button id="host-publish-round" class="primary-btn" disabled>
+            ✅ Publish Round
+          </button>
+          <p class="hint">Preview a goal first, then skip or publish it</p>
         </div>
         
         <div class="action-group">
+          <h3>Active Round Controls</h3>
+          <button id="host-complete-round" class="primary-btn" disabled>
+            ✓ Complete Round
+          </button>
           <label for="host-change-deadline">Change Deadline:</label>
           <input 
             type="datetime-local" 
@@ -216,13 +233,7 @@
             aria-label="New deadline"
           >
           <button id="host-extend-round" class="secondary-btn">
-            Change Deadline
-          </button>
-          <button id="host-complete-round" class="primary-btn">
-            ✓ Complete Round
-          </button>
-          <button id="host-skip-goal" class="warning-btn">
-            ⏭ Skip Goal
+            ⏰ Change Deadline
           </button>
         </div>
       </div>

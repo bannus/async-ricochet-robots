@@ -59,16 +59,18 @@ Host creates a new game instance to start playing with friends.
 
 ---
 
-## 2. Starting a Round
+## 2. Starting a Round (NEW: Preview & Publish Workflow)
 
 ### Objective
-Host starts a new round with a fresh puzzle for players.
+Host creates a round, previews the goal, and publishes it when ready for players.
 
 ### Prerequisites
 - Host has game credentials
 - No round is currently active (or previous round has ended)
 
 ### Steps
+
+#### Phase 1: Create & Preview
 
 1. **Access Host Panel**
    - Navigate to host panel URL
@@ -86,31 +88,76 @@ Host starts a new round with a fresh puzzle for players.
    - Shows preview: "Round will end: Friday, Oct 20, 5:00 PM"
    - Can adjust to any future date/time
 
-4. **Click "Start Round"**
-   - Confirmation: "Start Round #X ending at [date/time]?"
-   - Click "Confirm"
+4. **Click "Start Round" (Creates Pending Round)**
+   - System randomly selects goal from available goals
+   - Round created in 'pending' status (host-only visibility)
+   - Success message: "Round preview created!"
 
-5. **Round Starts**
-   - Success message: "Round started successfully!"
-   - Puzzle preview shown
+5. **Preview the Goal**
+   - Goal displayed on board (host-only view)
+   - Goal color and position shown
+   - Message: "Preview Mode - Players cannot see this yet"
+   - Two options presented:
+     - **"Skip This Goal"** button - Try a different goal
+     - **"Publish Round"** button - Make visible to players
+
+#### Phase 2: Skip Goal (Optional)
+
+6. **Click "Skip This Goal" (If Not Satisfied)**
+   - Confirmation: "Try a different goal?"
+   - Click "Confirm"
+   - System selects NEW random goal
+   - Same pending round updated with new goal
+   - Goal doesn't count as completed
+   - Can skip multiple times until satisfied
+
+#### Phase 3: Publish Round
+
+7. **Click "Publish Round" (When Ready)**
+   - Confirmation: "Publish this round to players?"
+   - Click "Confirm"
+   - Round status changes from 'pending' to 'active'
+   - Actual startTime recorded
+   - Round becomes visible to players
+
+8. **Round Now Active**
+   - Success message: "Round published successfully!"
+   - Puzzle visible to all players
    - Round timer starts counting down
    - Player link displayed with "Share" button
 
-6. **Share with Players**
+9. **Share with Players**
    - Copy player link
    - Share via messaging, email, etc.
    - QR code available for easy mobile access
 
 ### Success Criteria
 - Round created with unique puzzle
-- Timer countdown visible
+- Host can preview and optionally skip goals
+- Once published, timer countdown visible
 - Player link ready to share
-- Players can access puzzle
+- Players can access puzzle only after publish
 
 ### UI Updates
+
+**Preview Mode (Pending):**
+- Dashboard shows "Preview Mode" badge
+- Goal visible only to host
+- Action buttons: [Skip This Goal] [Publish Round]
+- Timer NOT counting down yet
+- Message: "Players cannot see this round yet"
+
+**Active Mode (After Publish):**
 - Dashboard updates to show active round
 - Timer displays: "23h 59m remaining"
 - Real-time solution counter: "0 solutions submitted"
+- Action buttons: [Change Deadline] [End Round]
+
+### Benefits of Preview Mode
+- ✅ Host can ensure goal quality before exposing to players
+- ✅ Can skip "boring" or "too easy" goals
+- ✅ No wasted round numbers on skipped goals
+- ✅ Cleaner game flow - only published rounds visible to players
 
 ---
 

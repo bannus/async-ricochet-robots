@@ -34,17 +34,21 @@ async function submitSolutionHandler(
     const game = await Storage.games.getGame(gameId);
     const round = await Storage.rounds.getRound(gameId, roundId);
 
-    // Check if round is still active
+    // Check if round is active (not pending or completed)
     if (round.status !== 'active') {
+      const message = round.status === 'pending'
+        ? 'This round has not been published yet. Please wait for the host to publish it.'
+        : 'This round has ended. Solutions can no longer be submitted.';
+      
       return errorResponse(
-        'This round has ended. Solutions can no longer be submitted.',
-        'ROUND_ENDED',
+        message,
+        'ROUND_NOT_ACTIVE',
         400
       );
     }
 
     // Check if round deadline has passed
-    if (Date.now() > round.endTime) {
+    if (round.endTime && Date.now() > round.endTime) {
       return errorResponse(
         'The deadline for this round has passed.',
         'DEADLINE_PASSED',

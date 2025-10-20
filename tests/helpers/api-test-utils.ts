@@ -38,15 +38,20 @@ export interface GameCreationResponse {
 export interface RoundData {
   roundId: string;
   roundNumber: number;
-  gameId: string;
+  gameId?: string;
   status: string;
-  goal: {
-    color: string;
-    position: { x: number; y: number };
-  };
-  robotPositions: any;
-  startTime: number;
-  endTime: number;
+  goalIndex?: number;
+  goalColor?: string;
+  goalPosition?: { x: number; y: number };
+  robots?: any;
+  robotPositions?: any;
+  startTime?: number;
+  endTime?: number;
+  goalsCompleted?: number;
+  goalsRemaining?: number;
+  isUpdate?: boolean;
+  previousGoalIndex?: number;
+  message?: string;
 }
 
 export interface LeaderboardEntry {
@@ -121,34 +126,61 @@ export async function createTestGame(
 }
 
 /**
- * Start a test round
+ * Start a test round (creates in pending status)
  */
 export async function startTestRound(
   gameId: string,
-  hostKey: string,
-  hoursFromNow: number = 1
+  hostKey: string
 ): Promise<RoundData> {
-  // Calculate endTime as Unix timestamp in milliseconds
-  const endTime = Date.now() + (hoursFromNow * 60 * 60 * 1000);
-
   const response = await makeRequest('/host/startRound', {
     method: 'POST',
     headers: {
       'x-game-id': gameId,
       'x-host-key': hostKey,
     },
+    body: {},
+  });
+
+  const result = await parseResponse<any>(response);
+
+  if (!result.success || !result.data) {
+    throw new Error(`Failed to start round: ${result.error}`);
+  }
+
+  return result.data;
+}
+
+/**
+ * Publish a pending round (makes it active with deadline)
+ */
+export async function publishTestRound(
+  gameId: string,
+  hostKey: string,
+  roundId: string,
+  hoursFromNow: number = 1
+): Promise<RoundData> {
+  // Calculate endTime as Unix timestamp in milliseconds
+  const endTime = Date.now() + (hoursFromNow * 60 * 60 * 1000);
+
+  const response = await makeRequest('/host/publishRound', {
+    method: 'POST',
+    headers: {
+      'x-game-id': gameId,
+      'x-host-key': hostKey,
+    },
     body: {
+      roundId,
       endTime,
     },
   });
 
   const result = await parseResponse<any>(response);
 
-  if (!result.success || !result.data || !result.data.round) {
-    throw new Error(`Failed to start round: ${result.error}`);
+  if (!result.success || !result.data) {
+    throw new Error(`Failed to publish round: ${result.error}`);
   }
 
-  return result.data.round;
+  return result.data;
 }
 
 /**
@@ -180,13 +212,12 @@ export async function submitTestSolution(
 }
 
 /**
- * End a round
+ * End a round (completes it and marks goal as completed)
  */
 export async function endTestRound(
   gameId: string,
   hostKey: string,
-  roundId: string,
-  skipGoal: boolean = false
+  roundId: string
 ): Promise<any> {
   const response = await makeRequest('/host/endRound', {
     method: 'POST',
@@ -196,7 +227,6 @@ export async function endTestRound(
     },
     body: {
       roundId,
-      skipGoal,
     },
   });
 

@@ -51,9 +51,9 @@ export interface RoundEntity {
   goalColor: string;
   goalPosition: string;  // JSON stringified Position
   robotPositions: string; // JSON stringified Robots
-  startTime: number;
-  endTime: number;
-  status: 'active' | 'completed' | 'skipped';
+  startTime?: number;    // Set when published
+  endTime?: number;      // Set when published
+  status: 'pending' | 'active' | 'completed';
   createdBy: 'host' | 'timer';
 }
 
@@ -93,9 +93,9 @@ export interface Round {
   goalIndex: number;
   goal: Goal;
   robotPositions: Robots;
-  startTime: number;
-  endTime: number;
-  status: 'active' | 'completed' | 'skipped';
+  startTime?: number;
+  endTime?: number;
+  status: 'pending' | 'active' | 'completed';
   createdBy: 'host' | 'timer';
 }
 
@@ -388,8 +388,13 @@ export class RoundsStorage extends BaseStorageClient {
     gameId: string,
     roundId: string,
     updates: Partial<{
-      status: 'active' | 'completed' | 'skipped';
+      status: 'pending' | 'active' | 'completed';
+      startTime: number;
       endTime: number;
+      goalIndex: number;
+      goalColor: string;
+      goalPosition: string;
+      robotPositions: string;
     }>
   ): Promise<void> {
     try {
@@ -489,6 +494,64 @@ export class RoundsStorage extends BaseStorageClient {
       status: entity.status,
       createdBy: entity.createdBy
     };
+  }
+
+  /**
+   * Get or create a pending round (upsert pattern for skip workflow)
+   * If a pending round exists for this game, returns it
+   * Otherwise creates a new one
+   */
+  async getPendingRound(gameId: string): Promise<Round | null> {
+    try {
+      const filter = odata`PartitionKey eq ${gameId} and status eq 'pending'`;
+      const entities = this.tableClient.listEntities<RoundEntity & TableEntity>({
+        queryOptions: { filter }
+      });
+
+      for await (const entity of entities) {
+        return this.parseRound(entity);
+      }
+
+      return null;
+    } catch (error) {
+      this.handleError(error, `getPendingRound(${gameId})`);
+    }
+  }
+
+  /**
+   * Upsert a pending round (create or update)
+   * Used for skip-goal-during-preview workflow
+   */
+  async upsertPendingRound(
+    gameId: string,
+    roundId: string,
+    roundData: {
+      roundNumber: number;
+      goalIndex: number;
+      goal: Goal;
+      robotPositions: Robots;
+      createdBy: 'host' | 'timer';
+    }
+  ): Promise<Round> {
+    try {
+      const entity: RoundEntity & TableEntity = {
+        partitionKey: gameId,
+        rowKey: roundId,
+        roundNumber: roundData.roundNumber,
+        goalIndex: roundData.goalIndex,
+        goalColor: roundData.goal.color,
+        goalPosition: JSON.stringify(roundData.goal.position),
+        robotPositions: JSON.stringify(roundData.robotPositions),
+        status: 'pending',
+        createdBy: roundData.createdBy
+      };
+
+      await this.tableClient.upsertEntity(entity, 'Replace');
+
+      return this.parseRound(entity);
+    } catch (error) {
+      this.handleError(error, `upsertPendingRound(${gameId}, ${roundId})`);
+    }
   }
 }
 

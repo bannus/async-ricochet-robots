@@ -11,6 +11,215 @@ This file contains all bugs that have been resolved and verified. For active bug
 
 ## Fixed Bugs (Newest First)
 
+### Bug #15: Host Cannot View Board During Preview Mode
+**Priority:** 🟡 High  
+**Status:** ✅ Fixed  
+**Location:** `api/src/functions/getCurrentRound.ts`, `client/src/player-app.ts`  
+**Discovered:** User Testing (2025-10-20)  
+**Fixed:** 2025-10-20
+
+**Description:**  
+After implementing the new pending/publish workflow (Bug #14), hosts could create pending rounds to preview goals, but the board remained invisible during preview mode. The host couldn't see the goal they were supposed to be previewing.
+
+**Expected Behavior:**  
+- Host clicks "Preview Goal" → Pending round created
+- Host sees the board with the goal displayed
+- Host can decide to skip or publish
+- Players see "preview mode" indicator but can't submit
+
+**Actual Behavior:**  
+- Host clicks "Preview Goal" → Pending round created
+- Board shows "No active round" message
+- Host cannot see what goal they're previewing
+- Defeats the purpose of preview mode
+
+**Root Cause:**  
+The `getCurrentRound` API endpoint was designed to only return `active` rounds to players. When we added the pending status for preview mode, we filtered out pending rounds entirely. This made sense for players (they shouldn't see unpublished rounds), but it also blocked the host from seeing their own preview.
+
+**Fix Implementation:**
+
+**Option Considered #1:** Add host authentication to getCurrentRound
+- Check for X-Host-Key header
+- Return pending rounds only for authenticated hosts
+- More complex, requires authentication logic
+
+**Option Implemented #2:** Return pending rounds to everyone, handle in UI (SIMPLER)
+- Backend: getCurrentRound returns pending OR active rounds
+- Frontend: Show board for both states, but disable controls for pending
+- Simpler implementation, no authentication needed
+
+**Changes Made:**
+
+1. **Backend (`api/src/functions/getCurrentRound.ts`):**
+   ```typescript
+   // Old: Only return active rounds
+   const activeRound = await Storage.rounds.getActiveRound(gameId);
+   if (!activeRound) {
+     return noActiveRoundResponse();
+   }
+   
+   // New: Return active OR pending rounds
+   let currentRound = await Storage.rounds.getActiveRound(gameId);
+   if (!currentRound) {
+     currentRound = await Storage.rounds.getPendingRound(gameId);
+   }
+   if (!currentRound) {
+     return noActiveRoundResponse();
+   }
+   ```
+
+2. **Frontend (`client/src/player-app.ts`):**
+   ```typescript
+   // Handle different round statuses
+   if (data.status === 'pending') {
+     // Pending: Show board but disable controls
+     this.disablePlayerControls();
+     this.hidePlayerControls();
+     goalStatus.textContent = '⏸️ Preview Mode - Host is reviewing this goal';
+   } else if (data.status === 'completed') {
+     // Completed: Disable controls
+     this.disablePlayerControls();
+     this.hidePlayerControls();
+     goalStatus.textContent = 'Round ended - Click leaderboard entries to replay';
+   } else {
+     // Active: Enable controls
+     this.enablePlayerControls();
+     this.showPlayerControls();
+   }
+   ```
+
+3. **Tests (`tests/integration/api-integration.test.ts`):**
+   - Updated test: "pending round is visible but marked as preview"
+   - Old expectation: Pending rounds not returned
+   - New expectation: Pending rounds returned with `status: 'pending'`
+
+**Benefits:**
+- ✅ Host can see the board during preview
+- ✅ Players see the board with "preview mode" banner
+- ✅ Simple implementation - no authentication complexity
+- ✅ Clear visual feedback for both host and players
+- ✅ All 26/26 API integration tests passing
+
+**User Experience:**
+- **Host during preview:** Sees full board, can preview goal, buttons show "Skip" and "Publish"
+- **Players during preview:** See board with "Preview Mode" banner, controls disabled/hidden
+- **Host after publish:** Sees active round, buttons show "Complete" and "Change Deadline"
+- **Players after publish:** See active round, can submit solutions
+
+**Files Modified:**
+- `api/src/functions/getCurrentRound.ts` - Return pending OR active rounds
+- `client/src/player-app.ts` - Handle pending status in UI
+- `tests/integration/api-integration.test.ts` - Updated visibility test
+- `doc/BUGS-FIXED.md` - This entry
+
+**Verification:**
+- ✅ Host can see board during preview mode
+- ✅ Players see "Preview Mode" message with controls disabled
+- ✅ Skip button works (updates same pending round)
+- ✅ Publish button makes round active
+- ✅ All 26/26 integration tests passing
+
+**Related to:** Bug #14 (Pending/Publish Workflow)
+
+---
+
+### Bug #14: "Entity Already Exists" When Starting New Round After Skip
+**Priority:** 🔴 Critical  
+**Status:** ✅ Fixed  
+**Location:** `api/src/functions/hostStartRound.ts`, `api/src/functions/hostPublishRound.ts` (new)  
+**Discovered:** User Testing (2025-10-20)  
+**Fixed:** 2025-10-20
+
+**Description:**  
+When skipping a goal during preview (pending state), then trying to start a new round, the system throws an error: "Failed to start round: Entity already exists: createRound(game_69f3a0cfd9f87e81, game_69f3a0cfd9f87e81_round13)". This completely blocks the host from continuing the game.
+
+**Expected Behavior:**  
+- Host calls `startRound` → Round created in 'pending' status
+- Host doesn't like the goal, calls `startRound` again → Same round updated with new goal
+- Host likes the goal → Calls `publishRound` → Round status changes to 'active'
+- Players can now see and submit solutions
+
+**Actual Behavior:**  
+- First `startRound` creates pending round
+- Second `startRound` tries to CREATE instead of UPDATE
+- Azure Table Storage rejects duplicate entity creation
+- Error thrown, game stuck
+
+**Root Cause:**  
+The old round status flow was: `active → completed → skipped`. The "skip" functionality worked differently:
+1. Round became active immediately when created
+2. Host could "skip" an active round (marking it 'skipped')
+3. Skipped rounds didn't consume the goal
+
+The new workflow requires: `pending → active → completed`:
+1. Round starts in 'pending' (host preview)
+2. Host can call `startRound` multiple times to try different goals (same round updated)
+3. Host calls `publishRound` to make round 'active'
+4. Round ends as 'completed'
+
+The 'skipped' status is no longer needed - skipping now happens during the pending phase by calling `startRound` again.
+
+**Fix Implementation:**
+
+**Phase 1: Documentation** (Current)
+1. Updated `doc/api-specification.md` with new workflow
+2. Updated `doc/data-models.md` with new status values
+3. Document this bug fix
+
+**Phase 2: Tests** (Next)
+- Update integration tests for pending round workflow
+- Test skip-during-pending scenario
+- Test publish round endpoint
+- Test validation rules
+
+**Phase 3: API Implementation** (Next)
+- Update `api/shared/storage.ts` - Change status type to `'pending' | 'active' | 'completed'`
+- Modify `hostStartRound.ts`:
+  - Check for existing pending round
+  - If found: Update with new goal (skip scenario)
+  - If not found: Create new pending round
+  - Calculate roundNumber from completed rounds only
+- Create `hostPublishRound.ts`:
+  - Validate round is pending
+  - Change status to active
+  - Set actual startTime
+- Update `getCurrentRound.ts` - Filter to only return active rounds
+- Update `submitSolution.ts` - Only accept solutions for active rounds
+- Update `hostEndRound.ts` - Only allow ending active rounds
+- Update `checkRoundEnd.ts` timer - Only auto-expire active rounds
+
+**Phase 4: Frontend Implementation** (Next)
+- Add `publishRound()` to `api-client.ts`
+- Update `host-manager.ts` UI:
+  - Pending state: Show [Skip Goal] [Publish Round] buttons
+  - Active state: Show [End Round] [Extend Deadline] buttons
+- Update `index.html` with button templates
+- Add CSS styling for preview mode indicator
+
+**New Workflow:**
+```
+Host starts round      → status: 'pending'  (host-only visibility)
+Host skips goal        → call startRound again → updates same round
+Host publishes round   → status: 'active'   (players can see/submit)
+Round ends (timer/manual) → status: 'completed'
+```
+
+**Benefits:**
+- ✅ Eliminates 'skipped' status complexity
+- ✅ Host can preview goals before exposing to players
+- ✅ Host can try multiple goals without consuming round numbers
+- ✅ Cleaner state machine: pending → active → completed
+- ✅ No more "already exists" errors
+
+**Files Modified:** (Documentation phase complete)
+- `doc/api-specification.md` - Documented new workflow and publishRound endpoint
+- `doc/data-models.md` - Updated Round status values
+- `doc/BUGS-FIXED.md` - This entry
+
+**Status:** Documentation complete, ready to proceed with implementation phases
+
+---
+
 ### Bug #13: Skip Goal Not Working
 **Priority:** 🔴 Critical  
 **Status:** ✅ Fixed  

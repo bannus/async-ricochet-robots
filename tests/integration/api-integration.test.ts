@@ -18,6 +18,7 @@
 import {
   createTestGame,
   startTestRound,
+  publishTestRound,
   submitTestSolution,
   endTestRound,
   getCurrentRound,
@@ -39,99 +40,275 @@ describe('API Integration Tests', () => {
     });
   });
 
-  describe('Round Lifecycle', () => {
-    test('starts round, submits solution, ends round', async () => {
-      const game = await createTestGame();
-      const round = await startTestRound(game.gameId, game.hostKey);
+  describe('Round Lifecycle - New Pending/Publish Workflow', () => {
+    test('creates pending round, publishes it, then completes it', async () => {
+      const game = await createTestGame('Pending/Publish Test');
+      
+      // Step 1: Start round (creates in pending status)
+      const pendingRound = await startTestRound(game.gameId, game.hostKey);
+      
+      expect(pendingRound.roundId).toMatch(/^game_[a-f0-9]+_round\d+$/);
+      expect(pendingRound.status).toBe('pending');
+      expect(pendingRound.goalColor).toBeDefined();
+      expect(pendingRound.goalPosition).toBeDefined();
+      expect(pendingRound.robots).toBeDefined();
+      
+      // Step 2: Publish round (makes it active with deadline)
+      const activeRound = await publishTestRound(
+        game.gameId, 
+        game.hostKey, 
+        pendingRound.roundId, 
+        1 // 1 hour from now
+      );
+      
+      expect(activeRound.roundId).toBe(pendingRound.roundId);
+      expect(activeRound.status).toBe('active');
+      expect(activeRound.endTime).toBeGreaterThan(Date.now());
+      
+      // Step 3: End the round
+      const endResult = await endTestRound(game.gameId, game.hostKey, activeRound.roundId);
+      
+      expect(endResult.round.status).toBe('completed');
+      expect(endResult.gameProgress.roundsCompleted).toBe(1);
+    });
 
-      expect(round.roundId).toMatch(/^game_[a-f0-9]+_round\d+$/);
-      expect(round.status).toBe('active');
-      expect(round.goal.color).toBeDefined();
-      expect(round.goal.position).toBeDefined();
-      expect(round.robotPositions).toBeDefined();
+    test('pending round is visible but marked as preview', async () => {
+      const game = await createTestGame('Pending Visibility Test');
+      
+      // Create pending round
+      const pendingRound = await startTestRound(game.gameId, game.hostKey);
+      expect(pendingRound.status).toBe('pending');
+      
+      // Get current round as a player
+      const playerView = await getCurrentRound(game.gameId);
+      
+      // Pending round IS visible (so host can see board during preview)
+      expect(playerView.data?.roundId).toBe(pendingRound.roundId);
+      expect(playerView.data?.status).toBe('pending');
+      expect(playerView.data?.hasActiveRound).toBe(false); // But marked as not active
+      expect(playerView.data?.puzzle).toBeDefined(); // Board data is available
+      
+      // Verify board data includes all necessary pieces
+      expect(playerView.data?.puzzle.walls).toBeDefined();
+      expect(playerView.data?.puzzle.robots).toBeDefined();
+      expect(playerView.data?.puzzle.goalColor).toBeDefined();
+      expect(playerView.data?.puzzle.goalPosition).toBeDefined();
+    });
+
+    test('published round becomes visible to players', async () => {
+      const game = await createTestGame('Published Visibility Test');
+      
+      // Create and publish round
+      const pendingRound = await startTestRound(game.gameId, game.hostKey);
+      const activeRound = await publishTestRound(
+        game.gameId, 
+        game.hostKey, 
+        pendingRound.roundId
+      );
+      
+      // Now players should see it
+      const playerView = await getCurrentRound(game.gameId);
+      
+      expect(playerView.data?.roundId).toBe(activeRound.roundId);
+      expect(playerView.data?.status).toBe('active');
+      expect(playerView.data?.puzzle).toBeDefined();
     });
   });
-});
 
-describe('Skip Goal Regression Test (Bug #13)', () => {
-  /**
-   * Regression test for Bug #13: Skip Goal Not Working
-   * 
-   * Bug Description:
-   * - The skipGoal parameter was received but never used in hostEndRound.ts
-   * - Both "Complete Round" and "Skip Goal" buttons were marking goals as completed
-   * - Goals were permanently removed from pool regardless of skip/complete choice
-   * 
-   * Fix:
-   * - Added conditional logic: only add goal to completedGoalIndices when skipGoal=false
-   * - When skipGoal=true, goal remains in pool for future rounds
-   * 
-   * This test verifies both behaviors work correctly.
-   */
+  describe('Skip Goal During Preview (Bug #14 Fix)', () => {
+    /**
+     * Regression test for Bug #14: Entity Already Exists when skipping goals
+     * 
+     * OLD Bug Description:
+     * - Host clicks "Skip Goal" → endRound with skipGoal=true
+     * - Host tries to start new round → ERROR: Entity already exists
+     * 
+     * NEW Workflow:
+     * - Host calls startRound → creates pending round
+     * - Host doesn't like goal, calls startRound again → UPDATES same pending round
+     * - No entity duplication, no "already exists" error
+     * 
+     * This test verifies the new skip-during-preview workflow works correctly.
+     */
 
-  test('skipGoal=false removes goal from pool permanently', async () => {
-    // Create a test game
-    const game = await createTestGame('Skip Goal Test - Complete');
+    test('calling startRound twice updates same pending round (skip workflow)', async () => {
+      const game = await createTestGame('Skip During Preview Test');
+      
+      // First call to startRound - creates pending round
+      const round1 = await startTestRound(game.gameId, game.hostKey);
+      
+      expect(round1.status).toBe('pending');
+      expect(round1.roundNumber).toBe(1);
+      const firstGoalIndex = round1.goalIndex;
+      const firstRoundId = round1.roundId;
+      
+      // Second call to startRound - should UPDATE same pending round
+      const round2 = await startTestRound(game.gameId, game.hostKey);
+      
+      // Should be same round ID and number
+      expect(round2.roundId).toBe(firstRoundId);
+      expect(round2.roundNumber).toBe(1);
+      expect(round2.status).toBe('pending');
+      
+      // Goal should be different (randomly selected)
+      // Note: There's a small chance this could be the same, but statistically unlikely with 17 goals
+      expect(round2.goalIndex).toBeDefined();
+      
+      // Response should indicate it's an update
+      expect(round2.isUpdate).toBe(true);
+      expect(round2.previousGoalIndex).toBe(firstGoalIndex);
+    });
 
-    // Start first round and note the goal
-    const round1 = await startTestRound(game.gameId, game.hostKey);
-    const round1GoalIndex = round1.goal.position.x * 16 + round1.goal.position.y; // Approximate index
+    test('skip multiple times without error', async () => {
+      const game = await createTestGame('Multiple Skip Test');
+      
+      let currentRound = await startTestRound(game.gameId, game.hostKey);
+      const originalRoundId = currentRound.roundId;
+      
+      // Skip 3 times in a row
+      for (let i = 0; i < 3; i++) {
+        currentRound = await startTestRound(game.gameId, game.hostKey);
+        
+        // Always same round ID
+        expect(currentRound.roundId).toBe(originalRoundId);
+        expect(currentRound.roundNumber).toBe(1);
+        expect(currentRound.status).toBe('pending');
+      }
+      
+      // Finally publish it
+      const published = await publishTestRound(
+        game.gameId,
+        game.hostKey,
+        currentRound.roundId
+      );
+      
+      expect(published.status).toBe('active');
+      expect(published.roundId).toBe(originalRoundId);
+    });
 
-    // End round with skipGoal=false (Complete Round button)
-    const endResult = await endTestRound(game.gameId, game.hostKey, round1.roundId, false);
+    test('cannot start new round while active round exists', async () => {
+      const game = await createTestGame('Active Round Blocks New Test');
+      
+      // Create and publish a round
+      const pending = await startTestRound(game.gameId, game.hostKey);
+      await publishTestRound(game.gameId, game.hostKey, pending.roundId);
+      
+      // Try to start another round - should fail
+      try {
+        await startTestRound(game.gameId, game.hostKey);
+        fail('Should have thrown error');
+      } catch (error: any) {
+        expect(error.message).toContain('active round');
+      }
+    });
 
-    // Verify goal was marked as completed
-    expect(endResult.gameProgress.roundsCompleted).toBe(1);
-    expect(endResult.gameProgress.totalGoals).toBe(17);
-    expect(endResult.gameProgress.roundsRemaining).toBe(16);
+    test('can start new round after ending previous round', async () => {
+      const game = await createTestGame('Sequential Rounds Test');
+      
+      // Round 1: Create, publish, end
+      const round1Pending = await startTestRound(game.gameId, game.hostKey);
+      const round1Active = await publishTestRound(game.gameId, game.hostKey, round1Pending.roundId);
+      await endTestRound(game.gameId, game.hostKey, round1Active.roundId);
+      
+      // Round 2: Should work now
+      const round2Pending = await startTestRound(game.gameId, game.hostKey);
+      
+      expect(round2Pending.roundNumber).toBe(2);
+      expect(round2Pending.status).toBe('pending');
+      expect(round2Pending.roundId).not.toBe(round1Pending.roundId);
+    });
+  });
 
-    // Verify dashboard reflects the completion
-    const dashboard = await getDashboard(game.gameId, game.hostKey);
-    expect(dashboard.progress.goalsCompleted).toBe(1);
+  describe('Goal Completion Tracking', () => {
+    test('completed round removes goal from available pool', async () => {
+      const game = await createTestGame('Goal Completion Test');
+      
+      // Start and publish round 1
+      const round1 = await startTestRound(game.gameId, game.hostKey);
+      await publishTestRound(game.gameId, game.hostKey, round1.roundId);
+      const round1GoalIndex = round1.goalIndex;
+      
+      // End round (marks goal as completed)
+      const endResult = await endTestRound(game.gameId, game.hostKey, round1.roundId);
+      expect(endResult.gameProgress.roundsCompleted).toBe(1);
+      expect(endResult.gameProgress.roundsRemaining).toBe(16);
+      
+      // Start several more rounds - completed goal should not appear
+      for (let i = 0; i < 5; i++) {
+        const nextRound = await startTestRound(game.gameId, game.hostKey);
+        
+        // Should not select the completed goal
+        expect(nextRound.goalIndex).not.toBe(round1GoalIndex);
+        expect(nextRound.goalsRemaining).toBe(16 - i);
+        
+        // Publish and end to continue
+        await publishTestRound(game.gameId, game.hostKey, nextRound.roundId);
+        await endTestRound(game.gameId, game.hostKey, nextRound.roundId);
+      }
+    }, 30000); // 30 second timeout for multiple rounds
+  });
 
-    // Start several more rounds and verify the completed goal doesn't reappear
-    const maxRoundsToCheck = 5;
-    for (let i = 0; i < maxRoundsToCheck; i++) {
-      const nextRound = await startTestRound(game.gameId, game.hostKey);
-      const nextGoalIndex = nextRound.goal.position.x * 16 + nextRound.goal.position.y;
+  describe('Publish Round Validation', () => {
+    test('cannot publish non-pending round', async () => {
+      const game = await createTestGame('Publish Validation Test');
+      
+      // Create, publish, and try to publish again
+      const pending = await startTestRound(game.gameId, game.hostKey);
+      await publishTestRound(game.gameId, game.hostKey, pending.roundId);
+      
+      try {
+        await publishTestRound(game.gameId, game.hostKey, pending.roundId);
+        fail('Should have thrown error');
+      } catch (error: any) {
+        expect(error.message).toContain('pending');
+      }
+    });
 
-      // The completed goal should NOT appear again
-      expect(nextGoalIndex).not.toBe(round1GoalIndex);
+    test('publishRound requires endTime', async () => {
+      const game = await createTestGame('EndTime Required Test');
+      
+      const pending = await startTestRound(game.gameId, game.hostKey);
+      
+      // Try to publish without endTime (by calling API directly)
+      const response = await makeRequest('/host/publishRound', {
+        method: 'POST',
+        headers: {
+          'x-game-id': game.gameId,
+          'x-host-key': game.hostKey,
+        },
+        body: {
+          roundId: pending.roundId,
+          // endTime missing
+        },
+      });
+      
+      const result = await parseResponse(response);
+      expect(result.success).toBe(false);
+    });
 
-      // End this round to continue
-      await endTestRound(game.gameId, game.hostKey, nextRound.roundId, false);
-    }
-  }, 30000); // 30 second timeout for multiple rounds
-
-  test('skipGoal=true keeps goal in pool for future rounds', async () => {
-    // Create a test game
-    const game = await createTestGame('Skip Goal Test - Skip');
-
-    // Start first round and note the goal - this will be the one we skip  
-    const round1 = await startTestRound(game.gameId, game.hostKey);
-    const skippedGoalIndex = round1.goal.position.x * 16 + round1.goal.position.y;
-
-    // End round with skipGoal=true (Skip Goal button)
-    const endResult = await endTestRound(game.gameId, game.hostKey, round1.roundId, true);
-
-    // Verify goal was NOT marked as completed
-    expect(endResult.gameProgress.roundsCompleted).toBe(0); // Should stay at 0
-    expect(endResult.gameProgress.totalGoals).toBe(17);
-    expect(endResult.gameProgress.roundsRemaining).toBe(17); // All goals still available
-
-    // Verify dashboard reflects NO completion
-    const dashboard1 = await getDashboard(game.gameId, game.hostKey);
-    expect(dashboard1.progress.goalsCompleted).toBe(0);
-
-    // Key test: Since the skipped goal was NOT added to completedGoalIndices,
-    // it should remain available in future rounds.
-    // We can't immediately start another round (round1 still exists),
-    // but we can verify the goal will be available by checking that
-    // completedGoalIndices doesn't include it, which we already did above.
-    
-    // The behavior is correct: skipGoal=true keeps goal in pool (not in completedGoalIndices)
-    // This test verifies the core functionality without trying to create duplicate rounds.
-  }, 30000); // 30 second timeout
+    test('publishRound validates endTime is in future', async () => {
+      const game = await createTestGame('EndTime Future Test');
+      
+      const pending = await startTestRound(game.gameId, game.hostKey);
+      
+      // Try to publish with past endTime
+      const response = await makeRequest('/host/publishRound', {
+        method: 'POST',
+        headers: {
+          'x-game-id': game.gameId,
+          'x-host-key': game.hostKey,
+        },
+        body: {
+          roundId: pending.roundId,
+          endTime: Date.now() - 1000, // 1 second ago
+        },
+      });
+      
+      const result = await parseResponse(response);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('future');
+    });
+  });
 });
 
 describe('API Integration Tests - Info', () => {

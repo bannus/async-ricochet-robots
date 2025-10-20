@@ -23,6 +23,7 @@ import './functions/getCurrentRound';
 import './functions/checkRoundEnd';
 import './functions/hostDashboard';
 import './functions/hostStartRound';
+import './functions/hostPublishRound';
 import './functions/hostEndRound';
 import './functions/hostExtendRound';
 

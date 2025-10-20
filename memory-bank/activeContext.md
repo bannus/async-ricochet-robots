@@ -7,9 +7,28 @@
 **Completion:** ~90%  
 **Next Milestone:** Final testing and polish
 
-## Active Work (Last Session - October 18, 2025)
+## Active Work (Last Session - October 20, 2025)
 
-### Deadline-Based Round Management ✅ (COMPLETED)
+### Bug #15: Host Preview Board Visibility ✅ (COMPLETED)
+- **Issue**: After implementing pending/publish workflow (Bug #14), hosts couldn't see the board during preview mode
+- **Fix Applied**: Modified getCurrentRound to return pending rounds, handle in UI with disabled controls
+- **Status**: Complete and tested
+- **Time**: ~30 minutes
+- **Files Modified**: 
+  - API: `api/src/functions/getCurrentRound.ts` (return pending OR active rounds)
+  - FRONTEND: `client/src/player-app.ts` (handle pending status with disabled controls)
+  - TESTS: `tests/integration/api-integration.test.ts` (updated visibility test)
+  - DOCS: `doc/BUGS-FIXED.md`
+- **Changes Made**:
+  1. **Backend**: getCurrentRound now returns pending OR active rounds (simpler than auth)
+  2. **Frontend**: Shows board for pending rounds with "⏸️ Preview Mode" banner, controls disabled
+  3. **Tests**: Updated test expectations - pending rounds now visible with `status: 'pending'`
+- **Test Results**: All 26/26 API integration tests passing ✅
+- **User Experience**:
+  - Host during preview: Sees board with goal, can skip or publish
+  - Players during preview: See board with "Preview Mode" message, controls disabled
+
+### Deadline-Based Round Management ✅ (COMPLETED October 18, 2025)
 - **Feature**: Migrated from duration-based (+N hours) to deadline-based (specific datetime) round management
 - **Status**: Complete, tested, and production-ready
 - **Time**: ~2 hours

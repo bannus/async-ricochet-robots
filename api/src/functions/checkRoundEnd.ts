@@ -77,8 +77,8 @@ async function checkRoundEndHandler(
             ...game.board,
             robots: newRobotPositions,
             completedGoalIndices: updatedCompletedGoalIndices
-          },
-          totalRounds: game.totalRounds + 1
+          }
+          // Note: totalRounds already incremented when round was published
         });
 
         context.log(`  Round ${round.roundId} completed successfully`);

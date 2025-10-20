@@ -146,12 +146,12 @@ export class ApiClient {
   // ========================================
 
   /**
-   * Start a new round (host only)
+   * Start a new round (creates in pending status) (host only)
+   * NEW: No endTime parameter - creates pending round for preview
    */
   async startRound(
     gameId: string,
-    hostKey: string,
-    endTime: number
+    hostKey: string
   ): Promise<ApiResponse> {
     const url = `${this.baseUrl}/host/startRound`;
     
@@ -162,7 +162,31 @@ export class ApiClient {
         'X-Game-Id': gameId,
         'X-Host-Key': hostKey
       },
+      body: JSON.stringify({})
+    });
+  }
+
+  /**
+   * Publish a pending round (makes it active with deadline) (host only)
+   * NEW: Separate endpoint to publish after preview
+   */
+  async publishRound(
+    gameId: string,
+    hostKey: string,
+    roundId: string,
+    endTime: number
+  ): Promise<ApiResponse> {
+    const url = `${this.baseUrl}/host/publishRound`;
+    
+    return this.fetchWithErrorHandling(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Game-Id': gameId,
+        'X-Host-Key': hostKey
+      },
       body: JSON.stringify({
+        roundId,
         endTime
       })
     });
@@ -195,12 +219,12 @@ export class ApiClient {
 
   /**
    * End current round (host only)
+   * NEW: Removed skipGoal parameter - use startRound again to skip during preview
    */
   async endRound(
     gameId: string,
     hostKey: string,
-    roundId: string,
-    skipGoal: boolean = false
+    roundId: string
   ): Promise<ApiResponse> {
     const url = `${this.baseUrl}/host/endRound`;
     
@@ -212,8 +236,7 @@ export class ApiClient {
         'X-Host-Key': hostKey
       },
       body: JSON.stringify({
-        roundId,
-        skipGoal
+        roundId
       })
     });
   }

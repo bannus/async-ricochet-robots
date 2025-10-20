@@ -263,8 +263,20 @@ export class PlayerApp {
       }, this.currentRound.activeGoalIndex);
     }
     
-    // Disable/hide controls if round has ended
-    if (data.status === 'completed') {
+    // Handle different round statuses
+    if (data.status === 'pending') {
+      // Pending round - show board but disable player controls
+      this.disablePlayerControls();
+      this.hidePlayerControls();
+      
+      // Show "Preview mode" message
+      const goalStatus = document.getElementById('goal-status');
+      if (goalStatus) {
+        goalStatus.className = 'info';
+        goalStatus.textContent = '⏸️ Preview Mode - Host is reviewing this goal';
+      }
+    } else if (data.status === 'completed') {
+      // Completed round - disable controls
       this.disablePlayerControls();
       this.hidePlayerControls();
       
@@ -275,9 +287,16 @@ export class PlayerApp {
         goalStatus.textContent = 'Round ended - Click leaderboard entries to replay solutions';
       }
     } else {
-      // Enable and show controls for active rounds
+      // Active round - enable and show controls
       this.enablePlayerControls();
       this.showPlayerControls();
+      
+      // Clear any status message
+      const goalStatus = document.getElementById('goal-status');
+      if (goalStatus) {
+        goalStatus.className = '';
+        goalStatus.textContent = '';
+      }
     }
     
     // Start timer countdown

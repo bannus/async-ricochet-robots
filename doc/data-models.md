@@ -129,7 +129,7 @@ Stores round metadata and goal selection for each game round.
 | robotPositions | String | Yes | JSON string: robot positions at start of round |
 | startTime | Int64 | Yes | Unix timestamp (milliseconds) |
 | endTime | Int64 | Yes | Unix timestamp (milliseconds) |
-| status | String | Yes | "active", "completed", or "skipped" |
+| status | String | Yes | "pending", "active", or "completed" |
 | createdBy | String | Yes | "host" or "timer" |
 
 ## goalPosition JSON Structure
@@ -175,9 +175,9 @@ Robot positions at the START of this round (snapshot for replay purposes):
 
 ## Round Status Values
 
-- **active**: Round in progress, accepting solutions
-- **completed**: Round finished, goal successfully solved
-- **skipped**: Round ended by host without completion (goal returns to available pool)
+- **pending**: Round created but not yet published to players (host preview mode)
+- **active**: Round published and in progress, accepting solutions
+- **completed**: Round finished, goal successfully solved and marked as completed
 
 ## Indexes
 
@@ -345,15 +345,7 @@ Display: Include winningRobot in leaderboard
 Performance: Fast (validation + single entity insert + conditional update)
 ```
 
-### 6. Skip Round (Host Action)
-```javascript
-// Step 1: Update Rounds.status = "skipped"
-// Step 2: Update Game.currentRoundId = null
-// Note: goalIndex NOT added to completedGoalIndices (stays available)
-Performance: Fast (2 entity updates)
-```
-
-### 7. Timer Function (Check Round End)
+### 6. Timer Function (Check Round End)
 ```javascript
 // Query: Rounds table
 // Scan all partitions where status = "active"
@@ -362,7 +354,7 @@ Expected Results: 0-50 entities (across all games)
 Performance: Slower (cross-partition), but runs infrequently (every 1 min)
 ```
 
-### 8. Check Game Completion
+### 7. Check Game Completion
 ```javascript
 // Query: Games table
 PartitionKey = "GAME"
@@ -373,7 +365,7 @@ Result: If true, game is complete (cannot create more rounds)
 Performance: Fast (single entity read)
 ```
 
-### 9. Host Dashboard
+### 8. Host Dashboard
 ```javascript
 // Query 1: Games table
 PartitionKey = "GAME"
@@ -417,24 +409,31 @@ Display: Show completed goals (17 - completedGoalIndices.length remaining)
    → boardData contains: walls (17 L-shapes), robots (initial positions), 
      allGoals (17 goals), completedGoalIndices ([])
 
-2. Host starts round (with specific endTime)
+2. Host starts round (creates pending round with endTime)
    → Check completedGoalIndices.length < 17
-   → Select random goalIndex from incomplete goals
-   → Insert into Rounds table with goalIndex, goalColor, goalPosition, endTime
-   → Update Games.currentRoundId
+   → Check for existing pending round
+   → If pending exists: Update with new random goalIndex (skip scenario)
+   → If no pending: Create new round with status='pending'
+   → Round visible only to host (preview mode)
 
-3. Player submits solution
+3. Host publishes round (optional skip steps in between)
+   → Update Round.status from 'pending' to 'active'
+   → Set actual startTime
+   → Update Games.currentRoundId
+   → Round now visible to players
+
+4. Player submits solution
    → Validate solution with game engine
    → Insert into Solutions table with winningRobot
    → No change to Game.boardData yet (robots still in original positions)
 
-4. Round ends (timer or manual)
-   → Update Rounds.status = "completed" or "skipped"
-   → If completed: Add goalIndex to completedGoalIndices
+5. Round ends (timer or manual)
+   → Update Rounds.status = 'completed'
+   → Add goalIndex to completedGoalIndices
    → Update Game.boardData.robots to final positions from winning solution
    → Update Games.currentRoundId = null
 
-5. Check game completion
+6. Check game completion
    → If completedGoalIndices.length === 17: game ends
    → Cannot create more rounds (return error)
 ```
@@ -446,17 +445,23 @@ Board Creation:
   → 17 goals generated (indices 0-16)
   → completedGoalIndices = []
 
-Round 1:
-  → Select random from [0-16]
-  → If completed: completedGoalIndices = [5]
+Round 1 (preview):
+  → Host calls startRound: Creates pending round with goal from [0-16]
+  → Host happy with goal, calls publishRound
+  → Round becomes active, goal index 5
+  → Round ends completed: completedGoalIndices = [5]
 
-Round 2:
-  → Select random from [0-4, 6-16] (exclude 5)
-  → If skipped: completedGoalIndices = [5] (unchanged)
+Round 2 (with skip):
+  → Host calls startRound: Creates pending round with goal from [0-4, 6-16]
+  → Host doesn't like goal, calls startRound again
+  → Same pending round updated with new goal from [0-4, 6-16]
+  → Host satisfied, calls publishRound
+  → Round becomes active, goal index 12
+  → Round ends completed: completedGoalIndices = [5, 12]
 
 Round 3:
-  → Select random from [0-4, 6-16] (same pool, skip didn't consume goal)
-  → If completed: completedGoalIndices = [5, 12]
+  → Select random from [0-4, 6-11, 13-16] (exclude 5, 12)
+  → Round ends completed: completedGoalIndices = [5, 12, 8]
 
 ...continue until completedGoalIndices.length === 17
 ```
@@ -744,27 +749,6 @@ await gamesTable.updateEntity({
   boardData: JSON.stringify(board),
   currentRoundId: null
 }, 'Merge');
-```
-
-## Skipping a Round
-
-```javascript
-// Mark round as skipped (goal stays available)
-await roundsTable.updateEntity({
-  partitionKey: gameId,
-  rowKey: roundId,
-  status: 'skipped'
-}, 'Merge');
-
-// Clear current round
-await gamesTable.updateEntity({
-  partitionKey: 'GAME',
-  rowKey: gameId,
-  currentRoundId: null
-}, 'Merge');
-
-// Note: goalIndex NOT added to completedGoalIndices
-// Goal can be selected again in future rounds
 ```
 
 ## Querying Solutions for Leaderboard
