@@ -237,35 +237,57 @@ export class PlayerApp {
     if (gameName) gameName.textContent = data.gameName || 'Ricochet Robots';
     if (roundNumber) roundNumber.textContent = `Round ${data.roundNumber || 1}`;
     
-    // Update goal description
-    const goalDesc = document.getElementById('goal-description');
-    if (goalDesc) {
-      const goalText = data.puzzle.goalColor === 'multi'
-        ? 'Get ANY robot to the purple goal'
-        : `Get ${data.puzzle.goalColor} robot to goal`;
-      goalDesc.textContent = goalText;
-    }
-    
     // Only load puzzle if it's a new round (or first load)
     // This prevents resetting player's progress during polling
     const isNewRound = this.controller.roundId !== data.roundId;
     
-    if (isNewRound) {
-      // Load puzzle into controller
-      this.controller.gameId = this.gameId;
-      this.controller.roundId = data.roundId;
-      this.controller.loadPuzzle({
-        walls: data.puzzle.walls,
-        robots: data.puzzle.robots,
-        allGoals: data.puzzle.allGoals,
-        goalPosition: data.puzzle.goalPosition,
-        goalColor: data.puzzle.goalColor
-      }, this.currentRound.activeGoalIndex);
-    }
-    
     // Handle different round statuses
     if (data.status === 'pending') {
-      // Pending round - show board but disable player controls
+      // Pending round - host sees goal, players don't
+      
+      if (this.hostManager) {
+        // HOST VIEW: Show goal for preview
+        const goalDesc = document.getElementById('goal-description');
+        if (goalDesc) {
+          const goalText = data.puzzle.goalColor === 'multi'
+            ? 'Get ANY robot to the purple goal'
+            : `Get ${data.puzzle.goalColor} robot to goal`;
+          goalDesc.textContent = goalText;
+        }
+        
+        if (isNewRound) {
+          // Load puzzle with goal visible for host
+          this.controller.gameId = this.gameId;
+          this.controller.roundId = data.roundId;
+          this.controller.loadPuzzle({
+            walls: data.puzzle.walls,
+            robots: data.puzzle.robots,
+            allGoals: data.puzzle.allGoals,
+            goalPosition: data.puzzle.goalPosition,
+            goalColor: data.puzzle.goalColor
+          }, this.currentRound.activeGoalIndex);
+        }
+      } else {
+        // PLAYER VIEW: Hide goal
+        const goalDesc = document.getElementById('goal-description');
+        if (goalDesc) {
+          goalDesc.textContent = 'Waiting for host...';
+        }
+        
+        if (isNewRound) {
+          // Load puzzle WITHOUT goal visible for players
+          this.controller.gameId = this.gameId;
+          this.controller.roundId = data.roundId;
+          this.controller.loadPuzzle({
+            walls: data.puzzle.walls,
+            robots: data.puzzle.robots,
+            allGoals: data.puzzle.allGoals,
+            goalPosition: data.puzzle.goalPosition,
+            goalColor: data.puzzle.goalColor
+          }, -1); // -1 = don't render any goal marker
+        }
+      }
+      
       this.disablePlayerControls();
       this.hidePlayerControls();
       
@@ -273,10 +295,33 @@ export class PlayerApp {
       const goalStatus = document.getElementById('goal-status');
       if (goalStatus) {
         goalStatus.className = 'info';
-        goalStatus.textContent = '⏸️ Preview Mode - Host is reviewing this goal';
+        goalStatus.textContent = '⏸️ Preview Mode - Waiting for host to publish';
       }
     } else if (data.status === 'completed') {
-      // Completed round - disable controls
+      // Completed round - show goal and disable controls
+      
+      // Update goal description
+      const goalDesc = document.getElementById('goal-description');
+      if (goalDesc) {
+        const goalText = data.puzzle.goalColor === 'multi'
+          ? 'Get ANY robot to the purple goal'
+          : `Get ${data.puzzle.goalColor} robot to goal`;
+        goalDesc.textContent = goalText;
+      }
+      
+      if (isNewRound) {
+        // Load puzzle into controller with goal visible
+        this.controller.gameId = this.gameId;
+        this.controller.roundId = data.roundId;
+        this.controller.loadPuzzle({
+          walls: data.puzzle.walls,
+          robots: data.puzzle.robots,
+          allGoals: data.puzzle.allGoals,
+          goalPosition: data.puzzle.goalPosition,
+          goalColor: data.puzzle.goalColor
+        }, this.currentRound.activeGoalIndex);
+      }
+      
       this.disablePlayerControls();
       this.hidePlayerControls();
       
@@ -287,7 +332,30 @@ export class PlayerApp {
         goalStatus.textContent = 'Round ended - Click leaderboard entries to replay solutions';
       }
     } else {
-      // Active round - enable and show controls
+      // Active round - show goal, enable and show controls
+      
+      // Update goal description
+      const goalDesc = document.getElementById('goal-description');
+      if (goalDesc) {
+        const goalText = data.puzzle.goalColor === 'multi'
+          ? 'Get ANY robot to the purple goal'
+          : `Get ${data.puzzle.goalColor} robot to goal`;
+        goalDesc.textContent = goalText;
+      }
+      
+      if (isNewRound) {
+        // Load puzzle into controller with goal visible
+        this.controller.gameId = this.gameId;
+        this.controller.roundId = data.roundId;
+        this.controller.loadPuzzle({
+          walls: data.puzzle.walls,
+          robots: data.puzzle.robots,
+          allGoals: data.puzzle.allGoals,
+          goalPosition: data.puzzle.goalPosition,
+          goalColor: data.puzzle.goalColor
+        }, this.currentRound.activeGoalIndex);
+      }
+      
       this.enablePlayerControls();
       this.showPlayerControls();
       

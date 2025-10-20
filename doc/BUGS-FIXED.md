@@ -11,6 +11,111 @@ This file contains all bugs that have been resolved and verified. For active bug
 
 ## Fixed Bugs (Newest First)
 
+### Bug #16: Players Can See Goal During Preview Mode
+**Priority:** 🟡 High  
+**Status:** ✅ Fixed  
+**Location:** `client/src/player-app.ts`  
+**Discovered:** User Feedback (2025-10-20)  
+**Fixed:** 2025-10-20
+
+**Description:**  
+When a round is in "pending" (preview mode) status, players can see the full board including the goal position and color. This allows them to start mentally working on the puzzle before the host publishes it, defeating the purpose of preview mode.
+
+**Expected Behavior:**  
+- Host in preview mode: Sees full board with goal (to decide skip/publish)
+- Players in preview mode: See board layout (walls, robots) but NO goal
+- Players should only see the goal after host publishes the round
+
+**Actual Behavior:**  
+- Both host and players see the full board with goal during preview
+- Players can start working on solution before round is officially active
+- Preview mode doesn't prevent players from getting a head start
+
+**Root Cause:**  
+The frontend was rendering the goal marker for all round statuses. When displaying pending rounds, the code passed the calculated `activeGoalIndex` to the renderer, which drew the goal marker on the board. Additionally, the goal description text was shown even in preview mode.
+
+**Fix Implementation:**
+
+**Frontend-Only Solution** (no backend changes needed):
+
+1. **Hide Goal Description for Pending Rounds:**
+   ```typescript
+   // Pending status
+   const goalDesc = document.getElementById('goal-description');
+   if (goalDesc) {
+     goalDesc.textContent = 'Waiting for host...';  // Hide actual goal
+   }
+   ```
+
+2. **Don't Render Goal Marker for Pending Rounds:**
+   ```typescript
+   // Pass -1 as activeGoalIndex to skip rendering goal
+   this.controller.loadPuzzle({
+     walls: data.puzzle.walls,
+     robots: data.puzzle.robots,
+     allGoals: data.puzzle.allGoals,
+     goalPosition: data.puzzle.goalPosition,
+     goalColor: data.puzzle.goalColor
+   }, -1);  // -1 = don't render any goal marker
+   ```
+
+3. **Updated Status Message:**
+   ```typescript
+   goalStatus.textContent = '⏸️ Preview Mode - Waiting for host to publish';
+   ```
+
+4. **Restructured Status Handling:**
+   - Moved goal description and puzzle loading into each status branch
+   - Pending: No goal description, no goal rendering (activeGoalIndex = -1)
+   - Active: Show goal description, render goal (activeGoalIndex from data)
+   - Completed: Show goal description, render goal (activeGoalIndex from data)
+
+**Benefits:**
+- ✅ Players can see board layout during preview (walls, starting positions)
+- ✅ Goal remains hidden until host publishes
+- ✅ No backend changes needed
+- ✅ Leverages existing renderer capability (activeGoalIndex = -1)
+- ✅ Clean separation between preview and active states
+
+**User Experience After Fix:**
+- **Preview Mode (Pending)**:
+  - Board visible with walls and robots ✅
+  - NO goal marker on board ✅
+  - Goal description: "Waiting for host..." ✅
+  - Status: "⏸️ Preview Mode - Waiting for host to publish" ✅
+  - Controls disabled ✅
+
+- **Active Mode**:
+  - Full board with goal marker ✅
+  - Goal description: "Get [color] robot to goal" ✅
+  - Controls enabled ✅
+
+- **Completed Mode**:
+  - Full board with goal for replay ✅
+  - Goal description shown ✅
+  - Controls disabled ✅
+
+**Files Modified:**
+- `client/src/player-app.ts` - Updated `displayActiveRound()` method to hide goal during preview
+- `doc/BUGS-FIXED.md` - This entry
+
+**Verification:**
+- ✅ TypeScript compilation successful
+- ✅ No errors in build output
+- ✅ Ready for E2E testing with pending rounds
+
+**Testing Plan:**
+1. Create a game and start a round (pending status)
+2. View as player → Verify no goal marker visible
+3. View as player → Verify goal description shows "Waiting for host..."
+4. Host publishes round
+5. View as player → Verify goal marker now visible
+6. View as player → Verify goal description shows actual goal
+
+**Related to:** Bug #15 (Host Preview Board Visibility)
+
+---
+
 ### Bug #15: Host Cannot View Board During Preview Mode
 **Priority:** 🟡 High  
 **Status:** ✅ Fixed  
