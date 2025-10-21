@@ -559,6 +559,12 @@ export class PlayerApp {
     const timerElement = document.getElementById('time-remaining');
     if (!timerElement) return;
     
+    // Handle invalid/missing endTime (preview mode)
+    if (!endTime || endTime <= 0) {
+      timerElement.textContent = 'Waiting to start...';
+      return;
+    }
+    
     const updateTimer = () => {
       const now = Date.now();
       const remaining = Math.max(0, endTime - now);
