@@ -11,6 +11,185 @@ This file contains all bugs that have been resolved and verified. For active bug
 
 ## Fixed Bugs (Newest First)
 
+### Bug #19: Leaderboard Flashing Issues
+**Priority:** 🟡 High  
+**Status:** ✅ Fixed  
+**Location:** `client/src/player-app.ts`, `client/css/game.css`  
+**Discovered:** User Feedback (2025-10-20)  
+**Fixed:** 2025-10-20
+
+**Description:**  
+The leaderboard had two separate flashing issues:
+1. **Original Issue:** Leaderboard flashed on every polling update (every 20 seconds)
+2. **Follow-up Issue:** Leaderboard flashed TWICE when new submissions came in
+
+**Expected Behavior:**  
+- Leaderboard updates smoothly without flashing
+- Only NEW entries should animate in with fade effect
+- Existing entries remain stable during polling updates
+
+**Actual Behavior:**  
+- All leaderboard rows flashed/animated on every poll (every 20 seconds)
+- Distracting visual glitch even when no new submissions existed
+- Created impression of instability in the UI
+
+**Root Cause:**  
+The CSS applied a `fadeInRow` animation to ALL table rows unconditionally:
+
+```css
+#leaderboard tbody tr {
+  animation: fadeInRow 0.3s ease-in;
+}
+```
+
+The leaderboard rendering logic cleared and recreated all rows on every update:
+```typescript
+tbody.innerHTML = '';  // Clear all rows
+// Then recreate all rows from scratch
+```
+
+Since every row was new DOM elements, the CSS animation ran on ALL rows during every polling cycle, even though the data hadn't changed.
+
+**Fix Implementation:**
+
+**1. CSS Changes - Conditional Animation:**
+Changed from applying animation to all rows to using a specific class:
+
+```css
+/* Old: Animation on ALL rows */
+#leaderboard tbody tr {
+  animation: fadeInRow 0.3s ease-in;
+}
+
+/* New: Animation only on .new-entry class */
+#leaderboard tbody tr.new-entry {
+  animation: fadeInRow 0.3s ease-in;
+  animation-fill-mode: forwards;
+}
+```
+
+**2. TypeScript Changes - Entry Tracking:**
+
+Added state tracking to detect genuinely new entries:
+
+```typescript
+// Track previous leaderboard state
+private previousLeaderboardKeys: Set<string> = new Set();
+
+private displayLeaderboard(data: any): void {
+  const currentKeys = new Set<string>();
+  
+  data.solutions.forEach((solution: any) => {
+    // Create unique key for this entry
+    const entryKey = `${solution.playerName}_${solution.submittedAt}`;
+    currentKeys.add(entryKey);
+    
+    // Check if this is a new entry
+    const isNewEntry = !this.previousLeaderboardKeys.has(entryKey);
+    if (isNewEntry) {
+      row.classList.add('new-entry');  // Only new entries animate
+    }
+    
+    // ... rest of row creation ...
+  });
+  
+  // Update tracking for next comparison
+  this.previousLeaderboardKeys = currentKeys;
+}
+```
+
+**How It Works:**
+1. Each leaderboard entry gets a unique key: `playerName_submittedAtTimestamp`
+2. Current keys are compared against previous keys from last render
+3. Only entries not in previous set get the `new-entry` class
+4. CSS animation applies only to rows with `new-entry` class
+5. Next poll: previously new entries are now "old", no animation
+
+**Benefits:**
+- ✅ Eliminates distracting flash on polling updates
+- ✅ Preserves nice animation for actual new submissions
+- ✅ Maintains visual feedback when players submit solutions
+- ✅ Professional, polished user experience
+- ✅ Zero performance impact (simple Set lookup)
+
+**Follow-up Issue: Double Flash on New Submissions**
+
+After the initial fix, a second issue was discovered: when a player submitted a new solution, the leaderboard would flash TWICE instead of once. This was caused by the `startPolling()` method calling `loadLeaderboard()` redundantly:
+
+```typescript
+// In startPolling():
+await this.loadCurrentRound();  // This already calls loadLeaderboard()
+
+// Then AGAIN:
+if (this.currentRound && this.currentRound.hasActiveRound !== false) {
+  await this.loadLeaderboard();  // REDUNDANT - causes second flash!
+}
+```
+
+**Root Cause of Double Flash:**
+1. `submitSolution()` calls `await this.loadLeaderboard()` → New entry animates (correct)
+2. Polling cycle hits → calls `loadCurrentRound()` → internally calls `loadLeaderboard()` again
+3. Then polling explicitly calls `loadLeaderboard()` AGAIN → causes second flash
+4. Result: Two full re-renders in quick succession
+
+**Second Fix:**
+Removed the redundant `loadLeaderboard()` call from the polling interval since `loadCurrentRound()` already loads it:
+
+```typescript
+private startPolling(): void {
+  this.pollingInterval = window.setInterval(async () => {
+    await this.loadCurrentRound();  // This already calls loadLeaderboard()
+    
+    if (this.currentRound && this.currentRound.roundId !== oldRoundId) {
+      this.showNotification('New round started!');
+    }
+    
+    // Removed redundant loadLeaderboard() call here
+  }, 20000);
+}
+```
+
+**Combined Benefits:**
+- ✅ Eliminates flash on polling updates (no new submissions)
+- ✅ Single smooth animation when new submissions arrive
+- ✅ Reduces redundant API calls
+- ✅ Improves performance
+- ✅ Professional, polished UX
+
+**User Experience After Both Fixes:**
+- **During Polling (No New Submissions):** Leaderboard remains stable, no flashing ✅
+- **New Player Submits Solution:** New entry animates in smoothly ONCE ✅
+- **Player Improves Score:** New entry animates in, old entry remains stable ✅
+- **Multiple Submissions:** Each new entry animates independently ✅
+
+**Files Modified:**
+- `client/css/game.css` - Changed animation to apply only to `.new-entry` class
+- `client/src/player-app.ts` - Added entry tracking, removed redundant loadLeaderboard call
+- `doc/BUGS-FIXED.md` - This entry
+
+**Verification:**
+- ✅ TypeScript compilation successful
+- ✅ Entry tracking logic implemented with Set data structure
+- ✅ Unique keys prevent false positives (same player, different timestamps)
+- ✅ Animation class applied only to genuinely new entries
+- ✅ Redundant API call eliminated from polling
+- ✅ Ready for E2E testing with both polling and submission scenarios
+
+**Testing Plan:**
+1. Start a game and submit a solution
+2. Wait for polling cycle (20 seconds)
+3. Verify leaderboard doesn't flash when no new submissions
+4. Submit another solution
+5. Verify new entry animates in smoothly
+6. Wait for another polling cycle
+7. Verify both entries remain stable
+
+**Related Issues:**
+- Similar to Bug #18 (timer flashing) - both involved unnecessary re-rendering
+- Different solution: CSS + state tracking vs. cleanup + validation
+
+---
+
 ### Bug #18: Countdown Flashing During Status Transitions
 **Priority:** 🟡 High  
 **Status:** ✅ Fixed  

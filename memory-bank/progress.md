@@ -297,6 +297,16 @@
 
 #### Recent Enhancements & Bug Fixes
 
+- ✅ **Toast Notification System** - Implemented 2025-10-20
+  - Feature: Replaced all 36 browser alert() dialogs with styled toast notifications
+  - Implementation: Shared notification utility with 4 typed functions (success, error, warning, info)
+  - UI: Non-blocking toasts at top-center with color-coded styling and animations
+  - Benefits: Better UX, contextual feedback, consistent design throughout app
+  - Preserved: confirm() dialogs for destructive actions (publish, complete, skip rounds)
+  - Files: `client/src/notifications.ts` (new), `client/src/player-app.ts`, `client/src/create-game.ts`, `client/src/host-manager.ts`, `client/css/game.css`
+  - Documentation: `doc/NOTIFICATIONS.md`, `memory-bank/systemPatterns.md`
+  - Status: ✅ Complete - All alerts replaced, TypeScript compilation successful
+
 - ✅ **Bug #17 & #18: Countdown Clock Issues** - Fixed 2025-10-20
   - Issue #17: Timer displayed "NaNh NaNm NaNs" during preview mode
   - Issue #18: Timer flashed between different values during status transitions

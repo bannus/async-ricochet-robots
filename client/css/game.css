@@ -252,12 +252,14 @@ header h1 {
   color: #7F8C8D;
 }
 
-#leaderboard tbody tr {
-  animation: fadeInRow 0.3s ease-in;
-}
-
 #leaderboard tbody tr:hover {
   background: #F8F9FA;
+}
+
+/* Only animate new entries, not on every re-render */
+#leaderboard tbody tr.new-entry {
+  animation: fadeInRow 0.3s ease-in;
+  animation-fill-mode: forwards;
 }
 
 @keyframes fadeInRow {
@@ -636,6 +638,31 @@ header h1 {
   z-index: 2000;
   animation: slideIn 0.3s ease-out;
   font-weight: 600;
+  transition: opacity 0.3s ease-out;
+  max-width: 400px;
+  word-wrap: break-word;
+}
+
+/* Toast type variants */
+.toast-notification.toast-success {
+  background: var(--color-green);
+  border-left: 4px solid #1e7e34;
+}
+
+.toast-notification.toast-error {
+  background: var(--color-red);
+  border-left: 4px solid #a71d2a;
+}
+
+.toast-notification.toast-warning {
+  background: var(--color-yellow);
+  color: var(--color-text);
+  border-left: 4px solid #d68910;
+}
+
+.toast-notification.toast-info {
+  background: var(--color-blue);
+  border-left: 4px solid #1f5d8f;
 }
 
 @keyframes slideIn {
@@ -647,6 +674,19 @@ header h1 {
     opacity: 1;
     transform: translateX(0);
   }
+}
+
+/* Stack multiple toasts */
+.toast-notification:nth-last-child(2) {
+  bottom: calc(var(--spacing-xl) + 80px);
+}
+
+.toast-notification:nth-last-child(3) {
+  bottom: calc(var(--spacing-xl) + 160px);
+}
+
+.toast-notification:nth-last-child(4) {
+  bottom: calc(var(--spacing-xl) + 240px);
 }
 
 /* Error Message */

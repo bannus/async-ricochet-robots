@@ -104,6 +104,26 @@ interface Goal {
 
 ## Frontend Patterns
 
+### User Notifications
+**Pattern**: Toast notifications (non-blocking, typed)
+```typescript
+// Shared notification utility (client/src/notifications.ts)
+import { showSuccess, showError, showWarning, showInfo } from './notifications.js';
+
+// Usage examples
+showSuccess('Round published successfully!');
+showError('Failed to submit solution');
+showWarning('Please enter your name');
+showInfo('New round started!', 5000); // Custom duration
+```
+- **Implementation**: DOM-based toast elements, CSS animations
+- **Types**: Success (green), Error (red), Warning (yellow), Info (blue)
+- **Duration**: Default 3s, configurable per message
+- **Position**: Top-center with slide-in animation
+- **Benefits**: Non-blocking, color-coded, consistent UX
+- **Migration**: 36 `alert()` dialogs replaced across codebase
+- **Preserved**: `confirm()` dialogs for destructive actions (publish/complete rounds)
+
 ### Canvas Rendering
 **Pattern**: Immediate mode rendering
 ```typescript

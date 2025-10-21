@@ -9,6 +9,47 @@
 
 ## Active Work (Last Session - October 20, 2025)
 
+### Toast Notification System ✅ (COMPLETED October 20, 2025)
+- **Feature**: Replaced all browser alert dialogs with styled toast notifications
+- **Status**: Complete and tested
+- **Time**: ~45 minutes
+- **Files**: 
+  - NEW: `client/src/notifications.ts` (shared notification utility)
+  - MODIFIED: `client/src/player-app.ts` (5 alerts → toasts)
+  - MODIFIED: `client/src/create-game.ts` (3 alerts → toasts)
+  - MODIFIED: `client/src/host-manager.ts` (28 alerts → toasts)
+  - MODIFIED: `client/css/game.css` (notification styling)
+  - DOCS: `doc/NOTIFICATIONS.md` (new documentation)
+  - MEMORY: `memory-bank/systemPatterns.md` (documented pattern)
+- **Changes Made**:
+  1. **Notification API**: Created typed notification functions
+     - `showSuccess()` - Green success messages
+     - `showError()` - Red error messages
+     - `showWarning()` - Yellow warning messages
+     - `showInfo()` - Blue info messages
+     - Configurable duration (default 3s)
+  2. **UI Improvements**:
+     - Non-blocking toasts appear at top-center
+     - Smooth slide-in animation from top
+     - Color-coded by message type
+     - Auto-dismiss after duration
+  3. **Migration**: Replaced 36 alert() dialogs across 3 files
+     - Form validations → warnings
+     - API errors → errors
+     - Success operations → success
+     - Status updates → info
+  4. **Preserved**: `confirm()` dialogs for destructive actions remain
+     - Publishing rounds
+     - Completing rounds
+     - Skipping goals
+     - Changing deadlines
+- **Benefits**:
+  - Better UX: Non-blocking, modern appearance
+  - Contextual: Color-coded messages
+  - Consistent: Same styling everywhere
+  - Accessible: Still readable and visible
+- **Test Results**: TypeScript compilation successful ✅
+
 ### Bug #17 & #18: Countdown Clock Issues ✅ (COMPLETED)
 - **Issues**: 
   1. Bug #17: NaN countdown during preview mode ("NaNh NaNm NaNs")

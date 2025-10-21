@@ -9,6 +9,7 @@
  */
 
 import { ApiClient } from './api-client.js';
+import { showError, showWarning, showSuccess, showInfo } from './notifications.js';
 
 export class HostManager {
   private pendingRoundId: string | null = null;
@@ -193,16 +194,16 @@ export class HostManager {
         
         const goal = result.data.goalColor;
         const pos = result.data.goalPosition;
-        alert(`Goal Preview:\n${goal} robot to (${pos.x}, ${pos.y})\n\nClick "Skip" for a different goal, or "Publish" to make it active.`);
+        showInfo(`Goal Preview: ${goal} robot to (${pos.x}, ${pos.y}). Click "Skip" for a different goal, or "Publish" to make it active.`, 5000);
         
         // Reload to show preview
         window.location.reload();
       } else {
-        alert('Failed to preview goal: ' + (result.error || 'Unknown error'));
+        showError('Failed to preview goal: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Preview goal error:', error);
-      alert('Error previewing goal: ' + (error as Error).message);
+      showError('Error previewing goal: ' + (error as Error).message);
     }
   }
 
@@ -212,7 +213,7 @@ export class HostManager {
    */
   private async skipGoal(): Promise<void> {
     if (!this.pendingRoundId) {
-      alert('No pending round to skip');
+      showWarning('No pending round to skip');
       return;
     }
     
@@ -230,18 +231,18 @@ export class HostManager {
         const wasUpdate = result.data.isUpdate;
         
         if (wasUpdate) {
-          alert(`New Goal:\n${goal} robot to (${pos.x}, ${pos.y})\n\nClick "Skip" again for another, or "Publish" to make it active.`);
+          showInfo(`New Goal: ${goal} robot to (${pos.x}, ${pos.y}). Click "Skip" again for another, or "Publish" to make it active.`, 5000);
         } else {
-          alert(`Goal:\n${goal} robot to (${pos.x}, ${pos.y})`);
+          showInfo(`Goal: ${goal} robot to (${pos.x}, ${pos.y})`, 4000);
         }
         
         window.location.reload();
       } else {
-        alert('Failed to skip goal: ' + (result.error || 'Unknown error'));
+        showError('Failed to skip goal: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Skip goal error:', error);
-      alert('Error skipping goal: ' + (error as Error).message);
+      showError('Error skipping goal: ' + (error as Error).message);
     }
   }
 
@@ -251,19 +252,19 @@ export class HostManager {
    */
   private async publishRound(): Promise<void> {
     if (!this.pendingRoundId) {
-      alert('No pending round to publish');
+      showWarning('No pending round to publish');
       return;
     }
     
     const deadlineInput = document.getElementById('host-round-deadline') as HTMLInputElement;
     if (!deadlineInput) {
-      alert('Deadline input not found');
+      showError('Deadline input not found');
       return;
     }
     
     const deadlineValue = deadlineInput.value;
     if (!deadlineValue) {
-      alert('Please select a deadline for the round');
+      showWarning('Please select a deadline for the round');
       return;
     }
     
@@ -272,7 +273,7 @@ export class HostManager {
     
     // Validate that deadline is in the future
     if (endTime <= Date.now()) {
-      alert('Deadline must be in the future');
+      showWarning('Deadline must be in the future');
       return;
     }
     
@@ -293,15 +294,15 @@ export class HostManager {
       );
       
       if (result.success) {
-        alert(`Round published successfully!\nPlayers can now submit solutions.`);
+        showSuccess('Round published successfully! Players can now submit solutions.', 4000);
         this.pendingRoundId = null;
         window.location.reload();
       } else {
-        alert('Failed to publish round: ' + (result.error || 'Unknown error'));
+        showError('Failed to publish round: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Publish round error:', error);
-      alert('Error publishing round: ' + (error as Error).message);
+      showError('Error publishing round: ' + (error as Error).message);
     }
   }
 
@@ -316,7 +317,7 @@ export class HostManager {
     try {
       const roundId = this.getCurrentRoundId();
       if (!roundId) {
-        alert('Cannot determine current round');
+        showError('Cannot determine current round');
         return;
       }
       
@@ -327,14 +328,14 @@ export class HostManager {
       );
       
       if (result.success) {
-        alert('Round completed successfully!');
+        showSuccess('Round completed successfully!', 3000);
         window.location.reload();
       } else {
-        alert('Failed to complete round: ' + (result.error || 'Unknown error'));
+        showError('Failed to complete round: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Complete round error:', error);
-      alert('Error completing round: ' + (error as Error).message);
+      showError('Error completing round: ' + (error as Error).message);
     }
   }
 
@@ -362,13 +363,13 @@ export class HostManager {
   private async extendRound(): Promise<void> {
     const deadlineInput = document.getElementById('host-change-deadline') as HTMLInputElement;
     if (!deadlineInput) {
-      alert('Deadline input not found');
+      showError('Deadline input not found');
       return;
     }
     
     const newDeadlineValue = deadlineInput.value;
     if (!newDeadlineValue) {
-      alert('Please select a new deadline');
+      showWarning('Please select a new deadline');
       return;
     }
     
@@ -377,7 +378,7 @@ export class HostManager {
     
     // Validate that new deadline is in the future
     if (newEndTime <= Date.now()) {
-      alert('New deadline must be in the future');
+      showWarning('New deadline must be in the future');
       return;
     }
     
@@ -392,7 +393,7 @@ export class HostManager {
     try {
       const roundId = this.getCurrentRoundId();
       if (!roundId) {
-        alert('Cannot determine current round');
+        showError('Cannot determine current round');
         return;
       }
       
@@ -404,14 +405,14 @@ export class HostManager {
       );
       
       if (result.success) {
-        alert(`Deadline updated successfully`);
+        showSuccess('Deadline updated successfully', 3000);
         window.location.reload();
       } else {
-        alert('Failed to change deadline: ' + (result.error || 'Unknown error'));
+        showError('Failed to change deadline: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Change deadline error:', error);
-      alert('Error changing deadline: ' + (error as Error).message);
+      showError('Error changing deadline: ' + (error as Error).message);
     }
   }
 
@@ -472,7 +473,7 @@ export class HostManager {
       }
     } catch (err) {
       console.error('Failed to copy:', err);
-      alert('Failed to copy. Please copy manually.');
+      showWarning('Failed to copy. Please copy manually.');
     }
   }
 }

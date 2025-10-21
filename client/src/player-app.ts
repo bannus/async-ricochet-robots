@@ -9,6 +9,7 @@ import { GameController } from './game-controller.js';
 import { CreateGameManager } from './create-game.js';
 import { HostManager } from './host-manager.js';
 import { ReplayController } from './replay-controller.js';
+import { showNotification, showError, showWarning, showSuccess } from './notifications.js';
 
 export class PlayerApp {
   private apiClient!: ApiClient;
@@ -23,6 +24,7 @@ export class PlayerApp {
   private pollingInterval: number | null = null;
   private timerInterval: number | null = null;
   private isInReplayMode: boolean = false;
+  private previousLeaderboardKeys: Set<string> = new Set();
 
   constructor() {
     // Get gameId from URL parameters
@@ -446,12 +448,17 @@ export class PlayerApp {
     const tbody = document.getElementById('leaderboard-body');
     if (!tbody) return;
     
+    // Track current entries to detect new ones
+    const currentKeys = new Set<string>();
+    
     tbody.innerHTML = '';
     
     if (!data.solutions || data.solutions.length === 0) {
       const row = document.createElement('tr');
       row.innerHTML = '<td colspan="5">No solutions yet. Be the first!</td>';
       tbody.appendChild(row);
+      // Clear previous keys since there are no entries
+      this.previousLeaderboardKeys.clear();
       return;
     }
     
@@ -460,6 +467,16 @@ export class PlayerApp {
     
     data.solutions.forEach((solution: any) => {
       const row = document.createElement('tr');
+      
+      // Create unique key for this entry (playerName + submittedAt timestamp)
+      const entryKey = `${solution.playerName}_${solution.submittedAt}`;
+      currentKeys.add(entryKey);
+      
+      // Check if this is a new entry
+      const isNewEntry = !this.previousLeaderboardKeys.has(entryKey);
+      if (isNewEntry) {
+        row.classList.add('new-entry');
+      }
       
       // Highlight current player
       if (savedName && solution.playerName.toLowerCase() === savedName.toLowerCase()) {
@@ -482,6 +499,9 @@ export class PlayerApp {
       tbody.appendChild(row);
     });
     
+    // Update previous keys for next comparison
+    this.previousLeaderboardKeys = currentKeys;
+    
     // Setup click handlers if round ended
     this.setupLeaderboardClickHandlers(data);
   }
@@ -494,12 +514,12 @@ export class PlayerApp {
     const playerName = nameInput?.value.trim() || '';
     
     if (!playerName) {
-      alert('Please enter your name');
+      showWarning('Please enter your name');
       return;
     }
     
     if (this.controller.getMoveCount() === 0) {
-      alert('No solution to submit');
+      showWarning('No solution to submit');
       return;
     }
     
@@ -512,7 +532,7 @@ export class PlayerApp {
         const moveCount = data.solution?.moveCount || data.moveCount;
         const rank = data.solution?.rank || data.rank;
         
-        alert(`Solution #${submissionNum} submitted! You used ${moveCount} moves. Current rank: #${rank}\n\nYou can submit again to improve your score!`);
+        showSuccess(`Solution #${submissionNum} submitted! You used ${moveCount} moves. Current rank: #${rank}. You can submit again to improve your score!`, 5000);
         
         // Reload leaderboard to show new submission
         await this.loadLeaderboard();
@@ -520,11 +540,11 @@ export class PlayerApp {
         // Reset the puzzle so player can try again
         this.controller.reset();
       } else {
-        alert('Failed to submit: ' + (result.error || 'Unknown error'));
+        showError('Failed to submit: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Submit error:', error);
-      alert('Failed to submit: ' + (error as Error).message);
+      showError('Failed to submit: ' + (error as Error).message);
     }
   }
 
@@ -546,10 +566,8 @@ export class PlayerApp {
         this.showNotification('New round started!');
       }
       
-      // Reload leaderboard if round is active
-      if (this.currentRound && this.currentRound.hasActiveRound !== false) {
-        await this.loadLeaderboard();
-      }
+      // Note: loadLeaderboard() is already called inside loadCurrentRound()
+      // No need to call it again here - that was causing double flashing
     }, 20000);
   }
 
@@ -716,7 +734,7 @@ export class PlayerApp {
     const solution = solutions[solutionIndex];
     
     if (!solution.moves) {
-      alert('Solution data not available');
+      showWarning('Solution data not available');
       return;
     }
     
@@ -755,7 +773,7 @@ export class PlayerApp {
       
     } catch (error) {
       console.error('Replay error:', error);
-      alert('Failed to replay solution');
+      showError('Failed to replay solution');
     }
   }
 

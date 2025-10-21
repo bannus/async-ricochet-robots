@@ -4,6 +4,7 @@
  */
 
 import { ApiClient } from './api-client.js';
+import { showError, showWarning } from './notifications.js';
 
 export class CreateGameManager {
   constructor(private apiClient: ApiClient) {}
@@ -88,7 +89,7 @@ export class CreateGameManager {
     const gameName = nameInput.value.trim();
     
     if (!gameName) {
-      alert('Please enter a game name');
+      showWarning('Please enter a game name');
       return;
     }
     
@@ -121,11 +122,11 @@ export class CreateGameManager {
         }
         
       } else {
-        alert('Failed to create game: ' + (result.error || 'Unknown error'));
+        showError('Failed to create game: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Create game error:', error);
-      alert('Error creating game: ' + (error as Error).message);
+      showError('Error creating game: ' + (error as Error).message);
     }
   }
 
@@ -153,7 +154,7 @@ export class CreateGameManager {
       }
     } catch (err) {
       console.error('Failed to copy:', err);
-      alert('Failed to copy. Please copy manually.');
+      showWarning('Failed to copy. Please copy manually.');
     }
   }
 }
