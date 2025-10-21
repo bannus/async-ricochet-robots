@@ -21,6 +21,7 @@ export class PlayerApp {
   private gameId: string = '';
   private currentRound: any = null;
   private pollingInterval: number | null = null;
+  private timerInterval: number | null = null;
   private isInReplayMode: boolean = false;
 
   constructor() {
@@ -559,6 +560,12 @@ export class PlayerApp {
     const timerElement = document.getElementById('time-remaining');
     if (!timerElement) return;
     
+    // Clear any existing timer first to prevent multiple timers running
+    if (this.timerInterval !== null) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
+    
     // Handle invalid/missing endTime (preview mode)
     if (!endTime || endTime <= 0) {
       timerElement.textContent = 'Waiting to start...';
@@ -582,7 +589,7 @@ export class PlayerApp {
     };
     
     updateTimer();
-    setInterval(updateTimer, 1000);
+    this.timerInterval = window.setInterval(updateTimer, 1000);
   }
 
   /**
