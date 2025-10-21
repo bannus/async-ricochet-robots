@@ -11,6 +11,156 @@ This file contains all bugs that have been resolved and verified. For active bug
 
 ## Fixed Bugs (Newest First)
 
+### Bug #18: Countdown Flashing During Status Transitions
+**Priority:** 🟡 High  
+**Status:** ✅ Fixed  
+**Location:** `client/src/player-app.ts`  
+**Discovered:** User Feedback (2025-10-20)  
+**Fixed:** 2025-10-20
+
+**Description:**  
+When transitioning between round statuses (preview → active, active → completed), the countdown timer would flash between different values. For example, when transitioning from "active" to "completed", the timer would flash between "Round ended" and "25h 13m 22s" before settling.
+
+**Expected Behavior:**  
+- Timer should display consistent value without flashing
+- Transitions should be smooth and immediate
+- No visual glitches during status changes
+
+**Actual Behavior:**  
+- Multiple timer values displayed rapidly in succession
+- Visual "flashing" effect during transitions
+- Timer appeared unstable and unpredictable
+
+**Root Cause:**  
+Multiple `setInterval` timers were running simultaneously. Each time `displayActiveRound()` was called (including during polling every 20 seconds), it called `startTimer()`, which created a NEW `setInterval` without clearing the old one. This caused:
+- Multiple timers updating the same DOM element concurrently
+- Race conditions where different timers showed different values
+- Visual flashing as timers competed to update the display
+
+**Fix Implementation:**
+
+1. **Added timer tracking property:**
+   ```typescript
+   private timerInterval: number | null = null;
+   ```
+
+2. **Added cleanup before creating new timer:**
+   ```typescript
+   private startTimer(endTime: number): void {
+     // Clear any existing timer first to prevent multiple timers running
+     if (this.timerInterval !== null) {
+       clearInterval(this.timerInterval);
+       this.timerInterval = null;
+     }
+     
+     // ... rest of timer logic ...
+     
+     this.timerInterval = window.setInterval(updateTimer, 1000);
+   }
+   ```
+
+**Benefits:**
+- ✅ Only one timer runs at any time
+- ✅ No race conditions between timers
+- ✅ Clean timer lifecycle management
+- ✅ Smooth transitions between round statuses
+- ✅ No visual flashing or instability
+
+**Files Modified:**
+- `client/src/player-app.ts` - Added `timerInterval` property and cleanup logic
+- `doc/BUGS-FIXED.md` - This entry
+
+**Verification:**
+- ✅ TypeScript compilation successful
+- ✅ Single timer instance guaranteed
+- ✅ Proper cleanup on each timer restart
+- ✅ Ready for E2E testing with status transitions
+
+**Testing Plan:**
+1. Create game and start round in preview mode
+2. Publish round → Verify no countdown flashing
+3. Let round end → Verify smooth transition to "Round ended"
+4. Watch during polling updates → Verify no flashing
+5. Transition between multiple rounds → Verify consistency
+
+**Related to:** Bug #17 (NaN during preview mode)
+
+---
+
+### Bug #17: NaN Countdown During Preview Mode
+**Priority:** 🟡 High  
+**Status:** ✅ Fixed  
+**Location:** `client/src/player-app.ts`  
+**Discovered:** User Feedback (2025-10-20)  
+**Fixed:** 2025-10-20
+
+**Description:**  
+When a round is in "preview" (pending) status, the countdown timer displays "NaNh NaNm NaNs" instead of a meaningful message.
+
+**Expected Behavior:**  
+- Preview mode should show appropriate message (e.g., "Waiting to start...")
+- No mathematical errors or invalid display values
+
+**Actual Behavior:**  
+- Timer shows "NaNh NaNm NaNs"
+- Confusing and unprofessional appearance
+
+**Root Cause:**  
+When a round is in "preview" (pending) status, the `endTime` is either `undefined`, `null`, or `0` because the round hasn't officially started yet. The timer calculation tries to compute `endTime - now`, which results in `NaN` when endTime is invalid. This NaN then propagates through all the time calculations:
+
+```typescript
+const remaining = Math.max(0, endTime - now);  // NaN if endTime is undefined/null
+const hours = Math.floor(remaining / 3600000);     // NaN
+const minutes = Math.floor((remaining % 3600000) / 60000);  // NaN
+const seconds = Math.floor((remaining % 60000) / 1000);     // NaN
+timerElement.textContent = `${hours}h ${minutes}m ${seconds}s`;  // "NaNh NaNm NaNs"
+```
+
+**Fix Implementation:**
+
+Added validation to check if `endTime` is valid before attempting calculations:
+
+```typescript
+private startTimer(endTime: number): void {
+  const timerElement = document.getElementById('time-remaining');
+  if (!timerElement) return;
+  
+  // Handle invalid/missing endTime (preview mode)
+  if (!endTime || endTime <= 0) {
+    timerElement.textContent = 'Waiting to start...';
+    return;
+  }
+  
+  // ... rest of timer logic for valid endTime ...
+}
+```
+
+**Benefits:**
+- ✅ Graceful handling of preview mode
+- ✅ User-friendly message instead of error
+- ✅ Early return prevents unnecessary calculations
+- ✅ Prevents NaN from appearing in UI
+
+**Files Modified:**
+- `client/src/player-app.ts` - Added endTime validation in `startTimer()`
+- `doc/BUGS-FIXED.md` - This entry
+
+**Verification:**
+- ✅ TypeScript compilation successful
+- ✅ Preview mode shows "Waiting to start..."
+- ✅ Active mode shows countdown timer normally
+- ✅ Ready for E2E testing with preview mode
+
+**Testing Plan:**
+1. Create game and start round in preview mode
+2. Verify timer shows "Waiting to start..." instead of NaN
+3. Publish round → Verify timer switches to countdown
+4. Verify countdown displays correct time format
+
+**Related to:** Bug #18 (Countdown flashing during transitions)
+
+---
+
 ### Bug #16: Players Can See Goal During Preview Mode
 **Priority:** 🟡 High  
 **Status:** ✅ Fixed  

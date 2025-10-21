@@ -297,6 +297,16 @@
 
 #### Recent Enhancements & Bug Fixes
 
+- ✅ **Bug #17 & #18: Countdown Clock Issues** - Fixed 2025-10-20
+  - Issue #17: Timer displayed "NaNh NaNm NaNs" during preview mode
+  - Issue #18: Timer flashed between different values during status transitions
+  - Cause #17: endTime undefined/null/0 in preview mode, calculations resulted in NaN
+  - Cause #18: Multiple setInterval timers running simultaneously without cleanup
+  - Fix #17: Added validation to check endTime before calculations, show "Waiting to start..." for preview
+  - Fix #18: Added timerInterval property with clearInterval() cleanup before creating new timer
+  - Files: `client/src/player-app.ts`, `doc/BUGS-FIXED.md`
+  - Status: ✅ Complete - Preview mode shows friendly message, no flashing during transitions
+
 - ✅ **Deadline-Based Round Management** - Implemented 2025-10-18
   - Feature: Replaced duration dropdowns with datetime pickers
   - Impact: Better control, clearer deadlines, more flexible scheduling

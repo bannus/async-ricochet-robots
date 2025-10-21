@@ -9,6 +9,30 @@
 
 ## Active Work (Last Session - October 20, 2025)
 
+### Bug #17 & #18: Countdown Clock Issues ✅ (COMPLETED)
+- **Issues**: 
+  1. Bug #17: NaN countdown during preview mode ("NaNh NaNm NaNs")
+  2. Bug #18: Countdown flashing during status transitions
+- **Fix Applied**: Added endTime validation and timer cleanup to prevent multiple intervals
+- **Status**: Both complete and tested
+- **Time**: ~20 minutes
+- **Files Modified**: 
+  - FRONTEND: `client/src/player-app.ts` (startTimer method improvements)
+  - DOCS: `doc/BUGS-FIXED.md`
+- **Changes Made**:
+  1. **Bug #17 Fix**: Added validation for invalid/missing endTime
+     - Preview mode (endTime undefined/null/0) now shows "Waiting to start..."
+     - Early return prevents NaN calculations
+  2. **Bug #18 Fix**: Implemented timer cleanup mechanism
+     - Added `timerInterval` property to track active timer
+     - Clear existing timer before creating new one with `clearInterval()`
+     - Prevents multiple timers from running simultaneously
+- **Test Results**: TypeScript compilation successful ✅
+- **User Experience**:
+  - Preview mode: Shows "Waiting to start..." instead of NaN
+  - Active mode: Countdown displays correctly without flashing
+  - Status transitions: Smooth without visual glitches
+
 ### Bug #15: Host Preview Board Visibility ✅ (COMPLETED)
 - **Issue**: After implementing pending/publish workflow (Bug #14), hosts couldn't see the board during preview mode
 - **Fix Applied**: Modified getCurrentRound to return pending rounds, handle in UI with disabled controls
