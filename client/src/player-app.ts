@@ -455,7 +455,7 @@ export class PlayerApp {
     
     if (!data.solutions || data.solutions.length === 0) {
       const row = document.createElement('tr');
-      row.innerHTML = '<td colspan="5">No solutions yet. Be the first!</td>';
+      row.innerHTML = '<td colspan="4">No solutions yet. Be the first!</td>';
       tbody.appendChild(row);
       // Clear previous keys since there are no entries
       this.previousLeaderboardKeys.clear();
@@ -485,14 +485,13 @@ export class PlayerApp {
       
       // Display player name with submission number if available
       const playerDisplay = solution.submissionNumber 
-        ? `${this.escapeHtml(solution.playerName)} (#${solution.submissionNumber})`
+        ? `${this.escapeHtml(solution.playerName)} <span class="tie-indicator">(#${solution.submissionNumber})</span>`
         : this.escapeHtml(solution.playerName);
       
       row.innerHTML = `
         <td>${solution.rank}</td>
         <td>${playerDisplay}</td>
         <td>${solution.moveCount}</td>
-        <td class="robot-${solution.winningRobot}">${solution.winningRobot}</td>
         <td>${this.formatTime(solution.submittedAt)}</td>
       `;
       
@@ -701,8 +700,20 @@ export class PlayerApp {
     const leaderboardRows = document.querySelectorAll('#leaderboard-body tr');
     leaderboardRows.forEach((row, index) => {
       row.classList.add('clickable');
+      
+      // Click handler for full replay
       row.addEventListener('click', () => {
         this.handleLeaderboardClick(index, data.solutions);
+      });
+      
+      // Hover handler for path preview
+      row.addEventListener('mouseenter', () => {
+        this.handleLeaderboardHover(index, data.solutions);
+      });
+      
+      // Clear preview on mouse leave
+      row.addEventListener('mouseleave', () => {
+        this.clearPathPreview();
       });
       
       // Add replay icon
@@ -883,6 +894,46 @@ export class PlayerApp {
     
     if (replayInfo) {
       replayInfo.textContent = 'Replaying solution...';
+    }
+  }
+
+  /**
+   * Handle hovering over a leaderboard entry - show path preview
+   */
+  private handleLeaderboardHover(solutionIndex: number, solutions: any[]): void {
+    // Don't show preview if already in replay mode
+    if (this.isInReplayMode) {
+      return;
+    }
+    
+    const solution = solutions[solutionIndex];
+    
+    if (!solution.moves || !this.currentRound) {
+      return;
+    }
+    
+    // Draw path preview on top of current board state
+    this.renderer.drawSolutionPathPreview(
+      solution.moves,
+      this.currentRound.puzzle.robots,
+      solution.winningRobot,
+      this.currentRound.puzzle,
+      this.currentRound.activeGoalIndex
+    );
+  }
+
+  /**
+   * Clear the path preview and restore normal board view
+   */
+  private clearPathPreview(): void {
+    // Don't clear if in replay mode
+    if (this.isInReplayMode) {
+      return;
+    }
+    
+    // Simply re-render the board to its current state
+    if (this.currentRound) {
+      this.renderer.render(this.currentRound.puzzle, this.currentRound.activeGoalIndex);
     }
   }
 }

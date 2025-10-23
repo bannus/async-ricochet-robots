@@ -252,8 +252,30 @@ header h1 {
   color: #7F8C8D;
 }
 
+/* Narrow specific columns */
+#leaderboard th:nth-child(1),
+#leaderboard td:nth-child(1) {
+  width: 50px;
+  text-align: center;
+}
+
+#leaderboard th:nth-child(3),
+#leaderboard td:nth-child(3) {
+  width: 70px;
+  text-align: center;
+}
+
+/* Gray out tie indicators */
+.tie-indicator {
+  color: #95A5A6;
+  font-weight: normal;
+}
+
+/* Enhanced row hover effect */
 #leaderboard tbody tr:hover {
-  background: #F8F9FA;
+  background: #E8F4F8;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
 /* Only animate new entries, not on every re-render */
@@ -824,6 +846,7 @@ header h1 {
 
 #leaderboard-body tr.clickable {
   cursor: pointer;
+  position: relative;
 }
 
 #leaderboard-body tr.clickable:hover {
