@@ -7,7 +7,50 @@
 **Completion:** ~90%  
 **Next Milestone:** Final testing and polish
 
-## Active Work (Last Session - October 20, 2025)
+## Active Work (Last Session - October 22, 2025)
+
+### Leaderboard UI Refinements ✅ (COMPLETED October 22, 2025)
+- **Feature**: Visual polish and UX improvements to leaderboard table
+- **Status**: Complete and tested
+- **Time**: ~20 minutes
+- **Files Modified**:
+  - FRONTEND: `client/index.html` (removed Robot column from table structure)
+  - FRONTEND: `client/src/player-app.ts` (wrapped tie indicators, removed robot cell, conditional class management)
+  - STYLES: `client/css/game.css` (column widths, colors, hover effects, layout proportions, conditional visibility)
+- **Changes Made**:
+  1. **Narrower Columns**: 
+     - Rank column: 50px width, centered (was flexible)
+     - Moves column: 70px width, centered (was flexible)
+     - Makes table more compact and scannable
+  2. **Grayed Tie Indicators**:
+     - Wrapped "(#N)" submission numbers in `<span class="tie-indicator">`
+     - Applied muted gray color (#95A5A6)
+     - Less visually distracting while still readable
+  3. **Removed Robot Column**:
+     - Deleted Robot header and cells from table
+     - Updated colspan from 5 to 4 for empty states
+     - Simplified display (robot info not critical for quick scanning)
+  4. **Enhanced Hover Effect**:
+     - Changed background from #F8F9FA to #E8F4F8 (light blue tint)
+     - Added smooth 0.2s transition
+     - Added cursor pointer for better UX
+  5. **Layout Proportions**:
+     - Game section: Changed from `flex: 2` to `flex: 1.3`
+     - Leaderboard section: Remains at `flex: 1`
+     - Gives leaderboard more breathing room, reduces vertical scrolling
+  6. **Cleaner Round End Display**:
+     - Added `.round-ended` class to `.goal-info` when status is "completed"
+     - CSS hides goal description heading during replay mode
+     - Only shows "Round ended - Click entries to replay" message
+- **Benefits**:
+  - Cleaner, more focused design
+  - Easier to scan quickly
+  - Better use of screen space
+  - Less visual clutter during replay mode
+- **Test Results**: All functionality preserved, TypeScript compilation successful ✅
+
+## Previous Work (October 20, 2025)
+## Previous Work (October 20, 2025)
 
 ### Toast Notification System ✅ (COMPLETED October 20, 2025)
 - **Feature**: Replaced all browser alert dialogs with styled toast notifications

@@ -312,6 +312,12 @@ export class PlayerApp {
         goalDesc.textContent = goalText;
       }
       
+      // Add class to hide goal description when round ended
+      const goalInfo = document.querySelector('.goal-info');
+      if (goalInfo) {
+        goalInfo.classList.add('round-ended');
+      }
+      
       if (isNewRound) {
         // Load puzzle into controller with goal visible
         this.controller.gameId = this.gameId;
@@ -344,6 +350,12 @@ export class PlayerApp {
           ? 'Get ANY robot to the purple goal'
           : `Get ${data.puzzle.goalColor} robot to goal`;
         goalDesc.textContent = goalText;
+      }
+      
+      // Remove round-ended class if it was previously set
+      const goalInfo = document.querySelector('.goal-info');
+      if (goalInfo) {
+        goalInfo.classList.remove('round-ended');
       }
       
       if (isNewRound) {

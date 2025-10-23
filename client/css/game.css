@@ -48,7 +48,7 @@ header h1 {
 }
 
 .game-section {
-  flex: 2;
+  flex: 1.3;
   background: var(--color-card);
   padding: var(--spacing-lg);
   border-radius: var(--border-radius);
@@ -85,6 +85,11 @@ header h1 {
 #goal-status.success {
   background: #D4EDDA;
   color: #155724;
+}
+
+/* Hide goal description when round has ended */
+.goal-info.round-ended h2 {
+  display: none;
 }
 
 /* Canvas */

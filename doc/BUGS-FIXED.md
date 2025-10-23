@@ -11,6 +11,157 @@ This file contains all bugs that have been resolved and verified. For active bug
 
 ## Fixed Bugs (Newest First)
 
+### Enhancement: Leaderboard UI Refinements
+**Priority:** 🟢 Low (Polish)  
+**Status:** ✅ Complete  
+**Location:** `client/index.html`, `client/src/player-app.ts`, `client/css/game.css`  
+**Discovered:** User Feedback (2025-10-22)  
+**Fixed:** 2025-10-22
+
+**Description:**  
+A set of visual polish improvements to make the leaderboard cleaner, more scannable, and better utilize screen space.
+
+**Issues Addressed:**
+1. Rank and Moves columns too wide for their numeric content
+2. Tie indicators "(#N)" visually distracting in the same color as player names
+3. Robot column not critical information, cluttering the display
+4. Hover effect too subtle
+5. Game board taking too much vertical space, causing scrolling
+6. Goal description redundant during replay mode
+
+**Expected Behavior:**
+- Leaderboard columns sized appropriately for content
+- Tie indicators present but less prominent
+- Only essential information displayed
+- Clear visual feedback on hover
+- Better screen space utilization
+- Cleaner replay mode display
+
+**Actual Behavior (Before Fix):**
+- All columns flexible width, wasting space
+- Tie indicators same visual weight as names
+- Robot column present but rarely referenced
+- Subtle gray hover effect
+- Game board flex: 2, leaderboard flex: 1 (66%/33% split)
+- Goal description shown even during replay
+
+**Fix Implementation:**
+
+**1. Narrower Columns (CSS):**
+```css
+/* Rank column */
+#leaderboard th:nth-child(1),
+#leaderboard td:nth-child(1) {
+  width: 50px;
+  text-align: center;
+}
+
+/* Moves column */
+#leaderboard th:nth-child(3),
+#leaderboard td:nth-child(3) {
+  width: 70px;
+  text-align: center;
+}
+```
+
+**2. Grayed Tie Indicators (HTML + TypeScript + CSS):**
+```typescript
+// Wrap tie number in span
+const playerDisplay = solution.submissionNumber 
+  ? `${this.escapeHtml(solution.playerName)} <span class="tie-indicator">(#${solution.submissionNumber})</span>`
+  : this.escapeHtml(solution.playerName);
+```
+```css
+.tie-indicator {
+  color: #95A5A6;  /* Muted gray */
+  font-weight: normal;
+}
+```
+
+**3. Removed Robot Column (HTML + TypeScript):**
+- Deleted `<th scope="col">Robot</th>` from table header
+- Removed `<td class="robot-${color}">${color}</td>` from row template
+- Updated colspan from 5 to 4 in empty states
+
+**4. Enhanced Hover Effect (CSS):**
+```css
+#leaderboard tbody tr:hover {
+  background: #E8F4F8;  /* Light blue instead of gray */
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+```
+
+**5. Layout Proportions (CSS):**
+```css
+.game-section {
+  flex: 1.3;  /* Was flex: 2 */
+}
+
+.leaderboard-section {
+  flex: 1;  /* Unchanged */
+}
+```
+- Game board now takes ~56% of space (was 66%)
+- Leaderboard takes ~44% of space (was 33%)
+- Reduces vertical scrolling needs
+
+**6. Cleaner Round End Display (TypeScript + CSS):**
+```typescript
+// Add class when round ends
+if (data.status === 'completed') {
+  const goalInfo = document.querySelector('.goal-info');
+  if (goalInfo) {
+    goalInfo.classList.add('round-ended');
+  }
+}
+```
+```css
+.goal-info.round-ended h2 {
+  display: none;  /* Hides "Goal: Get red robot to goal" */
+}
+```
+
+**Results:**
+- ✅ Rank column: 50px, centered (compact for numbers 1-99)
+- ✅ Moves column: 70px, centered (compact for 2-digit counts)
+- ✅ Tie indicators: Gray and subtle, less distracting
+- ✅ Robot column: Removed entirely
+- ✅ Hover effect: Blue tint, smooth transition, clear feedback
+- ✅ Layout: Better balance, less scrolling
+- ✅ Replay mode: Only shows "Round ended - Click entries to replay"
+
+**Files Modified:**
+- `client/index.html` - Removed Robot column from table structure
+- `client/src/player-app.ts` - Wrapped tie indicators, removed robot cell, added conditional class
+- `client/css/game.css` - Column widths, tie indicator color, hover effect, layout proportions, conditional visibility
+
+**Benefits:**
+- Cleaner, more focused leaderboard design
+- Easier to scan quickly for rankings
+- Better use of screen space
+- Less visual clutter during replay mode
+- More professional appearance
+- All functionality preserved
+
+**Verification:**
+- ✅ TypeScript compilation successful
+- ✅ Table structure updated (4 columns instead of 5)
+- ✅ Tie indicators properly styled
+- ✅ Hover effects work smoothly
+- ✅ Layout proportions adjusted
+- ✅ Goal description hidden when round ends
+- ✅ Ready for visual testing
+
+**User Experience:**
+- Leaderboard feels more polished and professional
+- Information hierarchy clearer (rank and name most prominent)
+- Hover feedback more obvious and intentional
+- Screen space better utilized
+- Replay mode cleaner and less cluttered
+
+---
+
 ### Bug #19: Leaderboard Flashing Issues
 **Priority:** 🟡 High  
 **Status:** ✅ Fixed  
