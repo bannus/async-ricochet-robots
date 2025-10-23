@@ -4,7 +4,7 @@
  * Renders robots, walls, goals, and animations
  */
 
-import type { Position, Robots, Walls, Goal } from '../../shared/types.js';
+import type { Position, Robots, Walls, Goal, Move } from '../../shared/types.js';
 
 interface Puzzle {
   walls: Walls;
@@ -16,6 +16,10 @@ export class GameRenderer {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private cellSize: number;
+  
+  // Path preview configuration constants
+  private static readonly PATH_PREVIEW_ALPHA = 0.3;
+  private static readonly PATH_PREVIEW_LINE_WIDTH_RATIO = 0.65; // ratio of cellSize
   
   private colors = {
     red: '#E74C3C',
@@ -359,5 +363,95 @@ export class GameRenderer {
       width: this.canvas.width,
       height: this.canvas.height
     };
+  }
+
+  /**
+   * Draw a faint preview of a solution's path on hover
+   * Shows the path taken by each robot with semi-transparent lines
+   * Each robot gets its own colored path
+   * Overlapping segments naturally darken due to alpha blending
+   */
+  drawSolutionPathPreview(
+    moves: Move[],
+    startingRobots: Robots,
+    robotColor: string,
+    puzzle: Puzzle,
+    activeGoalIndex: number
+  ): void {
+    if (!moves || moves.length === 0) return;
+
+    // Import game engine functions to simulate moves
+    import('../../shared/game-engine.js').then(({ applyMove }) => {
+      // Start with the initial positions
+      let currentRobots = { ...startingRobots };
+      
+      // Group consecutive moves by robot to draw separate path segments
+      interface PathSegment {
+        robot: string;
+        positions: Position[];
+      }
+      
+      const pathSegments: PathSegment[] = [];
+      let currentSegment: PathSegment | null = null;
+      
+      // Simulate each move and group by robot
+      for (const move of moves) {
+        const movingRobot = move.robot;
+        
+        // If starting a new segment or robot changed
+        if (!currentSegment || currentSegment.robot !== movingRobot) {
+          // Save previous segment if it exists
+          if (currentSegment) {
+            pathSegments.push(currentSegment);
+          }
+          
+          // Start new segment with this robot's current position
+          currentSegment = {
+            robot: movingRobot,
+            positions: [{ ...currentRobots[movingRobot as keyof Robots] }]
+          };
+        }
+        
+        // Apply the move
+        currentRobots = applyMove(currentRobots, puzzle.walls, move);
+        
+        // Add new position to current segment
+        currentSegment.positions.push({ ...currentRobots[movingRobot as keyof Robots] });
+      }
+      
+      // Don't forget the last segment
+      if (currentSegment) {
+        pathSegments.push(currentSegment);
+      }
+      
+      // Now draw each path segment in its robot's color
+      this.ctx.save();
+      this.ctx.globalAlpha = GameRenderer.PATH_PREVIEW_ALPHA;
+      this.ctx.lineWidth = this.cellSize * GameRenderer.PATH_PREVIEW_LINE_WIDTH_RATIO;
+      this.ctx.lineCap = 'round';
+      this.ctx.lineJoin = 'round';
+      
+      for (const segment of pathSegments) {
+        // Set color for this robot
+        this.ctx.strokeStyle = this.colors[segment.robot as keyof typeof this.colors];
+        
+        // Draw lines connecting consecutive positions in this segment
+        this.ctx.beginPath();
+        for (let i = 0; i < segment.positions.length; i++) {
+          const pos = segment.positions[i];
+          const x = pos.x * this.cellSize + this.cellSize / 2;
+          const y = pos.y * this.cellSize + this.cellSize / 2;
+          
+          if (i === 0) {
+            this.ctx.moveTo(x, y);
+          } else {
+            this.ctx.lineTo(x, y);
+          }
+        }
+        this.ctx.stroke();
+      }
+      
+      this.ctx.restore();
+    });
   }
 }
