@@ -70,6 +70,16 @@ export class ReplayController {
     // Clone starting positions
     let currentPositions: Robots = JSON.parse(JSON.stringify(startingPositions));
     
+    // Render initial state
+    this.renderer.clear();
+    this.renderer.render(
+      { ...puzzle, robots: currentPositions },
+      activeGoalIndex
+    );
+    
+    // Pause before first move (1000ms) to let user see starting position
+    await this.pause(1000);
+    
     // Replay each move
     for (let i = 0; i < solution.moves.length && this.isPlaying; i++) {
       const move = solution.moves[i];
