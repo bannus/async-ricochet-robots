@@ -14,13 +14,15 @@ Players compete to solve puzzles using the fewest moves over extended time perio
 
 ## Project Status
 
-🔨 **In Development** - Phase 1: Core Game Engine
+🎮 **Live in Production**: https://robots.bann.us/
 
-- ✅ Design & Documentation Complete
-- 🔄 Core Game Engine (In Progress)
-- ⏳ Backend API (Planned)
-- ⏳ Frontend UI (Planned)
-- ⏳ Deployment (Planned)
+Production-ready multiplayer puzzle game featuring:
+- Core game engine
+- REST API
+- Interactive Canvas UI with host panel
+- Solution replay system
+- Mobile touch support
+- Deployed on Azure Static Web Apps
 
 ## Setup
 
@@ -34,7 +36,7 @@ Players compete to solve puzzles using the fewest moves over extended time perio
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/bannus/async-ricochet-robots.git
    cd async-ricochet-robots
    ```
 
@@ -110,30 +112,15 @@ See `api/README.md` for backend development setup.
 
 ```
 async-ricochet-robots/
-├── shared/              # Shared game logic (isomorphic - runs on client & server)
-│   ├── types.ts        # Type definitions, enums, and validation
-│   ├── wall-utils.ts   # Wall collision detection
-│   ├── game-engine.ts  # Core movement and validation logic
-│   └── puzzle-generator.ts  # Board and puzzle generation
-├── tests/              # Unit tests
-│   ├── types.test.ts
-│   ├── wall-utils.test.ts
-│   ├── game-engine.test.ts
-│   └── wall-generator.test.ts
-├── doc/                # Design documentation
-│   ├── architecture.md
-│   ├── api-specification.md
-│   ├── data-models.md
-│   ├── game-rules.md
-│   └── user-flows.md
-├── memory-bank/        # Project context for AI assistant
-│   ├── projectbrief.md
-│   ├── activeContext.md
-│   └── progress.md
-├── dist/               # Compiled JavaScript (git-ignored)
-├── tsconfig.json       # TypeScript configuration
-├── package.json        # Project configuration
-└── README.md          # This file
+├── shared/              # Shared game logic (TypeScript)
+├── tests/               # Unit and integration tests
+├── client/              # Frontend application
+├── api/                 # Backend Azure Functions
+├── doc/                 # Design documentation
+├── memory-bank/         # Project context
+├── tsconfig.json        # TypeScript configuration
+├── package.json         # Project configuration
+└── README.md            # This file
 ```
 
 ## Documentation
@@ -175,35 +162,6 @@ Ricochet Robots is a puzzle game where players move colored robots on a 16×16 g
 4. **Round ends** → Solutions revealed, leaderboard updated, robots stay in place
 5. **Repeat** → Host starts new round with next goal
 6. **Game complete** → After all 17 goals solved
-
-## Development Roadmap
-
-### Phase 1: Core Game Engine ✅ (Current)
-- [x] Project setup
-- [ ] Core data structures
-- [ ] Wall collision detection
-- [ ] Robot movement logic
-- [ ] Solution validation
-- [ ] Puzzle generation
-
-### Phase 2: Backend API ⏳
-- [ ] Azure Functions setup
-- [ ] Database layer
-- [ ] API endpoints
-- [ ] Host authentication
-- [ ] Timer function
-
-### Phase 3: Frontend UI ⏳
-- [ ] Canvas rendering
-- [ ] Player interface
-- [ ] Host panel
-- [ ] Polling client
-
-### Phase 4: Polish & Deploy ⏳
-- [ ] Error handling
-- [ ] Performance optimization
-- [ ] Azure deployment
-- [ ] Testing with users
 
 ## Contributing
 

@@ -450,8 +450,14 @@ jobs:
           output_location: "dist"
 ```
 
-### Production URL
-https://icy-glacier-0f757cb0f.1.azurestaticapps.net/
+### Production URLs
+- **Primary**: https://robots.bann.us/
+- **Azure Default**: https://icy-glacier-0f757cb0f.1.azurestaticapps.net/ (also active)
+
+**Custom Domain Configuration:**
+- DNS: CNAME record `robots` → `icy-glacier-0f757cb0f.1.azurestaticapps.net`
+- SSL: Automatically provisioned by Azure (free)
+- Configured: October 24, 2025
 
 ## Version History
 

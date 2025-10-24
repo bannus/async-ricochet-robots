@@ -3,7 +3,8 @@
 ## Azure Static Web Apps Deployment
 
 ### Current Deployment
-- **Production URL**: https://icy-glacier-0f757cb0f.1.azurestaticapps.net/
+- **Production URL**: https://robots.bann.us/
+- **Azure Default URL**: https://icy-glacier-0f757cb0f.1.azurestaticapps.net/ (also active)
 - **Platform**: Azure Static Web Apps
 - **API Runtime**: Node.js 20
 
@@ -131,6 +132,27 @@ Set in Azure Static Web Apps configuration:
 - **Result**: ✅ Deployment successful, API functions operational
 
 **Important**: For Static Web Apps Managed Functions, DO NOT set `AzureWebJobsStorage` in application settings. Azure manages this automatically.
+
+### 2025-10-24: Custom Domain Configuration
+- **Feature**: Added custom domain `robots.bann.us`
+- **Configuration Method**: CNAME flow for immediate activation
+- **DNS Records**: CNAME record pointing `robots.bann.us` → `icy-glacier-0f757cb0f.1.azurestaticapps.net`
+- **SSL Certificate**: Automatically provisioned by Azure (free)
+- **Dual URLs**: Both custom domain and Azure default URL remain active
+- **Result**: ✅ Production site accessible at https://robots.bann.us/ with valid SSL certificate
+
+**Custom Domain Setup Process:**
+1. Azure Portal → Static Web App → Custom domains → Add
+2. Selected CNAME flow (simpler, immediate activation)
+3. Added DNS CNAME record: `robots` → `icy-glacier-0f757cb0f.1.azurestaticapps.net`
+4. Azure auto-validated domain and provisioned SSL certificate
+5. Site accessible within minutes of DNS propagation
+
+**Benefits:**
+- Professional branded URL
+- Both URLs work (no disruption to existing links)
+- Free SSL certificate managed by Azure
+- Zero code changes required (relative API paths already configured)
 
 ### 2025-01-09: CSP Fix
 - Fixed Content Security Policy blocking API calls in production

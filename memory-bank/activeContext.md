@@ -2,12 +2,47 @@
 
 ## Current Status
 
-**Phase:** Phase 4+ - Feature Enhancements (IN PROGRESS)  
-**Date:** October 14, 2025  
-**Completion:** ~90%  
-**Next Milestone:** Final testing and polish
+**Phase:** Production Deployment (COMPLETE)  
+**Date:** October 24, 2025  
+**Completion:** 100%  
+**Production URL:** https://robots.bann.us/  
+**Next Milestone:** Maintenance and potential enhancements
 
-## Active Work (Last Session - October 22, 2025)
+## Recent Deployment (October 24, 2025)
+
+### Custom Domain Configuration ✅ (COMPLETED October 24, 2025)
+- **Feature**: Added custom domain `robots.bann.us` to production deployment
+- **Status**: Complete and verified with SSL certificate
+- **Time**: ~30 minutes (DNS propagation + validation)
+- **Configuration Method**: CNAME flow for immediate activation
+- **Changes Made**:
+  1. **Azure Portal Configuration**:
+     - Added custom domain in Static Web App settings
+     - Selected CNAME validation method
+     - Azure provided CNAME target: `icy-glacier-0f757cb0f.1.azurestaticapps.net`
+  2. **DNS Configuration**:
+     - Added CNAME record: `robots` → `icy-glacier-0f757cb0f.1.azurestaticapps.net`
+     - DNS propagated within minutes
+  3. **SSL Certificate**:
+     - Azure automatically provisioned free SSL certificate
+     - Certificate validation completed successfully
+  4. **Dual URL Support**:
+     - Custom domain: https://robots.bann.us/ (primary)
+     - Azure default: https://icy-glacier-0f757cb0f.1.azurestaticapps.net/ (still active)
+- **Benefits**:
+  - Professional branded URL for sharing
+  - No code changes required (API uses relative paths)
+  - Free SSL certificate managed by Azure
+  - Both URLs remain functional (no disruption to existing links)
+- **Documentation Updated**:
+  - `doc/DEPLOYMENT.md` - Added custom domain setup process and version history
+  - `README.md` - Updated production URL to robots.bann.us
+  - `memory-bank/activeContext.md` - This file
+  - `memory-bank/progress.md` - Updated deployment phase
+  - `memory-bank/techContext.md` - Updated production URL
+- **Test Results**: E2E testing successful, SSL certificate valid ✅
+
+## Previous Work (Last Session - October 22, 2025)
 
 ### Leaderboard UI Refinements ✅ (COMPLETED October 22, 2025)
 - **Feature**: Visual polish and UX improvements to leaderboard table

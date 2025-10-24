@@ -389,7 +389,7 @@
 ### ✅ Phase 6: Deployment (COMPLETE)
 **Status:** Complete  
 **Completion:** 100%  
-**Completed:** October 10, 2025
+**Completed:** October 10, 2025 (Initial), October 24, 2025 (Custom Domain)
 
 #### Completed Tasks
 - [x] Azure Static Web App created
@@ -400,22 +400,39 @@
 - [x] Production deployment successful
 - [x] API functions operational in production
 - [x] Monitoring configured
+- [x] **Custom domain configured** (October 24, 2025)
+- [x] SSL certificate provisioned
+- [x] DNS CNAME record configured
+- [x] E2E testing on custom domain successful
 
 #### Deployment Success
 
-**Production URL:** https://icy-glacier-0f757cb0f.1.azurestaticapps.net/
+**Production URL:** https://robots.bann.us/  
+**Azure Default URL:** https://icy-glacier-0f757cb0f.1.azurestaticapps.net/ (also active)
 
-**Critical Issue Resolved:**
-- **Problem**: Deployment failing with "Failed to deploy the Azure Functions"
-- **Root Cause**: Forbidden app setting `AzureWebJobsStorage` in Static Web App configuration
-- **Solution**: Removed `AzureWebJobsStorage` from Azure Portal application settings
-- **Result**: ✅ Successful deployment, all API functions operational
+**Critical Issues Resolved:**
 
-**Key Learning:** Azure Static Web Apps uses **Managed Functions** which automatically handle storage configuration. Manually setting `AzureWebJobsStorage` conflicts with the managed system and causes deployment rejection.
+1. **Azure Functions v4 Deployment** (October 10, 2025)
+   - **Problem**: Deployment failing with "Failed to deploy the Azure Functions"
+   - **Root Cause**: Forbidden app setting `AzureWebJobsStorage` in Static Web App configuration
+   - **Solution**: Removed `AzureWebJobsStorage` from Azure Portal application settings
+   - **Result**: ✅ Successful deployment, all API functions operational
+   - **Key Learning**: Azure Static Web Apps uses **Managed Functions** which automatically handle storage configuration
+
+2. **Custom Domain Configuration** (October 24, 2025)
+   - **Feature**: Added custom domain `robots.bann.us`
+   - **Method**: CNAME flow for immediate activation
+   - **DNS**: CNAME record `robots` → `icy-glacier-0f757cb0f.1.azurestaticapps.net`
+   - **SSL**: Automatically provisioned by Azure (free)
+   - **Result**: ✅ Site accessible at https://robots.bann.us/ with valid SSL certificate
+   - **Benefits**: Professional branded URL, zero code changes required, dual URLs remain active
 
 **Documentation Updated:**
-- ✅ `doc/DEPLOYMENT.md` - Added deployment fix details and warning
-- ✅ `memory-bank/activeContext.md` - Documented troubleshooting process
+- ✅ `doc/DEPLOYMENT.md` - Added deployment fix details, custom domain setup, and version history
+- ✅ `README.md` - Updated production URL to robots.bann.us
+- ✅ `memory-bank/activeContext.md` - Documented deployment process and custom domain configuration
+- ✅ `memory-bank/progress.md` - This file
+- ✅ `memory-bank/techContext.md` - Updated production URL
 
 ---
 
