@@ -218,6 +218,109 @@ input:focus, select:focus, textarea:focus {
   }
 }
 
+/* Recent Games Section */
+#recent-games-section {
+  margin-top: var(--spacing-lg);
+  max-width: 500px;
+  width: 100%;
+}
+
+.recent-games-heading {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-text);
+  opacity: 0.7;
+  margin-bottom: var(--spacing-md);
+  text-align: left;
+}
+
+#recent-games-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.game-history-item {
+  background: #F8F9FA;
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-md);
+  cursor: pointer;
+  transition: all var(--transition-speed);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.game-history-item:hover {
+  background: #E8F4F8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px var(--color-shadow);
+}
+
+.game-history-item:active {
+  transform: translateY(0);
+}
+
+.game-history-name {
+  font-weight: 500;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding-right: var(--spacing-xl); /* Space for delete button */
+}
+
+.game-history-host-badge {
+  color: var(--color-blue);
+  font-size: var(--font-size-base);
+}
+
+.game-history-time {
+  font-size: var(--font-size-sm);
+  color: #95A5A6;
+}
+
+.game-history-delete {
+  position: absolute;
+  top: 50%;
+  right: var(--spacing-md);
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #95A5A6;
+  font-size: 1.25rem;
+  padding: var(--spacing-xs);
+  cursor: pointer;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-speed);
+}
+
+.game-history-delete:hover {
+  background: rgba(231, 76, 60, 0.1);
+  color: var(--color-red);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: none;
+}
+
+.game-history-delete:focus-visible {
+  outline: 2px solid var(--color-red);
+  outline-offset: 2px;
+}
+
+.game-history-empty {
+  text-align: center;
+  color: #95A5A6;
+  font-style: italic;
+  padding: var(--spacing-lg);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   :root {
@@ -227,5 +330,15 @@ input:focus, select:focus, textarea:focus {
   
   .card {
     padding: var(--spacing-md);
+  }
+  
+  #recent-games-section {
+    max-width: 100%;
+  }
+  
+  .game-history-delete {
+    width: 44px;
+    height: 44px;
+    font-size: 1.5rem;
   }
 }

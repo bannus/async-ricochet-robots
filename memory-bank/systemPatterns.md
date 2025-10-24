@@ -124,6 +124,43 @@ showInfo('New round started!', 5000); // Custom duration
 - **Migration**: 36 `alert()` dialogs replaced across codebase
 - **Preserved**: `confirm()` dialogs for destructive actions (publish/complete rounds)
 
+### Game History Tracking
+**Pattern**: localStorage-based recent games list
+```typescript
+// Game history utility (client/src/game-history.ts)
+import { GameHistoryManager } from './game-history.js';
+
+// Track game visit
+GameHistoryManager.addGame(gameId, gameName, isHost);
+
+// Display on splash page
+GameHistoryManager.renderGameList();
+
+// Remove specific game
+GameHistoryManager.removeGame(gameId);
+```
+- **Implementation**: 
+  - Standalone `GameHistoryManager` class in dedicated file
+  - Stores data in localStorage (key: `gameHistory`)
+  - Tracks: gameId, gameName, lastVisited timestamp, host status
+  - Limit: 10 most recent games
+- **Features**:
+  - Automatic tracking when visiting games
+  - Click to navigate back to game
+  - Individual delete buttons per entry
+  - Host badge (🔑) for games user is hosting
+  - Relative timestamps ("2 hours ago", "3 days ago")
+- **UI Integration**:
+  - Appears on splash page (no-game screen)
+  - Hidden when no history exists
+  - Card-like entries with hover effects
+  - Touch-friendly (44px delete buttons on mobile)
+- **Benefits**: 
+  - Easy access to active games
+  - No backend changes required
+  - Per-device storage (privacy-friendly)
+  - Better UX for returning players
+
 ### Canvas Rendering
 **Pattern**: Immediate mode rendering
 ```typescript

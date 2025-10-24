@@ -7,6 +7,7 @@ import { ApiClient } from './api-client.js';
 import { GameRenderer } from './game-renderer.js';
 import { GameController } from './game-controller.js';
 import { CreateGameManager } from './create-game.js';
+import { GameHistoryManager } from './game-history.js';
 import { HostManager } from './host-manager.js';
 import { ReplayController } from './replay-controller.js';
 import { showNotification, showError, showWarning, showSuccess } from './notifications.js';
@@ -201,6 +202,10 @@ export class PlayerApp {
         g.position.x === data.puzzle.goalPosition.x &&
         g.position.y === data.puzzle.goalPosition.y
       );
+      
+      // Track this game visit in history
+      const isHost = this.hostManager !== undefined;
+      GameHistoryManager.addGame(this.gameId, data.gameName || 'Ricochet Robots', isHost);
       
       this.displayActiveRound(data);
       

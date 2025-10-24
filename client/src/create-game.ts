@@ -5,6 +5,7 @@
 
 import { ApiClient } from './api-client.js';
 import { showError, showWarning } from './notifications.js';
+import { GameHistoryManager } from './game-history.js';
 
 export class CreateGameManager {
   constructor(private apiClient: ApiClient) {}
@@ -22,6 +23,9 @@ export class CreateGameManager {
     if (container) {
       container.style.display = 'none';
     }
+    
+    // Render game history
+    GameHistoryManager.renderGameList();
     
     this.setupModal();
   }

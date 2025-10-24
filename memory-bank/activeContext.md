@@ -2,11 +2,49 @@
 
 ## Current Status
 
-**Phase:** Production Deployment (COMPLETE)  
+**Phase:** Production Deployment + Enhancements  
 **Date:** October 24, 2025  
 **Completion:** 100%  
 **Production URL:** https://robots.bann.us/  
 **Next Milestone:** Maintenance and potential enhancements
+
+## Recent Work (October 24, 2025)
+
+### Game History Feature ✅ (COMPLETED October 24, 2025)
+- **Feature**: Enhanced splash page with game history tracking
+- **Status**: Complete and tested
+- **Time**: ~45 minutes
+- **Files**:
+  - NEW: `client/src/game-history.ts` (GameHistoryManager + interface)
+  - MODIFIED: `client/index.html` (Recent Games section)
+  - MODIFIED: `client/css/shared.css` (game history styling)
+  - MODIFIED: `client/src/create-game.ts` (render game list on splash)
+  - MODIFIED: `client/src/player-app.ts` (track game visits)
+- **Changes Made**:
+  1. **localStorage-Based History**:
+     - Tracks last 10 games visited by user
+     - Stores: gameId, gameName, timestamp, host status
+     - Per-device storage (no server tracking)
+  2. **Enhanced Splash Page**:
+     - "Recent Games" section appears when history exists
+     - Shows most recent games first
+     - 🔑 badge for games where user is host
+     - Relative timestamps ("2 hours ago", "3 days ago")
+  3. **User Interactions**:
+     - Click entry → navigate to that game
+     - Click × → confirm and remove from history
+     - Hover effects with light blue tint
+     - Touch-friendly delete buttons (44px on mobile)
+  4. **Code Organization**:
+     - Extracted `GameHistoryManager` to dedicated file
+     - Clean separation of concerns
+     - Better reusability and testability
+- **Benefits**:
+  - Easy access to active games
+  - Reminds users of games they're playing
+  - Quick host access to managed games
+  - Pure client-side, no backend changes
+- **Test Results**: TypeScript compilation successful ✅
 
 ## Recent Deployment (October 24, 2025)
 
