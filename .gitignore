@@ -3,6 +3,8 @@ node_modules/
 
 # Testing
 coverage/
+playwright-report/
+test-results/
 
 # Environment variables
 .env
