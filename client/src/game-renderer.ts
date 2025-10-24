@@ -59,9 +59,21 @@ export class GameRenderer {
 
   /**
    * Clear the canvas
+   * Resets transform to ensure clearRect works in raw pixel coordinates
+   * This prevents zoom-level bugs where only part of canvas gets cleared
    */
   clear(): void {
+    // Save current transform state
+    this.ctx.save();
+    
+    // Reset to identity transform (no scaling/rotation/translation)
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    
+    // Clear entire canvas buffer in raw pixel coordinates
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // Restore previous transform for subsequent drawing operations
+    this.ctx.restore();
   }
 
   /**
