@@ -3,25 +3,25 @@
 ## Technology Stack
 
 ### Frontend
-- **Language**: TypeScript 5.x (strict mode)
+- **Language**: TypeScript 5.9.3 (strict mode)
 - **Build Tool**: Webpack 5
 - **Rendering**: HTML5 Canvas API
 - **Styling**: Custom CSS (no framework)
 - **Dependencies**: Minimal (Hammer.js for touch gestures only)
 
 ### Backend
-- **Runtime**: Node.js 18 LTS
-- **Language**: TypeScript 5.x (strict mode)
+- **Runtime**: Node.js 22 LTS
+- **Language**: TypeScript 5.9.3 (strict mode)
 - **Platform**: Azure Functions v4
-- **Framework**: @azure/functions v4.x
-- **Storage**: Azure Table Storage SDK
+- **Framework**: @azure/functions v4.8.0
+- **Storage**: Azure Table Storage SDK v13.3.1
 
 ### Development Tools
 - **IDE**: Visual Studio Code
 - **Package Manager**: npm
-- **Testing**: Jest 29.x
+- **Testing**: Jest 29.7.0
 - **Linting**: TypeScript compiler (strict mode)
-- **Local Storage**: Azurite (Azure Storage Emulator)
+- **Local Storage**: Azurite 3.35.0 (Azure Storage Emulator)
 - **Local Functions**: Azure Functions Core Tools v4
 
 ## Project Structure
@@ -61,12 +61,16 @@ async-ricochet-robots/
 ```json
 {
   "devDependencies": {
-    "@types/hammerjs": "^2.0.45",
-    "@types/minimatch": "^5.1.2",
-    "ts-loader": "^9.5.1",
-    "typescript": "^5.7.2",
-    "webpack": "^5.97.1",
-    "webpack-cli": "^6.0.1"
+    "@types/hammerjs": "^2.0.46",
+    "@types/minimatch": "^6.0.0",
+    "copyfiles": "^2.4.1",
+    "live-server": "^1.2.2",
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@types/hammerjs": "^2.0.46"
   }
 }
 ```
@@ -74,19 +78,24 @@ async-ricochet-robots/
 **Rationale**:
 - `@types/hammerjs` - TypeScript definitions for Hammer.js (touch gestures)
 - `@types/minimatch` - Required by SWA CLI dependency
-- `webpack` - Bundles TypeScript into single JS file
+- `rimraf` - Cross-platform file deletion
+- `copyfiles` - Copy shared game engine files
+- `live-server` - Development server
 - No runtime dependencies (Hammer.js included as static asset)
 
 ### API Dependencies
 ```json
 {
   "dependencies": {
-    "@azure/data-tables": "^13.2.2",
-    "@azure/functions": "^4.5.0"
+    "@azure/data-tables": "^13.3.1",
+    "@azure/functions": "^4.8.0"
   },
   "devDependencies": {
-    "@azure/static-web-apps-cli": "^2.0.1",
-    "typescript": "^5.7.2"
+    "@types/node": "^22.15.23",
+    "azurite": "^3.35.0",
+    "copyfiles": "^2.4.1",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.3"
   }
 }
 ```
@@ -94,16 +103,24 @@ async-ricochet-robots/
 **Rationale**:
 - `@azure/data-tables` - Azure Table Storage client
 - `@azure/functions` - Azure Functions v4 programming model
-- `@azure/static-web-apps-cli` - Local development emulator
+- `azurite` - Local Azure Storage emulator
+- `@types/node` - TypeScript definitions for Node.js 22
 
-### Test Dependencies
+### Root Test Dependencies
 ```json
 {
   "devDependencies": {
-    "@types/jest": "^29.5.14",
+    "@azure/static-web-apps-cli": "^2.0.7",
+    "@types/jest": "^30.0.0",
+    "@types/minimatch": "^6.0.0",
+    "@types/node": "^22.15.23",
+    "@types/node-fetch": "^2.6.13",
     "jest": "^29.7.0",
-    "ts-jest": "^29.2.5",
-    "typescript": "^5.7.2"
+    "node-fetch": "^2.7.0",
+    "npm-run-all": "^4.1.5",
+    "start-server-and-test": "^2.1.2",
+    "ts-jest": "^29.4.5",
+    "typescript": "^5.9.3"
   }
 }
 ```
