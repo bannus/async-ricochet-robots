@@ -21,7 +21,7 @@
   "author": "",
   "license": "ISC",
   "engines": {
-    "node": ">=20.0.0"
+    "node": "22.x"
   },
   "dependencies": {
     "@azure/data-tables": "^13.2.2",
