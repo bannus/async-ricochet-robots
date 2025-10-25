@@ -13,12 +13,17 @@
 ### CI/CD Integration Test Failures Fixed ✅ (COMPLETED October 24, 2025)
 - **Issue**: Integration tests failing in GitHub Actions CI/CD pipeline
 - **Status**: Complete
-- **Root Cause**: 
-  - Manual service startup with `&` (background) wasn't reliable
-  - Fixed `sleep 10` wait time insufficient
-  - Services not guaranteed to be ready before tests ran
-  - Azurite not available in CI environment (only installed in api/)
-- **Solution**: Use `start-server-and-test` package + add Azurite to root dependencies
+- **Root Causes**: 
+  1. Manual service startup with `&` (background) wasn't reliable
+  2. Fixed `sleep 10` wait time insufficient
+  3. Services not guaranteed to be ready before tests ran
+  4. Azurite not available in CI environment (only installed in api/)
+  5. Azure Functions Core Tools not installed
+  6. `FUNCTIONS_WORKER_RUNTIME` env var not set (func prompts for runtime selection)
+- **Solution**: 
+  - Use `start-server-and-test` package
+  - Add missing dependencies
+  - Set environment variables explicitly
 - **Changes**:
   1. `.github/workflows/azure-static-web-apps.yml`:
      - Removed manual Azurite startup step
@@ -28,11 +33,15 @@
      - Added `AzureWebJobsStorage: UseDevelopmentStorage=true` env var
   2. `package.json` (root):
      - Added `azurite: ^3.35.0` to devDependencies
+     - Added `cross-env: ^7.0.3` to devDependencies (cross-platform env vars)
      - Changed `start:azurite` script from `azurite` to `npx azurite`
+     - Changed `start:api` to `cd api && cross-env FUNCTIONS_WORKER_RUNTIME=node AzureWebJobsStorage=UseDevelopmentStorage=true npm start`
+  3. `api/package.json`:
+     - Added `azure-functions-core-tools: ^4.0.6280` to devDependencies
 - **How It Works**:
   - `npm run test:integration` → `start-server-and-test start:test-services http://localhost:7071 test:integration:run`
   - `start-server-and-test` handles:
-    - Starting Azurite + Azure Functions in parallel
+    - Starting Azurite + Azure Functions in parallel (with env vars set)
     - Polling `http://localhost:7071` until ready
     - Running integration tests once services respond
     - Cleanup on exit
@@ -40,6 +49,7 @@
   - **Reliable**: Waits for actual service readiness (not arbitrary timeout)
   - **Cleaner**: Reuses existing npm scripts
   - **Consistent**: Same approach locally and in CI/CD
+  - **Cross-platform**: Works on Windows, Linux, macOS
 
 ### Seeded PRNG for Deterministic Testing ✅ (COMPLETED October 24, 2025)
 - **Feature**: Implemented custom seeded PRNG to eliminate flaky integration tests
