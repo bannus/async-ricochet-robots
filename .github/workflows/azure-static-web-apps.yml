@@ -43,21 +43,11 @@ jobs:
       - name: Run unit tests
         run: npm test
       
-      - name: Start Azurite
-        run: npx azurite --silent --location azurite &
-      
-      - name: Start Azure Functions
-        run: cd api && npm start &
-        env:
-          AzureWebJobsStorage: UseDevelopmentStorage=true
-      
-      - name: Wait for services to be ready
-        run: sleep 10
-      
       - name: Run integration tests
-        run: npm run test:integration:run
+        run: npm run test:integration
         env:
           CI: true
+          AzureWebJobsStorage: UseDevelopmentStorage=true
       
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
