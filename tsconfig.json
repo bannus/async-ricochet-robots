@@ -41,7 +41,10 @@
     
     // Advanced
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    
+    // Type Acquisition - only include types we explicitly use
+    "types": ["node", "jest"]
   },
   "include": [
     "shared/**/*",

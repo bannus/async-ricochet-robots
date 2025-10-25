@@ -19,11 +19,8 @@ import {
   createTestGame,
   startTestRound,
   publishTestRound,
-  submitTestSolution,
   endTestRound,
   getCurrentRound,
-  getLeaderboard,
-  getDashboard,
   makeRequest,
   parseResponse,
 } from '../helpers/api-test-utils';
