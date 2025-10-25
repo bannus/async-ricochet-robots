@@ -518,3 +518,90 @@ try {
 2. **Use TypeScript strict mode** - Catches subtle bugs
 3. **Test before deploying** - Azurite catches storage issues locally
 4. **Document as you go** - Memory bank pattern maintains context
+
+## Random Number Generation Pattern
+
+### Custom Seeded PRNG Implementation
+**Pattern**: Custom Linear Congruential Generator (LCG) for deterministic testing
+
+**Implementation**: `shared/random-utils.ts`
+```typescript
+let seed = Date.now();
+
+export function setSeed(newSeed: number): void {
+  seed = newSeed;
+}
+
+export function random(): number {
+  // LCG algorithm (Numerical Recipes parameters)
+  seed = (seed * 1664525 + 1013904223) >>> 0;
+  return seed / 4294967296;
+}
+```
+
+**Design Decisions**:
+1. **Custom vs Library**: Chose custom implementation over libraries like `seedrandom`
+   - **Zero dependencies** - Simpler deployment, no security audits
+   - **Full control** - Complete understanding of behavior
+   - **Sufficient quality** - Good enough for game board generation (not cryptography)
+   - **Simple code** - Only 25 lines, easy to maintain
+
+2. **Algorithm Choice**: Linear Congruential Generator (LCG)
+   - **Parameters from Numerical Recipes** - Well-tested values
+   - **Fast execution** - Simple multiplication and addition
+   - **Adequate period** - Full 32-bit period (4.3 billion values)
+   - **Not suitable for**: Cryptography, statistical simulations
+   - **Perfect for**: Game board generation, UI randomness
+
+**Usage Pattern**:
+```typescript
+// Production: Random boards every game
+const puzzle = generatePuzzle(); // Uses Date.now() as seed
+
+// Testing: Deterministic boards for reliable tests
+beforeAll(() => {
+  setSeed(12345); // Fixed seed
+});
+const puzzle = generatePuzzle(); // Same board every time
+```
+
+**Replaced `Math.random()` in**:
+- `shared/l-shape-utils.ts` (5 call sites)
+  - `getRandomOrientation()` - L-shape wall orientation
+  - `addOuterEdgeWalls()` - Edge wall placement
+  - `generateWalls()` - Deprecated function
+- `shared/goal-placement.ts` (3 call sites)
+  - `randomPositionInQuadrant()` - Goal position selection
+  - `generateMultiColorGoal()` - Multi-color goal quadrant selection
+- `shared/game-engine.ts` (2 call sites)
+  - `generateRobotPositions()` - Robot starting positions
+
+**Testing Strategy**:
+1. **Unit Tests**: Use random seeds (default `Date.now()`)
+   - Tests verify behavior across many random scenarios
+   - Example: "generates varied positions" expects randomness
+   - Benefits: Validates algorithm works with different inputs
+
+2. **Integration Tests**: Use fixed seed (`setSeed(12345)`)
+   - Tests verify specific game scenarios deterministically
+   - Example: "robots interact as blockers" needs predictable board
+   - Benefits: Prevents flaky tests, reproducible failures
+
+**Benefits**:
+- **Deterministic Testing**: Same seed = same board = reliable CI/CD
+- **Zero Dependencies**: No external packages to maintain
+- **Debugging Friendly**: Can reproduce exact board configurations
+- **Production Unchanged**: Still random (Date.now() seed)
+- **Simple Implementation**: Easy to understand and modify
+
+**Trade-offs Accepted**:
+- **Lower Quality**: LCG has known statistical weaknesses vs better PRNGs
+- **Not Cryptographically Secure**: Never use for security purposes
+- **Predictable Sequence**: Not suitable for gambling/lottery applications
+- **Good Enough for Games**: Perfectly adequate for board game generation
+
+**When to Reconsider**:
+- Need cryptographically secure random numbers
+- Statistical analysis reveals board generation bias
+- Need to match specific library's random distribution
+- Security audit requires using audited PRNG library

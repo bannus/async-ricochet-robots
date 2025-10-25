@@ -8,6 +8,7 @@ import { Direction, BOARD_SIZE, cloneRobots } from './types.js';
 import { isWallBlocking } from './wall-utils.js';
 import { initializeWalls, addCenterSquare, addOuterEdgeWalls } from './l-shape-utils.js';
 import { generateAllGoals } from './goal-placement.js';
+import { random } from './random-utils.js';
 
 /**
  * Moves a robot in the specified direction until it hits an obstacle
@@ -212,8 +213,8 @@ function generateRobotPositions(goalPositions: Set<string>): Robots {
     
     do {
       position = {
-        x: Math.floor(Math.random() * 16),
-        y: Math.floor(Math.random() * 16)
+        x: Math.floor(random() * 16),
+        y: Math.floor(random() * 16)
       };
       posKey = `${position.x},${position.y}`;
     } while (occupied.has(posKey));

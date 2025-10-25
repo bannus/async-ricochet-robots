@@ -4,6 +4,7 @@
  */
 
 import type { Position, Walls } from './types.js';
+import { random } from './random-utils.js';
 
 /**
  * L-shape orientation types
@@ -423,7 +424,7 @@ export function isValidOrientation(orientation: any): orientation is LShapeOrien
  */
 export function getRandomOrientation(): LShapeOrientation {
   const orientations: LShapeOrientation[] = ['NW', 'NE', 'SW', 'SE'];
-  return orientations[Math.floor(Math.random() * orientations.length)];
+  return orientations[Math.floor(random() * orientations.length)];
 }
 
 /**
@@ -506,10 +507,10 @@ export function addCenterSquare(walls: Walls): void {
  */
 export function addOuterEdgeWalls(walls: Walls): void {
   // Helper to get random position in range 1-6 (2-7 tiles from left/top corner)
-  const randomEdgePosLeft = () => Math.floor(Math.random() * 6) + 1; // 1-6
+  const randomEdgePosLeft = () => Math.floor(random() * 6) + 1; // 1-6
   
   // Helper to get random position in range 8-13 (2-7 tiles from right/bottom corner)
-  const randomEdgePosRight = () => Math.floor(Math.random() * 6) + 8; // 8-13
+  const randomEdgePosRight = () => Math.floor(random() * 6) + 8; // 8-13
   
   // NW quadrant: top edge (vertical wall) and left edge (horizontal wall)
   const nwTopCol = randomEdgePosLeft(); // Column 1-6
@@ -571,8 +572,8 @@ export function generateWalls(): Walls {
     
     while (!placed && attempts < maxAttempts) {
       // Random position (not on outer boundary)
-      const x = Math.floor(Math.random() * 14) + 1; // 1-14
-      const y = Math.floor(Math.random() * 14) + 1; // 1-14
+      const x = Math.floor(random() * 14) + 1; // 1-14
+      const y = Math.floor(random() * 14) + 1; // 1-14
       const position: Position = { x, y };
       
       // Random orientation

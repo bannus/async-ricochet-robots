@@ -10,6 +10,53 @@
 
 ## Recent Work (October 24, 2025)
 
+### Seeded PRNG for Deterministic Testing ✅ (COMPLETED October 24, 2025)
+- **Feature**: Implemented custom seeded PRNG to eliminate flaky integration tests
+- **Status**: Complete and all tests passing
+- **Time**: ~1 hour
+- **Files**:
+  - NEW: `shared/random-utils.ts` (custom LCG implementation, ~50 lines)
+  - MODIFIED: `shared/l-shape-utils.ts` (5 Math.random() replacements)
+  - MODIFIED: `shared/goal-placement.ts` (3 Math.random() replacements)
+  - MODIFIED: `shared/game-engine.ts` (2 Math.random() replacements)
+  - MODIFIED: `tests/integration/game-integration.test.ts` (added setSeed(12345))
+  - DOCS: `doc/DEBUGGING.md` (added deterministic testing section)
+  - MEMORY: `memory-bank/systemPatterns.md` (documented PRNG pattern)
+- **Changes Made**:
+  1. **Created Custom PRNG**:
+     - Implemented Linear Congruential Generator (LCG) algorithm
+     - Uses Numerical Recipes parameters (well-tested)
+     - Default seed: `Date.now()` (random in production)
+     - Test seed: `12345` (deterministic for tests)
+     - Functions: `setSeed()`, `getSeed()`, `random()`, `resetToRandomSeed()`
+  2. **Replaced Math.random() Calls**:
+     - 10 total replacements across 3 files
+     - L-shape orientation selection
+     - Goal position generation
+     - Robot starting positions
+     - Edge wall placement
+  3. **Updated Integration Tests**:
+     - Added `beforeAll()` hook with `setSeed(12345)`
+     - Tests now generate identical boards every run
+     - Previously flaky tests now pass reliably
+  4. **Design Decision**:
+     - Chose custom implementation over libraries (seedrandom, random-seed)
+     - Zero dependencies, full control, simple code (25 lines)
+     - Adequate quality for game board generation (not cryptography)
+- **Testing Strategy**:
+  - **Unit tests**: Use random seeds (validate across variations)
+  - **Integration tests**: Use fixed seed (deterministic scenarios)
+- **Benefits**:
+  - **Deterministic Testing**: Same seed = same board = reliable CI/CD
+  - **Zero Dependencies**: No external packages to maintain
+  - **Debugging Friendly**: Can reproduce exact board configurations
+  - **Production Unchanged**: Still random (Date.now() seed)
+- **Test Results**: All tests passing ✅
+  - Unit tests: 195/195 passed (with random seeds)
+  - Integration tests: 14/14 passed (with fixed seed)
+  - TypeScript compilation: Success
+  - CI/CD pipeline: Ready for reliable execution
+
 ### PlayerApp Refactoring ✅ (COMPLETED October 24, 2025)
 - **Feature**: Extracted manager classes from PlayerApp to improve code organization
 - **Status**: Complete and tested

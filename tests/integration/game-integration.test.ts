@@ -8,6 +8,7 @@ import { generateAllGoals, validateGoals } from '../../shared/goal-placement';
 import { applyMoves, moveRobot as _moveRobot } from '../../shared/game-engine';
 import { validateSolution, getMoveCount } from '../../shared/solution-validator';
 import { isWallBlocking } from '../../shared/wall-utils';
+import { setSeed } from '../../shared/random-utils';
 
 /**
  * Helper to initialize empty walls
@@ -41,6 +42,11 @@ function placeRobots(goals: Goal[]): Robots {
 }
 
 describe('Integration Tests - Phase 1', () => {
+  // Set a fixed seed for deterministic test results
+  beforeAll(() => {
+    setSeed(12345);
+  });
+
   describe('Complete Board Generation', () => {
     test('generates valid complete game board', () => {
       const walls = initializeWalls();

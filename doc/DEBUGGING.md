@@ -261,6 +261,85 @@ Additional tasks available via **Terminal → Run Task**:
 - **Shift+F11** - Step out
 - **Ctrl+Shift+B** - Run build task
 
+## Deterministic Testing and Debugging
+
+### Seeded Random Number Generation
+
+The game uses a custom seeded PRNG (Pseudo-Random Number Generator) for board generation, allowing reproducible test scenarios.
+
+**Implementation:** `shared/random-utils.ts`
+- Uses Linear Congruential Generator (LCG) algorithm
+- Default seed: `Date.now()` (random in production)
+- Test seed: `12345` (deterministic for tests)
+
+**Why custom implementation?**
+- Zero dependencies (no external packages)
+- Simple and understandable (25 lines of code)
+- Sufficient quality for game board generation
+- Full control over seeding behavior
+
+**How it works:**
+```typescript
+import { setSeed, random } from '../shared/random-utils';
+
+// Production: random boards every time
+const board = generatePuzzle(); // Uses Date.now() as seed
+
+// Testing: same board every time
+setSeed(12345);
+const board = generatePuzzle(); // Deterministic board
+```
+
+**Used in:**
+- `shared/l-shape-utils.ts` - L-shape placement and orientation
+- `shared/goal-placement.ts` - Goal position selection
+- `shared/game-engine.ts` - Robot starting positions
+
+### Debugging Flaky Tests
+
+If tests fail intermittently:
+
+1. **Check if test uses random generation**
+   ```typescript
+   // Integration tests should set seed in beforeAll
+   beforeAll(() => {
+     setSeed(12345);
+   });
+   ```
+
+2. **Reproduce exact scenario**
+   ```typescript
+   // In your test, log the seed:
+   const seed = getSeed();
+   console.log('Current seed:', seed);
+   
+   // Then set that seed in a focused test:
+   it.only('reproduces bug', () => {
+     setSeed(1234567890); // Use logged seed
+     // ... test code
+   });
+   ```
+
+3. **Unit tests vs Integration tests**
+   - **Unit tests**: Use random seeds (test across variations)
+   - **Integration tests**: Use fixed seeds (test specific scenarios)
+
+### Debugging Board Generation Issues
+
+When debugging board generation problems:
+
+```typescript
+// In shared/random-utils.ts, temporarily add logging:
+export function random(): number {
+  seed = (seed * 1664525 + 1013904223) >>> 0;
+  const value = seed / 4294967296;
+  console.log('RNG:', seed, '→', value); // Debug output
+  return value;
+}
+```
+
+Then set a breakpoint in board generation code to see the sequence of random numbers used.
+
 ## Additional Resources
 
 - [VS Code Debugging Guide](https://code.visualstudio.com/docs/editor/debugging)

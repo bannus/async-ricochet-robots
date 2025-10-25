@@ -12,6 +12,7 @@ import {
   type LShape,
   type LShapeOrientation
 } from './l-shape-utils.js';
+import { random } from './random-utils.js';
 
 /**
  * Quadrant definition for goal placement
@@ -59,8 +60,8 @@ export function randomPositionInQuadrant(quadrant: Quadrant): Position {
   
   // Keep generating until we get a position that's not in the center 2×2 square
   do {
-    x = quadrant.xMin + Math.floor(Math.random() * (quadrant.xMax - quadrant.xMin + 1));
-    y = quadrant.yMin + Math.floor(Math.random() * (quadrant.yMax - quadrant.yMin + 1));
+    x = quadrant.xMin + Math.floor(random() * (quadrant.xMax - quadrant.xMin + 1));
+    y = quadrant.yMin + Math.floor(random() * (quadrant.yMax - quadrant.yMin + 1));
   } while ((x === 7 || x === 8) && (y === 7 || y === 8));
   
   return { x, y };
@@ -138,7 +139,7 @@ export function generateMultiColorGoal(
   existingLShapes: LShape[]
 ): GoalGenerationResult {
   // Randomly select a quadrant
-  const quadrant = QUADRANTS[Math.floor(Math.random() * QUADRANTS.length)];
+  const quadrant = QUADRANTS[Math.floor(random() * QUADRANTS.length)];
   
   const placement = placeGoalInQuadrant(quadrant, 'multi', existingLShapes, walls, 200);
   
