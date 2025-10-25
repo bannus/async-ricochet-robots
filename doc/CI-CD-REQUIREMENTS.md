@@ -1,58 +1,117 @@
-# CI/CD Requirements (Future Implementation)
+# CI/CD Implementation
 
-This document outlines the requirements and setup for continuous integration and deployment of the Async Ricochet Robots project.
+This document outlines the continuous integration and deployment setup for the Async Ricochet Robots project.
 
 ## Current Status
 
 ✅ **Testing Infrastructure Ready**
-- 208 unit and integration tests implemented
-- Test structure organized (unit/, integration/, helpers/)
-- API integration tests framework in place (skipped by default)
+- 208 unit tests implemented
+- 18 Playwright E2E tests implemented
+- API integration tests implemented
+- Test structure organized (unit/, integration/, e2e/, helpers/)
 - Manual testing documentation complete
 
-⏳ **CI/CD Not Yet Implemented**
-- GitHub Actions workflow needs to be created
-- Azure deployment pipeline pending
-- Automated testing in CI environment not configured
+✅ **CI/CD Fully Implemented**
+- GitHub Actions workflow configured with comprehensive test job
+- All tests run automatically on push/PR
+- Deployment blocked until all tests pass
+- Test artifacts uploaded for debugging
+- Azure deployment pipeline active
 
-## Planned CI/CD Pipeline
+## Implemented CI/CD Pipeline
 
-### GitHub Actions Workflow
+### GitHub Actions Workflow (`.github/workflows/azure-static-web-apps.yml`)
 
 **Trigger Events:**
-- Push to `main` branch
-- Pull requests to `main` branch
-- Manual workflow dispatch
+- ✅ Push to `main` branch
+- ✅ Pull requests to `main` branch
+- ✅ PR close events (cleanup)
 
-**Pipeline Stages:**
+**Pipeline Jobs:**
 
-#### 1. **Build & Test (All Commits)**
+#### 1. **Test Job** (Runs First, Blocks Deployment)
+Comprehensive test suite that must pass before deployment:
+
 ```yaml
-- Checkout code
-- Setup Node.js 18+
-- Install dependencies (npm ci)
-- Build TypeScript (npm run build)
-- Run unit tests (npm test unit/)
-- Run integration tests (npm test integration/game-integration)
-- Generate coverage report
-- Upload coverage to Codecov (optional)
+steps:
+  # Setup
+  - Checkout code
+  - Setup Node.js 22
+  - Install dependencies (root, client, api)
+  
+  # Build
+  - Build TypeScript (root and api)
+  
+  # Unit Tests
+  - Run Jest unit tests (208 tests, ~5s)
+  
+  # Integration Tests (with services)
+  - Start Azurite storage emulator
+  - Start Azure Functions emulator
+  - Wait for services
+  - Run API integration tests
+  
+  # E2E Tests
+  - Install Playwright browsers
+  - Run Playwright E2E tests (18 tests, ~15s)
+  
+  # Artifacts
+  - Upload Playwright HTML report (on failure)
+  - Upload test results (on failure)
 ```
 
-#### 2. **API Integration Tests (PR only)**
+#### 2. **Build and Deploy Job** (Runs Only If Tests Pass)
 ```yaml
-- Start Azurite in container
-- Build API (cd api && npm run build)
-- Start Azure Functions emulator
-- Run API integration tests (remove .skip)
-- Stop services
+needs: test_job  # Waits for all tests to pass
+steps:
+  - Checkout code
+  - Setup Node.js 22
+  - Deploy to Azure Static Web Apps
+    - Builds client (frontend)
+    - Deploys API (Azure Functions)
+    - Creates preview for PRs
 ```
 
-#### 3. **Deploy to Azure (main branch only)**
+#### 3. **Close Pull Request Job**
 ```yaml
-- Build production artifacts
-- Deploy Static Web App (frontend)
-- Deploy Azure Functions (backend)
-- Run smoke tests against production
+- Cleanup preview deployments when PR is closed
+```
+
+### Test Execution Flow
+
+```
+┌─────────────────────────────────────┐
+│   Push/PR to main                   │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│   Test Job (MUST PASS)              │
+├─────────────────────────────────────┤
+│ 1. Install & Build                  │
+│ 2. Unit Tests (208 tests)           │
+│ 3. Start Services (Azurite + API)   │
+│ 4. Integration Tests                │
+│ 5. Playwright E2E Tests (18 tests)  │
+│ 6. Upload Test Artifacts            │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+          Tests Pass? ────No──> ❌ Deployment Blocked
+               │                  📊 Artifacts Available
+               Yes
+               │
+               ▼
+┌─────────────────────────────────────┐
+│   Build & Deploy Job                │
+├─────────────────────────────────────┤
+│ 1. Build Production Artifacts       │
+│ 2. Deploy to Azure Static Web Apps  │
+│ 3. Deploy Azure Functions           │
+└─────────────────────────────────────┘
+               │
+               ▼
+          ✅ Deployment Complete
 ```
 
 ## Required GitHub Secrets
@@ -210,37 +269,83 @@ WEBSITE_NODE_DEFAULT_VERSION # 18-lts
 - Backend build: < 3 minutes
 - Total deployment: < 10 minutes
 
-## Next Steps for Implementation
+## Available npm Scripts
 
-1. **Create GitHub Actions Workflow**
-   - File: `.github/workflows/ci-cd.yml`
-   - Configure build, test, deploy stages
-   - Add environment-specific configurations
+### Testing Scripts
+```bash
+# Unit tests only (fast)
+npm test
 
-2. **Configure Azure Resources**
-   - Set up development environment
-   - Configure deployment credentials
-   - Enable Application Insights
+# All tests (unit + integration)
+npm run test:all
 
-3. **Implement Health Endpoint**
-   - Create `/api/health` function
-   - Check storage connectivity
-   - Return service status
+# Integration tests (requires services)
+npm run test:integration
 
-4. **Add ESLint Configuration**
-   - Install ESLint + TypeScript plugin
-   - Configure rules for code quality
-   - Add to CI pipeline
+# E2E tests with Playwright
+npm run test:e2e
 
-5. **Set Up Coverage Reporting**
-   - Configure Codecov or similar
-   - Add coverage badges to README
-   - Enforce coverage thresholds
+# E2E tests in UI mode (interactive)
+npm run test:e2e:ui
 
-6. **Create Deployment Documentation**
-   - Step-by-step deployment guide
-   - Rollback procedures
-   - Troubleshooting guide
+# E2E tests with visible browser
+npm run test:e2e:headed
+
+# Show Playwright HTML report
+npm run test:e2e:report
+
+# Test coverage report
+npm run test:coverage
+
+# Watch mode for development
+npm run test:watch
+```
+
+### CI Environment Detection
+The tests automatically detect CI environment via `process.env.CI`:
+- **Playwright**: Runs with 2 retries, forbids `.only`, uses 1 worker
+- **Jest**: Uses `--ci` flag for optimized output
+
+## Future Enhancements (Not Yet Implemented)
+
+The following improvements are documented for future implementation:
+
+### 1. **Code Coverage Reporting**
+- Integrate with Codecov or similar service
+- Add coverage badges to README
+- Enforce minimum coverage thresholds in CI
+- Track coverage trends over time
+- Generate coverage reports in PR comments
+
+### 2. **Enhanced PR Feedback**
+- Automated test result summaries in PR comments
+- Performance regression detection
+- Bundle size tracking and alerts
+- Automated dependency updates (Dependabot)
+
+### 3. **Improved Monitoring**
+- Implement `/api/health` endpoint
+- Add Application Insights integration
+- Set up custom alerts and dashboards
+- Track business metrics (games created, rounds played)
+
+### 4. **Code Quality Tools**
+- ESLint configuration for TypeScript
+- Prettier for consistent formatting
+- Husky for pre-commit hooks
+- Commitlint for conventional commits
+
+### 5. **Advanced Deployment Features**
+- Staging environment for pre-production testing
+- Blue-green deployment with health checks
+- Automatic rollback on errors
+- Deployment notifications (Slack/Teams)
+
+### 6. **Security Enhancements**
+- Automated security scanning (Snyk, Dependabot)
+- SAST (Static Application Security Testing)
+- Secret scanning in commits
+- Regular dependency updates
 
 ## References
 
