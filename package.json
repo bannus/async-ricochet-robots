@@ -20,7 +20,7 @@
     "type-check": "tsc --noEmit",
     "start:test-services": "run-p start:azurite start:api",
     "start:azurite": "npx azurite --silent --location azurite",
-    "start:api": "cd api && cross-env FUNCTIONS_WORKER_RUNTIME=node AzureWebJobsStorage=UseDevelopmentStorage=true npm start",
+    "start:api": "cd api && cross-env FUNCTIONS_WORKER_RUNTIME=node AzureWebJobsStorage=UseDevelopmentStorage=true AZURE_STORAGE_CONNECTION_STRING=UseDevelopmentStorage=true npm start",
     "dev:client": "npm run dev --prefix client",
     "start:client": "npm start --prefix client",
     "swa:start": "swa start client/dist --api-location api",

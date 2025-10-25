@@ -20,6 +20,7 @@
   4. Azurite not available in CI environment (only installed in api/)
   5. Azure Functions Core Tools not installed
   6. `FUNCTIONS_WORKER_RUNTIME` env var not set (func prompts for runtime selection)
+  7. `AZURE_STORAGE_CONNECTION_STRING` env var not set (storage initialization fails)
 - **Solution**: 
   - Use `start-server-and-test` package
   - Add missing dependencies
@@ -35,7 +36,7 @@
      - Added `azurite: ^3.35.0` to devDependencies
      - Added `cross-env: ^7.0.3` to devDependencies (cross-platform env vars)
      - Changed `start:azurite` script from `azurite` to `npx azurite`
-     - Changed `start:api` to `cd api && cross-env FUNCTIONS_WORKER_RUNTIME=node AzureWebJobsStorage=UseDevelopmentStorage=true npm start`
+     - Changed `start:api` to set all required env vars: `FUNCTIONS_WORKER_RUNTIME=node`, `AzureWebJobsStorage=UseDevelopmentStorage=true`, `AZURE_STORAGE_CONNECTION_STRING=UseDevelopmentStorage=true`
   3. `api/package.json`:
      - Added `azure-functions-core-tools: ^4.0.6280` to devDependencies
 - **How It Works**:
