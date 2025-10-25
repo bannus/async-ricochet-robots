@@ -17,14 +17,18 @@
   - Manual service startup with `&` (background) wasn't reliable
   - Fixed `sleep 10` wait time insufficient
   - Services not guaranteed to be ready before tests ran
-- **Solution**: Use `start-server-and-test` package (already configured)
+  - Azurite not available in CI environment (only installed in api/)
+- **Solution**: Use `start-server-and-test` package + add Azurite to root dependencies
 - **Changes**:
-  - `.github/workflows/azure-static-web-apps.yml`:
-    - Removed manual Azurite startup step
-    - Removed manual Azure Functions startup step  
-    - Removed fixed `sleep 10` wait step
-    - Changed to `npm run test:integration` (uses start-server-and-test)
-    - Added `AzureWebJobsStorage: UseDevelopmentStorage=true` env var
+  1. `.github/workflows/azure-static-web-apps.yml`:
+     - Removed manual Azurite startup step
+     - Removed manual Azure Functions startup step  
+     - Removed fixed `sleep 10` wait step
+     - Changed to `npm run test:integration` (uses start-server-and-test)
+     - Added `AzureWebJobsStorage: UseDevelopmentStorage=true` env var
+  2. `package.json` (root):
+     - Added `azurite: ^3.35.0` to devDependencies
+     - Changed `start:azurite` script from `azurite` to `npx azurite`
 - **How It Works**:
   - `npm run test:integration` → `start-server-and-test start:test-services http://localhost:7071 test:integration:run`
   - `start-server-and-test` handles:
