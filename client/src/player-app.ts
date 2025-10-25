@@ -9,7 +9,10 @@ import { GameController } from './game-controller.js';
 import { CreateGameManager } from './create-game.js';
 import { GameHistoryManager } from './game-history.js';
 import { HostManager } from './host-manager.js';
-import { ReplayController } from './replay-controller.js';
+import { UIStateManager } from './ui-state-manager.js';
+import { TimerManager } from './timer-manager.js';
+import { LeaderboardManager } from './leaderboard-manager.js';
+import { ReplayModeManager } from './replay-mode-manager.js';
 import { showNotification, showError, showWarning, showSuccess } from './notifications.js';
 
 export class PlayerApp {
@@ -18,14 +21,16 @@ export class PlayerApp {
   private controller!: GameController;
   private createGameManager?: CreateGameManager;
   private hostManager?: HostManager;
-  private replayController!: ReplayController;
+  
+  // Manager instances
+  private uiState!: UIStateManager;
+  private timer!: TimerManager;
+  private leaderboard!: LeaderboardManager;
+  private replayMode!: ReplayModeManager;
   
   private gameId: string = '';
   private currentRound: any = null;
   private pollingInterval: number | null = null;
-  private timerInterval: number | null = null;
-  private isInReplayMode: boolean = false;
-  private previousLeaderboardKeys: Set<string> = new Set();
 
   constructor() {
     // Get gameId from URL parameters
@@ -48,7 +53,23 @@ export class PlayerApp {
     const cellSize = this.calculateCellSize();
     this.renderer = new GameRenderer('game-board', cellSize);
     this.controller = new GameController(this.renderer, this.apiClient);
-    this.replayController = new ReplayController(this.renderer);
+    
+    // Initialize managers
+    this.uiState = new UIStateManager();
+    this.timer = new TimerManager();
+    this.leaderboard = new LeaderboardManager();
+    this.replayMode = new ReplayModeManager(this.renderer, this.uiState, this.leaderboard);
+    
+    // Wire up leaderboard callbacks
+    this.leaderboard.setClickHandler((index, solutions) => {
+      this.replayMode.handleLeaderboardClick(index, solutions);
+    });
+    this.leaderboard.setHoverHandler((index, solutions) => {
+      this.replayMode.handleLeaderboardHover(index, solutions, this.renderer);
+    });
+    this.leaderboard.setLeaveHandler(() => {
+      this.replayMode.clearPathPreview(this.renderer);
+    });
     
     // Case 3: Host mode detection (from localStorage only)
     const storedKey = localStorage.getItem(`hostKey_${this.gameId}`);
@@ -144,14 +165,14 @@ export class PlayerApp {
     const exitReplayBtn = document.getElementById('exit-replay-btn');
     if (exitReplayBtn) {
       exitReplayBtn.addEventListener('click', () => {
-        this.exitReplayMode();
+        this.replayMode.exit(this.renderer);
       });
     }
     
     // ESC key to exit replay
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.isInReplayMode) {
-        this.exitReplayMode();
+      if (e.key === 'Escape' && this.replayMode.isActive()) {
+        this.replayMode.exit(this.renderer);
       }
     });
     
@@ -176,7 +197,7 @@ export class PlayerApp {
       const response = await this.apiClient.getCurrentRound(this.gameId);
       
       if (!response.success) {
-        this.showError(response.error || 'Failed to load game data');
+        this.uiState.showError(response.error || 'Failed to load game data');
         return;
       }
       
@@ -184,13 +205,13 @@ export class PlayerApp {
       
       // Check game state
       if (data.gameComplete) {
-        this.showGameComplete(data);
+        this.uiState.showGameComplete();
         return;
       }
       
       // Show "no active round" only when there's truly no round data
       if (data.hasActiveRound === false && !data.roundId) {
-        this.showNoActiveRound(data);
+        this.uiState.showNoActiveRound(data.goalsCompleted || 0, data.goalsRemaining || 17);
         return;
       }
       
@@ -202,6 +223,9 @@ export class PlayerApp {
         g.position.x === data.puzzle.goalPosition.x &&
         g.position.y === data.puzzle.goalPosition.y
       );
+      
+      // Set current round in replay manager
+      this.replayMode.setCurrentRound(this.currentRound);
       
       // Track this game visit in history
       const isHost = this.hostManager !== undefined;
@@ -219,7 +243,7 @@ export class PlayerApp {
       
     } catch (error) {
       console.error('Error loading current round:', error);
-      this.showError('Failed to load game: ' + (error as Error).message);
+      this.uiState.showError('Failed to load game: ' + (error as Error).message);
     }
   }
 
@@ -227,23 +251,11 @@ export class PlayerApp {
    * Display active round UI
    */
   private displayActiveRound(data: any): void {
-    // Hide message screens
-    const noRoundMsg = document.getElementById('no-round-message');
-    const completeMsg = document.getElementById('game-complete-message');
-    const errorMsg = document.getElementById('error-message');
-    const mainContent = document.querySelector('.main-content') as HTMLElement;
-    
-    if (noRoundMsg) noRoundMsg.style.display = 'none';
-    if (completeMsg) completeMsg.style.display = 'none';
-    if (errorMsg) errorMsg.style.display = 'none';
-    if (mainContent) mainContent.style.display = 'flex';
+    // Show active round UI
+    this.uiState.showActiveRound();
     
     // Update header
-    const gameName = document.getElementById('game-name');
-    const roundNumber = document.getElementById('round-number');
-    
-    if (gameName) gameName.textContent = data.gameName || 'Ricochet Robots';
-    if (roundNumber) roundNumber.textContent = `Round ${data.roundNumber || 1}`;
+    this.uiState.updateHeader(data.gameName || 'Ricochet Robots', data.roundNumber || 1);
     
     // Only load puzzle if it's a new round (or first load)
     // This prevents resetting player's progress during polling
@@ -251,191 +263,129 @@ export class PlayerApp {
     
     // Handle different round statuses
     if (data.status === 'pending') {
-      // Pending round - host sees goal, players don't
-      
-      if (this.hostManager) {
-        // HOST VIEW: Show goal for preview
-        const goalDesc = document.getElementById('goal-description');
-        if (goalDesc) {
-          const goalText = data.puzzle.goalColor === 'multi'
-            ? 'Get ANY robot to the purple goal'
-            : `Get ${data.puzzle.goalColor} robot to goal`;
-          goalDesc.textContent = goalText;
-        }
-        
-        if (isNewRound) {
-          // Load puzzle with goal visible for host
-          this.controller.gameId = this.gameId;
-          this.controller.roundId = data.roundId;
-          this.controller.loadPuzzle({
-            walls: data.puzzle.walls,
-            robots: data.puzzle.robots,
-            allGoals: data.puzzle.allGoals,
-            goalPosition: data.puzzle.goalPosition,
-            goalColor: data.puzzle.goalColor
-          }, this.currentRound.activeGoalIndex);
-        }
-      } else {
-        // PLAYER VIEW: Hide goal
-        const goalDesc = document.getElementById('goal-description');
-        if (goalDesc) {
-          goalDesc.textContent = 'Waiting for host...';
-        }
-        
-        if (isNewRound) {
-          // Load puzzle WITHOUT goal visible for players
-          this.controller.gameId = this.gameId;
-          this.controller.roundId = data.roundId;
-          this.controller.loadPuzzle({
-            walls: data.puzzle.walls,
-            robots: data.puzzle.robots,
-            allGoals: data.puzzle.allGoals,
-            goalPosition: data.puzzle.goalPosition,
-            goalColor: data.puzzle.goalColor
-          }, -1); // -1 = don't render any goal marker
-        }
-      }
-      
-      this.disablePlayerControls();
-      this.hidePlayerControls();
-      
-      // Show "Preview mode" message
-      const goalStatus = document.getElementById('goal-status');
-      if (goalStatus) {
-        goalStatus.className = 'info';
-        goalStatus.textContent = '⏸️ Preview Mode - Waiting for host to publish';
-      }
+      this.handlePendingRound(data, isNewRound);
     } else if (data.status === 'completed') {
-      // Completed round - show goal and disable controls
-      
-      // Update goal description
-      const goalDesc = document.getElementById('goal-description');
-      if (goalDesc) {
-        const goalText = data.puzzle.goalColor === 'multi'
-          ? 'Get ANY robot to the purple goal'
-          : `Get ${data.puzzle.goalColor} robot to goal`;
-        goalDesc.textContent = goalText;
-      }
-      
-      // Add class to hide goal description when round ended
-      const goalInfo = document.querySelector('.goal-info');
-      if (goalInfo) {
-        goalInfo.classList.add('round-ended');
-      }
-      
-      if (isNewRound) {
-        // Load puzzle into controller with goal visible
-        this.controller.gameId = this.gameId;
-        this.controller.roundId = data.roundId;
-        this.controller.loadPuzzle({
-          walls: data.puzzle.walls,
-          robots: data.puzzle.robots,
-          allGoals: data.puzzle.allGoals,
-          goalPosition: data.puzzle.goalPosition,
-          goalColor: data.puzzle.goalColor
-        }, this.currentRound.activeGoalIndex);
-      }
-      
-      this.disablePlayerControls();
-      this.hidePlayerControls();
-      
-      // Show "Round ended" message
-      const goalStatus = document.getElementById('goal-status');
-      if (goalStatus) {
-        goalStatus.className = 'success';
-        goalStatus.textContent = 'Round ended - Click leaderboard entries to replay solutions';
-      }
+      this.handleCompletedRound(data, isNewRound);
     } else {
-      // Active round - show goal, enable and show controls
-      
-      // Update goal description
-      const goalDesc = document.getElementById('goal-description');
-      if (goalDesc) {
-        const goalText = data.puzzle.goalColor === 'multi'
-          ? 'Get ANY robot to the purple goal'
-          : `Get ${data.puzzle.goalColor} robot to goal`;
-        goalDesc.textContent = goalText;
-      }
-      
-      // Remove round-ended class if it was previously set
-      const goalInfo = document.querySelector('.goal-info');
-      if (goalInfo) {
-        goalInfo.classList.remove('round-ended');
-      }
-      
-      if (isNewRound) {
-        // Load puzzle into controller with goal visible
-        this.controller.gameId = this.gameId;
-        this.controller.roundId = data.roundId;
-        this.controller.loadPuzzle({
-          walls: data.puzzle.walls,
-          robots: data.puzzle.robots,
-          allGoals: data.puzzle.allGoals,
-          goalPosition: data.puzzle.goalPosition,
-          goalColor: data.puzzle.goalColor
-        }, this.currentRound.activeGoalIndex);
-      }
-      
-      this.enablePlayerControls();
-      this.showPlayerControls();
-      
-      // Clear any status message
-      const goalStatus = document.getElementById('goal-status');
-      if (goalStatus) {
-        goalStatus.className = '';
-        goalStatus.textContent = '';
-      }
+      this.handleActiveRound(data, isNewRound);
     }
     
     // Start timer countdown
-    this.startTimer(data.endTime);
+    this.timer.start(data.endTime);
   }
 
   /**
-   * Show no active round state
+   * Handle pending round state
    */
-  private showNoActiveRound(data: any): void {
-    const mainContent = document.querySelector('.main-content') as HTMLElement;
-    const noRoundMsg = document.getElementById('no-round-message');
-    const gameStats = document.getElementById('game-stats');
-    
-    if (mainContent) mainContent.style.display = 'none';
-    if (noRoundMsg) noRoundMsg.style.display = 'block';
-    
-    if (gameStats) {
-      gameStats.innerHTML = `
-        <p>Goals completed: ${data.goalsCompleted || 0} / 17</p>
-        <p>Goals remaining: ${data.goalsRemaining || 17}</p>
-      `;
+  private handlePendingRound(data: any, isNewRound: boolean): void {
+    if (this.hostManager) {
+      // HOST VIEW: Show goal for preview
+      const goalText = data.puzzle.goalColor === 'multi'
+        ? 'Get ANY robot to the purple goal'
+        : `Get ${data.puzzle.goalColor} robot to goal`;
+      this.uiState.updateGoalDescription(goalText);
+      
+      if (isNewRound) {
+        // Load puzzle with goal visible for host
+        this.controller.gameId = this.gameId;
+        this.controller.roundId = data.roundId;
+        this.controller.loadPuzzle({
+          walls: data.puzzle.walls,
+          robots: data.puzzle.robots,
+          allGoals: data.puzzle.allGoals,
+          goalPosition: data.puzzle.goalPosition,
+          goalColor: data.puzzle.goalColor
+        }, this.currentRound.activeGoalIndex);
+      }
+    } else {
+      // PLAYER VIEW: Hide goal
+      this.uiState.updateGoalDescription('Waiting for host...');
+      
+      if (isNewRound) {
+        // Load puzzle WITHOUT goal visible for players
+        this.controller.gameId = this.gameId;
+        this.controller.roundId = data.roundId;
+        this.controller.loadPuzzle({
+          walls: data.puzzle.walls,
+          robots: data.puzzle.robots,
+          allGoals: data.puzzle.allGoals,
+          goalPosition: data.puzzle.goalPosition,
+          goalColor: data.puzzle.goalColor
+        }, -1); // -1 = don't render any goal marker
+      }
     }
+    
+    this.uiState.setPlayerControlsEnabled(false);
+    this.uiState.setPlayerControlsVisible(false);
+    
+    // Show "Preview mode" message
+    this.uiState.updateGoalStatus('⏸️ Preview Mode - Waiting for host to publish', 'info');
   }
 
   /**
-   * Show game complete state
+   * Handle completed round state
    */
-  private showGameComplete(data: any): void {
-    const mainContent = document.querySelector('.main-content') as HTMLElement;
-    const completeMsg = document.getElementById('game-complete-message');
+  private handleCompletedRound(data: any, isNewRound: boolean): void {
+    // Update goal description
+    const goalText = data.puzzle.goalColor === 'multi'
+      ? 'Get ANY robot to the purple goal'
+      : `Get ${data.puzzle.goalColor} robot to goal`;
+    this.uiState.updateGoalDescription(goalText);
     
-    if (mainContent) mainContent.style.display = 'none';
-    if (completeMsg) completeMsg.style.display = 'block';
+    // Add class to hide goal description when round ended
+    this.uiState.setRoundEnded(true);
+    
+    if (isNewRound) {
+      // Load puzzle into controller with goal visible
+      this.controller.gameId = this.gameId;
+      this.controller.roundId = data.roundId;
+      this.controller.loadPuzzle({
+        walls: data.puzzle.walls,
+        robots: data.puzzle.robots,
+        allGoals: data.puzzle.allGoals,
+        goalPosition: data.puzzle.goalPosition,
+        goalColor: data.puzzle.goalColor
+      }, this.currentRound.activeGoalIndex);
+    }
+    
+    this.uiState.setPlayerControlsEnabled(false);
+    this.uiState.setPlayerControlsVisible(false);
+    
+    // Show "Round ended" message
+    this.uiState.updateGoalStatus('Round ended - Click leaderboard entries to replay solutions', 'success');
   }
 
   /**
-   * Show error state
+   * Handle active round state
    */
-  private showError(message: string): void {
-    const mainContent = document.querySelector('.main-content') as HTMLElement;
-    const noRoundMsg = document.getElementById('no-round-message');
-    const completeMsg = document.getElementById('game-complete-message');
-    const errorMsg = document.getElementById('error-message');
-    const errorText = document.getElementById('error-text');
+  private handleActiveRound(data: any, isNewRound: boolean): void {
+    // Update goal description
+    const goalText = data.puzzle.goalColor === 'multi'
+      ? 'Get ANY robot to the purple goal'
+      : `Get ${data.puzzle.goalColor} robot to goal`;
+    this.uiState.updateGoalDescription(goalText);
     
-    if (mainContent) mainContent.style.display = 'none';
-    if (noRoundMsg) noRoundMsg.style.display = 'none';
-    if (completeMsg) completeMsg.style.display = 'none';
-    if (errorMsg) errorMsg.style.display = 'block';
-    if (errorText) errorText.textContent = message;
+    // Remove round-ended class if it was previously set
+    this.uiState.setRoundEnded(false);
+    
+    if (isNewRound) {
+      // Load puzzle into controller with goal visible
+      this.controller.gameId = this.gameId;
+      this.controller.roundId = data.roundId;
+      this.controller.loadPuzzle({
+        walls: data.puzzle.walls,
+        robots: data.puzzle.robots,
+        allGoals: data.puzzle.allGoals,
+        goalPosition: data.puzzle.goalPosition,
+        goalColor: data.puzzle.goalColor
+      }, this.currentRound.activeGoalIndex);
+    }
+    
+    this.uiState.setPlayerControlsEnabled(true);
+    this.uiState.setPlayerControlsVisible(true);
+    
+    // Clear any status message
+    this.uiState.clearGoalStatus();
   }
 
   /**
@@ -451,75 +401,11 @@ export class PlayerApp {
       );
       
       if (response.success) {
-        this.displayLeaderboard(response.data);
+        this.leaderboard.display(response.data);
       }
     } catch (error) {
       console.error('Failed to load leaderboard:', error);
     }
-  }
-
-  /**
-   * Display leaderboard data
-   */
-  private displayLeaderboard(data: any): void {
-    const tbody = document.getElementById('leaderboard-body');
-    if (!tbody) return;
-    
-    // Track current entries to detect new ones
-    const currentKeys = new Set<string>();
-    
-    tbody.innerHTML = '';
-    
-    if (!data.solutions || data.solutions.length === 0) {
-      const row = document.createElement('tr');
-      row.innerHTML = '<td colspan="4">No solutions yet. Be the first!</td>';
-      tbody.appendChild(row);
-      // Clear previous keys since there are no entries
-      this.previousLeaderboardKeys.clear();
-      return;
-    }
-    
-    // Get saved player name for highlighting
-    const savedName = localStorage.getItem('playerName');
-    
-    data.solutions.forEach((solution: any) => {
-      const row = document.createElement('tr');
-      
-      // Create unique key for this entry (playerName + submittedAt timestamp)
-      const entryKey = `${solution.playerName}_${solution.submittedAt}`;
-      currentKeys.add(entryKey);
-      
-      // Check if this is a new entry
-      const isNewEntry = !this.previousLeaderboardKeys.has(entryKey);
-      if (isNewEntry) {
-        row.classList.add('new-entry');
-      }
-      
-      // Highlight current player
-      if (savedName && solution.playerName.toLowerCase() === savedName.toLowerCase()) {
-        row.classList.add('current-player');
-      }
-      
-      // Display player name with submission number if available
-      const playerDisplay = solution.submissionNumber 
-        ? `${this.escapeHtml(solution.playerName)} <span class="tie-indicator">(#${solution.submissionNumber})</span>`
-        : this.escapeHtml(solution.playerName);
-      
-      row.innerHTML = `
-        <td>${solution.rank}</td>
-        <td>${playerDisplay}</td>
-        <td>${solution.moveCount}</td>
-        <td>${this.formatTime(solution.submittedAt)}</td>
-      `;
-      
-      tbody.appendChild(row);
-    });
-    
-    // Update previous keys for next comparison
-    this.previousLeaderboardKeys = currentKeys;
-    
-    // Setup click handlers if round ended
-    this.setupLeaderboardClickHandlers(data);
   }
 
   /**
@@ -579,79 +465,9 @@ export class PlayerApp {
       // Check if round changed
       if (this.currentRound && this.currentRound.roundId !== oldRoundId) {
         // New round started!
-        this.showNotification('New round started!');
+        showNotification('New round started!');
       }
-      
-      // Note: loadLeaderboard() is already called inside loadCurrentRound()
-      // No need to call it again here - that was causing double flashing
     }, 20000);
-  }
-
-  /**
-   * Start countdown timer
-   */
-  private startTimer(endTime: number): void {
-    const timerElement = document.getElementById('time-remaining');
-    if (!timerElement) return;
-    
-    // Clear any existing timer first to prevent multiple timers running
-    if (this.timerInterval !== null) {
-      clearInterval(this.timerInterval);
-      this.timerInterval = null;
-    }
-    
-    // Handle invalid/missing endTime (preview mode)
-    if (!endTime || endTime <= 0) {
-      timerElement.textContent = 'Waiting to start...';
-      return;
-    }
-    
-    const updateTimer = () => {
-      const now = Date.now();
-      const remaining = Math.max(0, endTime - now);
-      
-      if (remaining === 0) {
-        timerElement.textContent = 'Round ended';
-        return;
-      }
-      
-      const hours = Math.floor(remaining / 3600000);
-      const minutes = Math.floor((remaining % 3600000) / 60000);
-      const seconds = Math.floor((remaining % 60000) / 1000);
-      
-      timerElement.textContent = `${hours}h ${minutes}m ${seconds}s`;
-    };
-    
-    updateTimer();
-    this.timerInterval = window.setInterval(updateTimer, 1000);
-  }
-
-  /**
-   * Format timestamp for display
-   */
-  private formatTime(timestamp: number): string {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    
-    if (diff < 60000) return 'Just now';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-    return date.toLocaleDateString();
-  }
-
-  /**
-   * Show toast notification
-   */
-  private showNotification(message: string): void {
-    const toast = document.createElement('div');
-    toast.className = 'toast-notification';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-      toast.remove();
-    }, 3000);
   }
 
   /**
@@ -687,269 +503,10 @@ export class PlayerApp {
     this.renderer.resize(newCellSize);
     
     // Re-render using controller to preserve current robot positions
-    // If controller exists (not on create game screen), use it to render current state
     if (this.controller) {
       this.controller.rerender();
     } else {
-      // Fallback for cases where controller doesn't exist (shouldn't happen in practice)
-      this.renderer.render(this.currentRound.puzzle, this.currentRound.activeGoalIndex);
-    }
-  }
-
-  /**
-   * Escape HTML to prevent XSS
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
-  /**
-   * Setup click handlers for leaderboard entries (replay mode)
-   */
-  private setupLeaderboardClickHandlers(data: any): void {
-    // Only enable when round has ended
-    if (data.roundStatus !== 'completed') {
-      return;
-    }
-    
-    const leaderboardRows = document.querySelectorAll('#leaderboard-body tr');
-    leaderboardRows.forEach((row, index) => {
-      row.classList.add('clickable');
-      
-      // Click handler for full replay
-      row.addEventListener('click', () => {
-        this.handleLeaderboardClick(index, data.solutions);
-      });
-      
-      // Hover handler for path preview
-      row.addEventListener('mouseenter', () => {
-        this.handleLeaderboardHover(index, data.solutions);
-      });
-      
-      // Clear preview on mouse leave
-      row.addEventListener('mouseleave', () => {
-        this.clearPathPreview();
-      });
-      
-      // Add replay icon
-      const replayIcon = document.createElement('span');
-      replayIcon.className = 'replay-icon';
-      replayIcon.textContent = ' ▶';
-      replayIcon.style.opacity = '0.5';
-      replayIcon.style.marginLeft = '8px';
-      const playerCell = row.querySelector('td:nth-child(2)');
-      if (playerCell) {
-        playerCell.appendChild(replayIcon);
-      }
-    });
-  }
-
-  /**
-   * Handle click on leaderboard entry
-   */
-  private async handleLeaderboardClick(solutionIndex: number, solutions: any[]): Promise<void> {
-    // If already replaying, stop current replay first
-    if (this.isInReplayMode) {
-      this.replayController.stopReplay();
-      // Remove highlighting from all rows
-      document.querySelectorAll('#leaderboard-body tr').forEach(row => {
-        row.classList.remove('replaying');
-      });
-    }
-    
-    const solution = solutions[solutionIndex];
-    
-    if (!solution.moves) {
-      showWarning('Solution data not available');
-      return;
-    }
-    
-    await this.playReplay(solution);
-  }
-
-  /**
-   * Play a solution replay
-   */
-  private async playReplay(solution: any): Promise<void> {
-    // Enter replay mode
-    this.isInReplayMode = true;
-    this.disablePlayerControls();
-    this.showReplayControls(solution.playerName, solution.moveCount);
-    
-    // Highlight selected leaderboard entry
-    const rows = document.querySelectorAll('#leaderboard-body tr');
-    rows.forEach(row => {
-      const playerCell = row.querySelector('td:nth-child(2)');
-      if (playerCell?.textContent?.includes(solution.playerName)) {
-        row.classList.add('replaying');
-      }
-    });
-    
-    try {
-      // Get starting positions from current round data
-      const startingPositions = this.currentRound.puzzle.robots;
-      
-      // Play replay
-      await this.replayController.replaySolution(
-        solution,
-        this.currentRound.puzzle,
-        startingPositions,
-        this.currentRound.activeGoalIndex
-      );
-      
-    } catch (error) {
-      console.error('Replay error:', error);
-      showError('Failed to replay solution');
-    }
-  }
-
-  /**
-   * Exit replay mode
-   */
-  private exitReplayMode(): void {
-    this.isInReplayMode = false;
-    this.replayController.stopReplay();
-    this.enablePlayerControls();
-    this.hideReplayControls();
-    
-    // Remove highlighting
-    document.querySelectorAll('#leaderboard-body tr').forEach(row => {
-      row.classList.remove('replaying');
-    });
-    
-    // Restore robots to starting positions
-    if (this.currentRound) {
-      // Render board with starting positions
-      this.renderer.render(this.currentRound.puzzle, this.currentRound.activeGoalIndex);
-    }
-  }
-
-  /**
-   * Disable player controls during replay
-   */
-  private disablePlayerControls(): void {
-    document.querySelectorAll('.robot-selector, #undo-btn, #reset-btn, #submit-btn').forEach(el => {
-      (el as HTMLButtonElement).disabled = true;
-    });
-  }
-
-  /**
-   * Enable player controls after replay
-   */
-  private enablePlayerControls(): void {
-    document.querySelectorAll('.robot-selector, #undo-btn, #reset-btn, #submit-btn').forEach(el => {
-      (el as HTMLButtonElement).disabled = false;
-    });
-  }
-
-  /**
-   * Hide player controls when round ends
-   */
-  private hidePlayerControls(): void {
-    const robotSelectors = document.querySelector('.robot-selectors') as HTMLElement;
-    const moveControls = document.querySelector('.move-controls') as HTMLElement;
-    const solutionInfo = document.querySelector('.solution-info') as HTMLElement;
-    
-    if (robotSelectors) {
-      robotSelectors.style.display = 'none';
-    }
-    if (moveControls) {
-      moveControls.style.display = 'none';
-    }
-    if (solutionInfo) {
-      solutionInfo.style.display = 'none';
-    }
-  }
-
-  /**
-   * Show player controls when round is active
-   */
-  private showPlayerControls(): void {
-    const robotSelectors = document.querySelector('.robot-selectors') as HTMLElement;
-    const moveControls = document.querySelector('.move-controls') as HTMLElement;
-    const solutionInfo = document.querySelector('.solution-info') as HTMLElement;
-    
-    if (robotSelectors) {
-      robotSelectors.style.display = '';
-    }
-    if (moveControls) {
-      moveControls.style.display = '';
-    }
-    if (solutionInfo) {
-      solutionInfo.style.display = '';
-    }
-  }
-
-  /**
-   * Show replay control UI
-   */
-  private showReplayControls(playerName: string, moveCount: number): void {
-    const controls = document.getElementById('replay-controls');
-    const replayInfo = document.getElementById('replay-info');
-    
-    if (controls) {
-      controls.style.display = 'block';
-    }
-    
-    if (replayInfo) {
-      replayInfo.textContent = `Replaying: ${playerName}'s solution (${moveCount} moves)`;
-    }
-  }
-
-  /**
-   * Hide replay control UI
-   */
-  private hideReplayControls(): void {
-    const controls = document.getElementById('replay-controls');
-    const replayInfo = document.getElementById('replay-info');
-    
-    if (controls) {
-      controls.style.display = 'none';
-    }
-    
-    if (replayInfo) {
-      replayInfo.textContent = 'Replaying solution...';
-    }
-  }
-
-  /**
-   * Handle hovering over a leaderboard entry - show path preview
-   */
-  private handleLeaderboardHover(solutionIndex: number, solutions: any[]): void {
-    // Don't show preview if already in replay mode
-    if (this.isInReplayMode) {
-      return;
-    }
-    
-    const solution = solutions[solutionIndex];
-    
-    if (!solution.moves || !this.currentRound) {
-      return;
-    }
-    
-    // Draw path preview on top of current board state
-    this.renderer.drawSolutionPathPreview(
-      solution.moves,
-      this.currentRound.puzzle.robots,
-      solution.winningRobot,
-      this.currentRound.puzzle,
-      this.currentRound.activeGoalIndex
-    );
-  }
-
-  /**
-   * Clear the path preview and restore normal board view
-   */
-  private clearPathPreview(): void {
-    // Don't clear if in replay mode
-    if (this.isInReplayMode) {
-      return;
-    }
-    
-    // Simply re-render the board to its current state
-    if (this.currentRound) {
+      // Fallback for cases where controller doesn't exist
       this.renderer.render(this.currentRound.puzzle, this.currentRound.activeGoalIndex);
     }
   }

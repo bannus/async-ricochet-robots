@@ -10,6 +10,56 @@
 
 ## Recent Work (October 24, 2025)
 
+### PlayerApp Refactoring ✅ (COMPLETED October 24, 2025)
+- **Feature**: Extracted manager classes from PlayerApp to improve code organization
+- **Status**: Complete and tested
+- **Time**: ~1 hour
+- **Files**:
+  - NEW: `client/src/ui-state-manager.ts` (~200 lines)
+  - NEW: `client/src/timer-manager.ts` (~65 lines)
+  - NEW: `client/src/leaderboard-manager.ts` (~170 lines)
+  - NEW: `client/src/replay-mode-manager.ts` (~145 lines)
+  - MODIFIED: `client/src/player-app.ts` (961 lines → 418 lines, 56% reduction)
+  - MODIFIED: `doc/architecture.md` (documented manager pattern)
+  - TESTS: `tests/e2e/player-app.spec.ts` (18/18 tests passing)
+  - TESTS: `tests/e2e/replay.spec.ts` (all tests passing)
+- **Changes Made**:
+  1. **Created UIStateManager**:
+     - Handles all UI visibility and state transitions
+     - Methods: `showActiveRound()`, `showNoActiveRound()`, `showGameComplete()`, `showError()`
+     - Manages player controls visibility and enabled state
+     - Updates header, goal descriptions, status messages
+  2. **Created TimerManager**:
+     - Manages countdown timer with automatic cleanup
+     - Methods: `start()`, `stop()`, private `updateDisplay()`
+     - Prevents multiple timers from running simultaneously
+  3. **Created LeaderboardManager**:
+     - Displays leaderboard with highlighting and animations
+     - Handles new entry detection and animation
+     - Sets up click/hover handlers for replay mode
+     - Methods: `display()`, `highlightEntry()`, `clearReplayHighlight()`
+  4. **Created ReplayModeManager**:
+     - Coordinates replay mode state and UI
+     - Integrates with ReplayController, UIStateManager, LeaderboardManager
+     - Methods: `handleLeaderboardClick()`, `handleLeaderboardHover()`, `exit()`, `isActive()`
+  5. **Refactored PlayerApp**:
+     - Reduced from 961 lines to 418 lines
+     - Now focuses on orchestration only
+     - Wires up manager callbacks in constructor
+     - Delegates all UI/timer/leaderboard/replay logic to managers
+     - Extracted helper methods: `handlePendingRound()`, `handleCompletedRound()`, `handleActiveRound()`
+- **Architecture Benefits**:
+  - **Single Responsibility**: Each manager has one clear purpose
+  - **Better Organization**: Related functionality grouped together
+  - **Improved Testability**: Managers can be unit tested independently
+  - **Cleaner PlayerApp**: Now focuses on coordination and API calls
+  - **Callback Pattern**: Managers communicate via callbacks set in PlayerApp
+- **Test Results**: All 18 Playwright tests passing ✅
+  - Player functionality (create game, active round, leaderboard)
+  - Round state handling (pending, active, completed, error)
+  - Replay mode (click to replay, ESC to exit, path preview)
+  - Responsive design (board resize)
+
 ### Game History Feature ✅ (COMPLETED October 24, 2025)
 - **Feature**: Enhanced splash page with game history tracking
 - **Status**: Complete and tested

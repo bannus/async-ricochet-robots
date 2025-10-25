@@ -80,9 +80,34 @@ Async Ricochet Robots is a multiplayer online implementation of the classic Rico
 
 **Technology Stack:**
 - Pure HTML5, CSS3, JavaScript (ES6+)
+- TypeScript compiled to JavaScript
 - HTML5 Canvas for game rendering
 - localStorage for client-side state persistence
 - Fetch API for HTTP requests
+
+**Client Architecture (Manager Pattern):**
+- `PlayerApp` - Main orchestrator (~418 lines)
+  - Coordinates API calls, managers, and event handling
+  - Manages game lifecycle and polling
+- `UIStateManager` - UI visibility and state transitions
+  - Controls which UI sections are displayed
+  - Updates header, goal descriptions, and status messages
+- `TimerManager` - Round countdown timer
+  - Manages countdown display and cleanup
+- `LeaderboardManager` - Leaderboard display and interaction
+  - Renders solutions with highlighting
+  - Handles click/hover for replay mode
+- `ReplayModeManager` - Solution replay coordination
+  - Coordinates replay state and UI
+  - Integrates with ReplayController for playback
+- `GameController` - Robot movement and solution building
+  - Handles player input and move tracking
+  - Submits solutions to API
+- `GameRenderer` - Canvas rendering
+  - Draws board, robots, goals, walls
+  - Handles path preview and replay visualization
+- `ReplayController` - Solution playback
+  - Animates solution moves step-by-step
 
 ### 2. Backend (Azure Functions)
 

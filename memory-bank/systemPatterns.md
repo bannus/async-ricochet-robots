@@ -104,6 +104,154 @@ interface Goal {
 
 ## Frontend Patterns
 
+### Manager Pattern Architecture (October 2025 Refactoring)
+**Pattern**: Extract cohesive responsibilities into focused manager classes
+
+**Problem Solved**: `PlayerApp` had grown to 961 lines with multiple responsibilities mixed together, making it hard to maintain and test.
+
+**Solution**: Extracted 4 manager classes following single responsibility principle:
+
+```typescript
+// PlayerApp (~418 lines) - Orchestration only
+class PlayerApp {
+  private uiState: UIStateManager;
+  private timer: TimerManager;
+  private leaderboard: LeaderboardManager;
+  private replayMode: ReplayModeManager;
+  
+  constructor() {
+    // Initialize managers
+    this.uiState = new UIStateManager();
+    this.timer = new TimerManager();
+    this.leaderboard = new LeaderboardManager();
+    this.replayMode = new ReplayModeManager(renderer, uiState, leaderboard);
+    
+    // Wire up callbacks
+    this.leaderboard.setClickHandler((idx, solutions) => 
+      this.replayMode.handleLeaderboardClick(idx, solutions)
+    );
+  }
+}
+```
+
+**Manager Classes**:
+
+1. **UIStateManager** (~200 lines) - UI visibility and state transitions
+   - `showActiveRound()`, `showNoActiveRound()`, `showGameComplete()`, `showError()`
+   - `updateHeader()`, `updateGoalDescription()`, `updateGoalStatus()`
+   - `setPlayerControlsVisible()`, `setPlayerControlsEnabled()`
+   - `showReplayControls()`, `hideReplayControls()`
+   - Responsibilities: Show/hide UI sections, update text content, manage control states
+
+2. **TimerManager** (~65 lines) - Countdown timer management
+   - `start(endTime)`, `stop()`
+   - Private: `updateDisplay(endTime)`
+   - Responsibilities: Countdown display, interval cleanup, format time remaining
+
+3. **LeaderboardManager** (~170 lines) - Leaderboard display and interaction
+   - `display(data)` - Renders leaderboard with highlighting
+   - `setClickHandler()`, `setHoverHandler()`, `setLeaveHandler()` - Callback setup
+   - `highlightEntry()`, `clearReplayHighlight()` - Visual state management
+   - Responsibilities: Render solutions, detect new entries, setup interaction handlers
+
+4. **ReplayModeManager** (~145 lines) - Replay mode coordination
+   - `handleLeaderboardClick()`, `handleLeaderboardHover()`, `clearPathPreview()`
+   - `exit()`, `isActive()`, `setCurrentRound()`
+   - Responsibilities: Coordinate replay state, integrate ReplayController/UI/Leaderboard
+
+**Benefits**:
+- **Maintainability**: Each class has single, clear purpose
+- **Testability**: Managers can be unit tested independently
+- **Readability**: PlayerApp becomes clear orchestrator (~56% code reduction)
+- **Reusability**: Managers could be reused in other contexts
+- **Separation**: UI logic separated from business logic and API calls
+
+**Callback Pattern**:
+```typescript
+// Managers don't know about each other directly
+// PlayerApp wires them together via callbacks
+this.leaderboard.setClickHandler((index, solutions) => {
+  this.replayMode.handleLeaderboardClick(index, solutions);
+});
+```
+
+**Testing**: All 18 Playwright E2E tests pass after refactoring, confirming no functionality broken.
+
+### Module Visibility Strategy (October 2025 Decision)
+**Decision**: Use implicit public exports + class-level access modifiers (current approach)
+
+**Rationale**: 
+- Project size (~15 TypeScript files in `client/src/`) doesn't justify complex module systems
+- Current patterns already provide adequate encapsulation
+- Clear naming conventions signal intent (e.g., `UIStateManager` vs `PlayerApp`)
+- Dependency injection + callback pattern creates natural boundaries
+
+**Current Approach (Adequate for Project):**
+```typescript
+// All exported classes are "public" to the module system
+export class UIStateManager {
+  // Public API methods
+  showActiveRound(): void { }
+  updateHeader(name: string, round: number): void { }
+  
+  // Private implementation details
+  private hideAllStates(): void { }
+}
+
+// PlayerApp coordinates via dependency injection
+class PlayerApp {
+  private uiState: UIStateManager;  // Owns the manager
+  
+  constructor() {
+    this.uiState = new UIStateManager();
+  }
+}
+```
+
+**What We're NOT Using (and why):**
+1. **Barrel Exports** (`index.ts` re-export pattern)
+   - Adds extra file with no enforcement
+   - People can still import directly
+   - Useful for libraries, not needed for applications
+   
+2. **`@internal` JSDoc + `stripInternal` compiler option**
+   - Requires additional TypeScript configuration
+   - Not runtime enforced, only documentation
+   - Better for published libraries than internal apps
+   
+3. **Separate "internal" directory structure**
+   - Adds organizational complexity
+   - Not needed with clear naming conventions
+
+**Optional Improvement (Low Priority):**
+Add JSDoc comments to document intended usage for manager classes:
+```typescript
+/**
+ * UIStateManager
+ * 
+ * Manages UI visibility and state transitions for the player interface.
+ * 
+ * @internal - Intended for use by PlayerApp only.
+ * Do not instantiate directly in other components.
+ */
+export class UIStateManager {
+  // ...
+}
+```
+
+**When to Reconsider:**
+- Project grows to 30+ files in `client/src/`
+- Need to publish client code as a library/package
+- Multiple teams working on different parts
+- Need strict API boundaries for breaking change management
+
+**Benefits of Current Approach:**
+- **Simplicity**: No extra build configuration or file structure
+- **Clarity**: Naming + dependency injection shows intent
+- **Maintainability**: Easy to understand, no hidden complexity
+- **TypeScript Native**: Uses built-in access modifiers effectively
+- **Testing**: All functionality testable without visibility workarounds
+
 ### User Notifications
 **Pattern**: Toast notifications (non-blocking, typed)
 ```typescript
