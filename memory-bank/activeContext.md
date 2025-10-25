@@ -39,6 +39,9 @@
      - Changed `start:api` to set all required env vars: `FUNCTIONS_WORKER_RUNTIME=node`, `AzureWebJobsStorage=UseDevelopmentStorage=true`, `AZURE_STORAGE_CONNECTION_STRING=UseDevelopmentStorage=true`
   3. `api/package.json`:
      - Added `azure-functions-core-tools: ^4.0.6280` to devDependencies
+  4. `playwright.config.ts`:
+     - Updated `webServer` to use `http-server` (via npx) in CI instead of `live-server`
+     - Local dev still uses `npm run dev` with live-server + watch mode
 - **How It Works**:
   - `npm run test:integration` → `start-server-and-test start:test-services http://localhost:7071 test:integration:run`
   - `start-server-and-test` handles:

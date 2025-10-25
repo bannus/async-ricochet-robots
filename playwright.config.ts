@@ -41,10 +41,18 @@ export default defineConfig({
   ],
 
   // Run local dev server before starting tests
-  webServer: {
-    command: 'cd client && npm run dev',
+  webServer: process.env.CI ? {
+    // In CI: Serve static files from client/dist
+    command: 'npx --yes http-server dist -p 8080 -c-1 --silent',
+    cwd: './client',
     url: 'http://localhost:8080',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
+  } : {
+    // Local dev: Use live-server with watch mode
+    command: 'npm run dev',
+    cwd: './client',
+    url: 'http://localhost:8080',
+    reuseExistingServer: true,
     timeout: 120 * 1000,
   },
 });
