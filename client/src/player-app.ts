@@ -36,6 +36,13 @@ export class PlayerApp {
    * Generate goal text with colored robot name
    */
   private getColoredGoalText(goalColor: string): string {
+    // Validate against known robot colors to prevent XSS
+    const validColors = ['red', 'yellow', 'green', 'blue', 'multi'];
+    if (!validColors.includes(goalColor)) {
+      // Fallback to safe default if unknown color
+      return `Get ${goalColor} robot to goal`;
+    }
+    
     if (goalColor === 'multi') {
       return 'Get ANY robot to the purple goal';
     }
