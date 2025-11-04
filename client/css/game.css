@@ -313,6 +313,7 @@ header h1 {
 .robot-yellow { color: var(--color-yellow); font-weight: 600; }
 .robot-green { color: var(--color-green); font-weight: 600; }
 .robot-blue { color: var(--color-blue); font-weight: 600; }
+.robot-multi { color: var(--color-multi); font-weight: 600; }
 
 /* No round / Game complete messages */
 #no-round-message,

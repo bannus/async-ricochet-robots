@@ -87,7 +87,7 @@ export class UIStateManager {
   updateGoalDescription(text: string): void {
     const goalDesc = document.getElementById('goal-description');
     if (goalDesc) {
-      goalDesc.textContent = text;
+      goalDesc.innerHTML = text;
     }
   }
 

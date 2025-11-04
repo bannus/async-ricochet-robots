@@ -32,6 +32,16 @@ export class PlayerApp {
   private currentRound: any = null;
   private pollingInterval: number | null = null;
 
+  /**
+   * Generate goal text with colored robot name
+   */
+  private getColoredGoalText(goalColor: string): string {
+    if (goalColor === 'multi') {
+      return 'Get ANY robot to the purple goal';
+    }
+    return `Get <span class="robot-${goalColor}">${goalColor}</span> robot to goal`;
+  }
+
   constructor() {
     // Get gameId from URL parameters
     const params = new URLSearchParams(window.location.search);
@@ -280,9 +290,7 @@ export class PlayerApp {
   private handlePendingRound(data: any, isNewRound: boolean): void {
     if (this.hostManager) {
       // HOST VIEW: Show goal for preview
-      const goalText = data.puzzle.goalColor === 'multi'
-        ? 'Get ANY robot to the purple goal'
-        : `Get ${data.puzzle.goalColor} robot to goal`;
+      const goalText = this.getColoredGoalText(data.puzzle.goalColor);
       this.uiState.updateGoalDescription(goalText);
       
       if (isNewRound) {
@@ -327,9 +335,7 @@ export class PlayerApp {
    */
   private handleCompletedRound(data: any, isNewRound: boolean): void {
     // Update goal description
-    const goalText = data.puzzle.goalColor === 'multi'
-      ? 'Get ANY robot to the purple goal'
-      : `Get ${data.puzzle.goalColor} robot to goal`;
+    const goalText = this.getColoredGoalText(data.puzzle.goalColor);
     this.uiState.updateGoalDescription(goalText);
     
     // Add class to hide goal description when round ended
@@ -360,9 +366,7 @@ export class PlayerApp {
    */
   private handleActiveRound(data: any, isNewRound: boolean): void {
     // Update goal description
-    const goalText = data.puzzle.goalColor === 'multi'
-      ? 'Get ANY robot to the purple goal'
-      : `Get ${data.puzzle.goalColor} robot to goal`;
+    const goalText = this.getColoredGoalText(data.puzzle.goalColor);
     this.uiState.updateGoalDescription(goalText);
     
     // Remove round-ended class if it was previously set
