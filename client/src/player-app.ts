@@ -33,20 +33,23 @@ export class PlayerApp {
   private pollingInterval: number | null = null;
 
   /**
-   * Generate goal text with colored robot name
+   * Update goal description with colored robot name
    */
-  private getColoredGoalText(goalColor: string): string {
-    // Validate against known robot colors to prevent XSS
+  private updateGoalDescription(goalColor: string): void {
+    // Validate against known robot colors
     const validColors = ['red', 'yellow', 'green', 'blue', 'multi'];
-    if (!validColors.includes(goalColor)) {
-      // Fallback to safe default if unknown color
-      return `Get ${goalColor} robot to goal`;
-    }
     
     if (goalColor === 'multi') {
-      return 'Get ANY robot to the purple goal';
+      this.uiState.updateGoalDescription('Get ANY robot to the purple goal');
+      return;
     }
-    return `Get <span class="robot-${goalColor}">${goalColor}</span> robot to goal`;
+    
+    if (validColors.includes(goalColor)) {
+      this.uiState.updateGoalDescription(goalColor, `robot-${goalColor}`);
+    } else {
+      // Fallback to safe default - no coloring for unknown colors
+      this.uiState.updateGoalDescription(`Get robot to goal`);
+    }
   }
 
   constructor() {
@@ -297,8 +300,7 @@ export class PlayerApp {
   private handlePendingRound(data: any, isNewRound: boolean): void {
     if (this.hostManager) {
       // HOST VIEW: Show goal for preview
-      const goalText = this.getColoredGoalText(data.puzzle.goalColor);
-      this.uiState.updateGoalDescription(goalText);
+      this.updateGoalDescription(data.puzzle.goalColor);
       
       if (isNewRound) {
         // Load puzzle with goal visible for host
@@ -342,8 +344,7 @@ export class PlayerApp {
    */
   private handleCompletedRound(data: any, isNewRound: boolean): void {
     // Update goal description
-    const goalText = this.getColoredGoalText(data.puzzle.goalColor);
-    this.uiState.updateGoalDescription(goalText);
+    this.updateGoalDescription(data.puzzle.goalColor);
     
     // Add class to hide goal description when round ended
     this.uiState.setRoundEnded(true);
@@ -373,8 +374,7 @@ export class PlayerApp {
    */
   private handleActiveRound(data: any, isNewRound: boolean): void {
     // Update goal description
-    const goalText = this.getColoredGoalText(data.puzzle.goalColor);
-    this.uiState.updateGoalDescription(goalText);
+    this.updateGoalDescription(data.puzzle.goalColor);
     
     // Remove round-ended class if it was previously set
     this.uiState.setRoundEnded(false);
