@@ -84,10 +84,27 @@ export class UIStateManager {
   /**
    * Update goal description
    */
-  updateGoalDescription(text: string): void {
+  updateGoalDescription(text: string, colorClass?: string): void {
     const goalDesc = document.getElementById('goal-description');
     if (goalDesc) {
-      goalDesc.textContent = text;
+      if (colorClass) {
+        // Clear existing content
+        goalDesc.textContent = '';
+        
+        // Build the text safely using DOM manipulation
+        const textBefore = document.createTextNode('Get ');
+        const coloredSpan = document.createElement('span');
+        coloredSpan.className = colorClass;
+        coloredSpan.textContent = text;
+        const textAfter = document.createTextNode(' robot to goal');
+        
+        goalDesc.appendChild(textBefore);
+        goalDesc.appendChild(coloredSpan);
+        goalDesc.appendChild(textAfter);
+      } else {
+        // Simple text content for non-colored messages
+        goalDesc.textContent = text;
+      }
     }
   }
 

@@ -32,6 +32,26 @@ export class PlayerApp {
   private currentRound: any = null;
   private pollingInterval: number | null = null;
 
+  /**
+   * Update goal description with colored robot name
+   */
+  private updateGoalDescription(goalColor: string): void {
+    // Validate against known robot colors
+    const validColors = ['red', 'yellow', 'green', 'blue', 'multi'];
+    
+    if (goalColor === 'multi') {
+      this.uiState.updateGoalDescription('Get ANY robot to the purple goal');
+      return;
+    }
+    
+    if (validColors.includes(goalColor)) {
+      this.uiState.updateGoalDescription(goalColor, `robot-${goalColor}`);
+    } else {
+      // Fallback to safe default - no coloring for unknown colors
+      this.uiState.updateGoalDescription(`Get robot to goal`);
+    }
+  }
+
   constructor() {
     // Get gameId from URL parameters
     const params = new URLSearchParams(window.location.search);
@@ -280,10 +300,7 @@ export class PlayerApp {
   private handlePendingRound(data: any, isNewRound: boolean): void {
     if (this.hostManager) {
       // HOST VIEW: Show goal for preview
-      const goalText = data.puzzle.goalColor === 'multi'
-        ? 'Get ANY robot to the purple goal'
-        : `Get ${data.puzzle.goalColor} robot to goal`;
-      this.uiState.updateGoalDescription(goalText);
+      this.updateGoalDescription(data.puzzle.goalColor);
       
       if (isNewRound) {
         // Load puzzle with goal visible for host
@@ -327,10 +344,7 @@ export class PlayerApp {
    */
   private handleCompletedRound(data: any, isNewRound: boolean): void {
     // Update goal description
-    const goalText = data.puzzle.goalColor === 'multi'
-      ? 'Get ANY robot to the purple goal'
-      : `Get ${data.puzzle.goalColor} robot to goal`;
-    this.uiState.updateGoalDescription(goalText);
+    this.updateGoalDescription(data.puzzle.goalColor);
     
     // Add class to hide goal description when round ended
     this.uiState.setRoundEnded(true);
@@ -360,10 +374,7 @@ export class PlayerApp {
    */
   private handleActiveRound(data: any, isNewRound: boolean): void {
     // Update goal description
-    const goalText = data.puzzle.goalColor === 'multi'
-      ? 'Get ANY robot to the purple goal'
-      : `Get ${data.puzzle.goalColor} robot to goal`;
-    this.uiState.updateGoalDescription(goalText);
+    this.updateGoalDescription(data.puzzle.goalColor);
     
     // Remove round-ended class if it was previously set
     this.uiState.setRoundEnded(false);
