@@ -417,28 +417,28 @@ Player submits completed solution to server.
 
 4. **Receive Confirmation**
    - **Success**: 
-     - "Solution submitted! You used 7 moves."
+     - "Solution #2 submitted! You used 7 moves."
      - "Current rank: #1"
      - Confetti animation (if first place)
    - **Duplicate**: 
-     - "You already submitted a solution (8 moves)"
-     - "Your previous solution stands"
+     - "You already submitted this exact solution."
+     - "Please submit a different solution to try again."
    - **Invalid**: 
      - "Solution doesn't reach goal. Please try again."
 
 5. **View Updated Leaderboard**
-   - Player's name appears on leaderboard
-   - Move count visible
-   - Rank shown
+   - Player's name may appear multiple times (if submitted different solutions)
+   - Each submission ranked independently
+   - Move counts and timestamps visible
 
 ### Success Criteria
 - Solution validated and stored
 - Player sees confirmation
-- Leaderboard updated
+- Leaderboard updated with new submission
 
 ### Error Handling
 - **Round Ended**: "This round has ended. Solutions no longer accepted."
-- **Already Submitted**: "You've already submitted for this round"
+- **Duplicate Solution**: "You have already submitted this exact solution. Please submit a different solution."
 - **Network Error**: "Unable to submit. Check connection and try again."
 
 ---
@@ -492,8 +492,8 @@ Player waits for round to complete and sees solutions.
 
 2. **Continue Improving**
    - Optional: Try to find better solution
-   - Note: Can't resubmit (one solution per round)
-   - Can practice different approaches
+   - Note: Can submit different solutions but not identical ones
+   - Can practice and submit multiple approaches
 
 3. **Round Ends**
    - Alert/notification: "Round has ended!"

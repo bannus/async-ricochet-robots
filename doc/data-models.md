@@ -208,7 +208,7 @@ Stores player solutions for each round.
 | Property | Type | Required | Description |
 |----------|------|----------|-------------|
 | PartitionKey | String | Yes | Composite key: "gameId_roundId" |
-| RowKey | String | Yes | playerName (normalized: lowercase, trimmed) |
+| RowKey | String | Yes | "playerName_timestamp" (allows multiple submissions per player) |
 | displayName | String | Yes | Original player name (for display) |
 | moveCount | Int32 | Yes | Number of moves in solution |
 | winningRobot | String | Yes | Robot that reached goal ('red', 'yellow', 'green', 'blue') |
@@ -234,13 +234,37 @@ Stores player solutions for each round.
 ```json
 {
   "PartitionKey": "game_abc123xyz_round_1704067200000",
-  "RowKey": "alice",
+  "RowKey": "alice_1704070000000",
   "displayName": "Alice",
   "moveCount": 7,
   "winningRobot": "red",
   "solutionData": "[{\"robot\":\"blue\",\"direction\":\"up\"},{\"robot\":\"red\",\"direction\":\"right\"},{\"robot\":\"blue\",\"direction\":\"right\"},{\"robot\":\"red\",\"direction\":\"down\"},{\"robot\":\"red\",\"direction\":\"right\"},{\"robot\":\"yellow\",\"direction\":\"left\"},{\"robot\":\"red\",\"direction\":\"up\"}]",
   "submittedAt": 1704070000000,
   "Timestamp": "2024-01-01T12:46:40.000Z"
+}
+```
+
+### Multiple Submissions Example
+
+When a player submits multiple different solutions, they appear as separate entities:
+
+```json
+// Alice's first submission (7 moves)
+{
+  "PartitionKey": "game_abc123xyz_round_1704067200000",
+  "RowKey": "alice_1704070000000",
+  "displayName": "Alice",
+  "moveCount": 7,
+  "submittedAt": 1704070000000
+}
+
+// Alice's second submission (5 moves - better solution)
+{
+  "PartitionKey": "game_abc123xyz_round_1704067200000",
+  "RowKey": "alice_1704072000000",
+  "displayName": "Alice",
+  "moveCount": 5,
+  "submittedAt": 1704072000000
 }
 ```
 
@@ -273,14 +297,24 @@ Both solutions are valid for a multi-color goal. Leaderboard shows which robot e
 - **Primary**: PartitionKey + RowKey
 - **Query Patterns**:
   - Get all solutions for round: `PartitionKey = "gameId_roundId"`
-  - Get specific player's solution: `PartitionKey = "gameId_roundId" AND RowKey = playerName`
-  - Check if player submitted: Same as above
+  - Get player's solutions: `PartitionKey = "gameId_roundId"` + filter by playerName prefix in RowKey
+  - Get player submission count: Count entities matching player's name prefix
 
-## Uniqueness Constraint
+## Multiple Submissions Per Player
 
-- PartitionKey + RowKey combination enforces one solution per player per round
-- Attempting to insert duplicate throws error (409 Conflict in API)
-- Updates are not allowed (solutions are immutable once submitted)
+- Players can submit multiple **different** solutions per round
+- RowKey format `playerName_timestamp` allows multiple entries per player
+- Duplicate detection: Server validates that move sequences are not identical
+- Each submission gets a unique timestamp ensuring no RowKey conflicts
+- All submissions appear on the leaderboard independently
+
+## Duplicate Prevention
+
+- Before accepting a solution, server checks player's existing solutions
+- Compares move sequences using JSON serialization for exact matching
+- Rejects submissions with identical move arrays (same robot, direction, order)
+- Returns `DUPLICATE_SOLUTION` error code when duplicate detected
+- Solutions are immutable once submitted (no updates allowed)
 
 ## Notes
 

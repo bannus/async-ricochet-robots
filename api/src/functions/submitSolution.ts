@@ -72,7 +72,23 @@ async function submitSolutionHandler(
       );
     }
 
-    // Solution is valid! Store it
+    // Check for duplicate solution
+    const isDuplicate = await Storage.solutions.hasDuplicateSolution(
+      gameId,
+      roundId,
+      playerName,
+      moves
+    );
+
+    if (isDuplicate) {
+      return errorResponse(
+        'You have already submitted this exact solution. Please submit a different solution.',
+        'DUPLICATE_SOLUTION',
+        400
+      );
+    }
+
+    // Solution is valid and unique! Store it
     const solution = await Storage.solutions.submitSolution(
       gameId,
       roundId,

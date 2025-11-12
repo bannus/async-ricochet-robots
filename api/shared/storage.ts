@@ -696,6 +696,31 @@ export class SolutionsStorage extends BaseStorageClient {
   }
 
   /**
+   * Check if a player has already submitted an identical solution
+   * Compares the moves arrays to detect duplicates
+   */
+  async hasDuplicateSolution(
+    gameId: string,
+    roundId: string,
+    playerName: string,
+    moves: Move[]
+  ): Promise<boolean> {
+    const existingSolutions = await this.getPlayerSolutions(gameId, roundId, playerName);
+    
+    // Compare moves arrays
+    const movesJson = JSON.stringify(moves);
+    
+    for (const solution of existingSolutions) {
+      const existingMovesJson = JSON.stringify(solution.moves);
+      if (movesJson === existingMovesJson) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+  /**
    * Parse entity to Solution object
    */
   private parseSolution(
