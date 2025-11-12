@@ -41,6 +41,7 @@ No authentication required. Players are identified by username only.
 - `INVALID_HOST_KEY`: Host authentication failed
 - `ROUND_ENDED`: Cannot submit solution to ended round
 - `INVALID_SOLUTION`: Solution does not reach goal
+- `DUPLICATE_SOLUTION`: Identical solution already submitted by this player
 - `VALIDATION_ERROR`: Input validation failed
 - `INVALID_DEADLINE`: Deadline is not in the future or is invalid
 - `ALL_GOALS_EXHAUSTED`: All 17 goals completed, game is finished
@@ -468,12 +469,28 @@ Submit a solution for the current round.
 }
 ```
 
+### Response 400 (Duplicate Solution)
+```json
+{
+  "success": false,
+  "error": "You have already submitted this exact solution. Please submit a different solution.",
+  "code": "DUPLICATE_SOLUTION"
+}
+```
+
 ### Multiple Submissions Allowed
-Players can submit multiple solutions per round. Each submission:
+Players can submit multiple **different** solutions per round. Each submission:
 - Gets a unique sequential number (1st, 2nd, 3rd attempt)
 - Is independently ranked on the leaderboard
 - Can improve or worsen the player's standing
 - All submissions remain visible on the leaderboard
+
+### Duplicate Detection
+Identical solutions are rejected:
+- Compares exact move sequences (same robot, direction, and order)
+- Players must submit a different solution to resubmit
+- Different players can submit the same solution
+- Solutions differing only in move order are considered different
 
 ---
 
