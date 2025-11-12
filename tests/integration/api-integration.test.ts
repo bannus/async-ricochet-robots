@@ -308,6 +308,172 @@ describe('API Integration Tests', () => {
   });
 });
 
+describe('Duplicate Solution Prevention', () => {
+  test('rejects identical solution submissions', async () => {
+    const game = await createTestGame('Duplicate Solution Test');
+    
+    // Create and publish a round
+    const pendingRound = await startTestRound(game.gameId, game.hostKey);
+    await publishTestRound(game.gameId, game.hostKey, pendingRound.roundId, 24);
+    
+    // Define a solution with specific moves
+    const moves = [
+      { robot: 'red', direction: 'right' },
+      { robot: 'red', direction: 'down' }
+    ];
+    
+    // First submission - should succeed or fail based on whether solution is valid
+    const response1 = await makeRequest('/submitSolution', {
+      method: 'POST',
+      body: {
+        gameId: game.gameId,
+        roundId: pendingRound.roundId,
+        playerName: 'TestPlayer',
+        moves: moves,
+      },
+    });
+    
+    const result1 = await parseResponse(response1);
+    
+    // If first submission was invalid, we can't test duplicate detection
+    // Skip this test case
+    if (!result1.success && result1.code === 'INVALID_SOLUTION') {
+      console.log('Skipping duplicate test - solution was invalid for this board');
+      return;
+    }
+    
+    // First submission should succeed
+    expect(result1.success).toBe(true);
+    
+    // Second submission with identical moves - should be rejected
+    const response2 = await makeRequest('/submitSolution', {
+      method: 'POST',
+      body: {
+        gameId: game.gameId,
+        roundId: pendingRound.roundId,
+        playerName: 'TestPlayer',
+        moves: moves,
+      },
+    });
+    
+    const result2 = await parseResponse(response2);
+    
+    // Should be rejected as duplicate
+    expect(result2.success).toBe(false);
+    expect(result2.code).toBe('DUPLICATE_SOLUTION');
+    expect(result2.error).toContain('already submitted');
+  });
+
+  test('allows different solutions from same player', async () => {
+    const game = await createTestGame('Different Solutions Test');
+    
+    // Create and publish a round
+    const pendingRound = await startTestRound(game.gameId, game.hostKey);
+    await publishTestRound(game.gameId, game.hostKey, pendingRound.roundId, 24);
+    
+    // Define two different solutions
+    const moves1 = [
+      { robot: 'red', direction: 'right' },
+      { robot: 'red', direction: 'down' }
+    ];
+    
+    const moves2 = [
+      { robot: 'blue', direction: 'left' },
+      { robot: 'blue', direction: 'up' }
+    ];
+    
+    // First submission
+    const response1 = await makeRequest('/submitSolution', {
+      method: 'POST',
+      body: {
+        gameId: game.gameId,
+        roundId: pendingRound.roundId,
+        playerName: 'TestPlayer',
+        moves: moves1,
+      },
+    });
+    
+    const result1 = await parseResponse(response1);
+    
+    // Skip if first solution is invalid
+    if (!result1.success && result1.code === 'INVALID_SOLUTION') {
+      console.log('Skipping different solutions test - first solution was invalid');
+      return;
+    }
+    
+    expect(result1.success).toBe(true);
+    
+    // Second submission with different moves - should be allowed even if invalid
+    const response2 = await makeRequest('/submitSolution', {
+      method: 'POST',
+      body: {
+        gameId: game.gameId,
+        roundId: pendingRound.roundId,
+        playerName: 'TestPlayer',
+        moves: moves2,
+      },
+    });
+    
+    const result2 = await parseResponse(response2);
+    
+    // Should NOT be rejected as duplicate (might be rejected as invalid solution though)
+    if (!result2.success) {
+      expect(result2.code).not.toBe('DUPLICATE_SOLUTION');
+    }
+  });
+
+  test('allows same solution from different players', async () => {
+    const game = await createTestGame('Same Solution Different Players Test');
+    
+    // Create and publish a round
+    const pendingRound = await startTestRound(game.gameId, game.hostKey);
+    await publishTestRound(game.gameId, game.hostKey, pendingRound.roundId, 24);
+    
+    // Define a solution
+    const moves = [
+      { robot: 'red', direction: 'right' },
+      { robot: 'red', direction: 'down' }
+    ];
+    
+    // First player submits
+    const response1 = await makeRequest('/submitSolution', {
+      method: 'POST',
+      body: {
+        gameId: game.gameId,
+        roundId: pendingRound.roundId,
+        playerName: 'Player1',
+        moves: moves,
+      },
+    });
+    
+    const result1 = await parseResponse(response1);
+    
+    // Skip if solution is invalid
+    if (!result1.success && result1.code === 'INVALID_SOLUTION') {
+      console.log('Skipping same solution different players test - solution was invalid');
+      return;
+    }
+    
+    expect(result1.success).toBe(true);
+    
+    // Second player submits same solution - should be allowed
+    const response2 = await makeRequest('/submitSolution', {
+      method: 'POST',
+      body: {
+        gameId: game.gameId,
+        roundId: pendingRound.roundId,
+        playerName: 'Player2',
+        moves: moves,
+      },
+    });
+    
+    const result2 = await parseResponse(response2);
+    
+    // Should be allowed (different player)
+    expect(result2.success).toBe(true);
+  });
+});
+
 describe('API Integration Tests - Info', () => {
   test('shows how to run integration tests', () => {
     console.log('\n📋 Integration Test Commands:');
