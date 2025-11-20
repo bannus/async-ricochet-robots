@@ -33,6 +33,7 @@ export class GameController {
   private animationQueue: Array<{robot: string, direction: 'up' | 'down' | 'left' | 'right'}> = [];
   private isProcessingQueue: boolean = false;
   private readonly MAX_QUEUE_SIZE = 50;
+  private isGoalReached: boolean = false;
   
   public gameId: string = '';
   public roundId: string = '';
@@ -55,6 +56,7 @@ export class GameController {
     this.moveHistory = [];
     this.goalIndex = goalIndex;
     this.selectedRobot = null;
+    this.isGoalReached = false;
     
     this.render();
     this.updateUI();
@@ -190,6 +192,11 @@ export class GameController {
    * Queues the move for sequential animation processing
    */
   async move(robotColor: string, direction: 'up' | 'down' | 'left' | 'right'): Promise<void> {
+    // Prevent moves after goal is reached
+    if (this.isGoalReached) {
+      return;
+    }
+    
     // Prevent queue from growing too large
     if (this.animationQueue.length >= this.MAX_QUEUE_SIZE) {
       return;
@@ -279,6 +286,9 @@ export class GameController {
     // Remove last move
     this.moveHistory.pop();
     
+    // Clear goal reached flag since we're undoing
+    this.isGoalReached = false;
+    
     // Replay all remaining moves from initial state
     this.currentState = this.deepCloneRobots(this.initialRobots);
     
@@ -305,6 +315,7 @@ export class GameController {
     
     this.currentState = this.deepCloneRobots(this.initialRobots);
     this.moveHistory = [];
+    this.isGoalReached = false;
     
     this.render();
     this.updateUI();
@@ -343,6 +354,9 @@ export class GameController {
     const statusElement = document.getElementById('goal-status');
     const submitButton = document.getElementById('submit-btn') as HTMLButtonElement;
     
+    // Set goal reached flag to prevent further moves
+    this.isGoalReached = true;
+    
     if (statusElement) {
       statusElement.textContent = `Goal reached! ${moveCount} moves using ${winningRobot} robot.`;
       statusElement.className = 'success';
@@ -359,6 +373,9 @@ export class GameController {
   private clearGoalStatus(): void {
     const statusElement = document.getElementById('goal-status');
     const submitButton = document.getElementById('submit-btn') as HTMLButtonElement;
+    
+    // Clear goal reached flag
+    this.isGoalReached = false;
     
     if (statusElement) {
       statusElement.textContent = '';
