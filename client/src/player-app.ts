@@ -215,6 +215,13 @@ export class PlayerApp {
         this.handleResize();
       }, 250);
     });
+    
+    // Handle theme changes - re-render game board with new colors
+    window.addEventListener('themechange', () => {
+      if (this.controller && this.currentRound) {
+        this.controller.rerender();
+      }
+    });
   }
 
   /**

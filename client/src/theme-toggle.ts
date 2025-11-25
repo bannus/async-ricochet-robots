@@ -81,6 +81,9 @@ export class ThemeToggle {
     this.applyTheme(this.currentTheme);
     this.saveTheme(this.currentTheme);
     this.updateButtonIcons();
+    
+    // Dispatch custom event so game board can re-render with new colors
+    window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: this.currentTheme } }));
   }
 
   /**
