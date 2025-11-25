@@ -310,7 +310,7 @@ header h1 {
 }
 
 .current-player {
-  background: #FFF9C4 !important;
+  background: var(--color-highlight) !important;
   font-weight: 600;
 }
 
