@@ -47,6 +47,13 @@ export class GameRenderer {
   }
 
   /**
+   * Get CSS variable value from the document root
+   */
+  private getCSSVariable(name: string): string {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  /**
    * Main render method - draws complete game state
    */
   render(puzzle: Puzzle, activeGoalIndex: number): void {
@@ -80,7 +87,8 @@ export class GameRenderer {
    * Draw the 16×16 grid lines
    */
   private drawGrid(): void {
-    this.ctx.strokeStyle = '#ECF0F1';
+    const gridColor = this.getCSSVariable('--color-grid-line') || '#ECF0F1';
+    this.ctx.strokeStyle = gridColor;
     this.ctx.lineWidth = 1;
     
     // Draw vertical lines
@@ -104,7 +112,8 @@ export class GameRenderer {
    * Draw all walls on the board
    */
   private drawWalls(walls: Walls): void {
-    this.ctx.strokeStyle = '#2C3E50';
+    const wallColor = this.getCSSVariable('--color-wall') || '#2C3E50';
+    this.ctx.strokeStyle = wallColor;
     this.ctx.lineWidth = this.cellSize * 0.1;
     this.ctx.lineCap = 'square';
     
@@ -173,7 +182,8 @@ export class GameRenderer {
     
     // Draw outline for active goal
     if (isActive) {
-      this.ctx.strokeStyle = '#2C3E50';
+      const wallColor = this.getCSSVariable('--color-wall') || '#2C3E50';
+      this.ctx.strokeStyle = wallColor;
       this.ctx.lineWidth = this.cellSize * 0.05;
       this.ctx.globalAlpha = 1.0;
       this.ctx.stroke();
@@ -236,7 +246,8 @@ export class GameRenderer {
     this.ctx.fill();
     
     // Draw outline
-    this.ctx.strokeStyle = '#2C3E50';
+    const wallColor = this.getCSSVariable('--color-wall') || '#2C3E50';
+    this.ctx.strokeStyle = wallColor;
     this.ctx.lineWidth = this.cellSize * 0.05;
     this.ctx.stroke();
     
@@ -318,7 +329,8 @@ export class GameRenderer {
     const radius = this.cellSize * 0.4;
     
     // Draw pulsing highlight ring
-    this.ctx.strokeStyle = '#2C3E50';
+    const wallColor = this.getCSSVariable('--color-wall') || '#2C3E50';
+    this.ctx.strokeStyle = wallColor;
     this.ctx.lineWidth = this.cellSize * 0.075;
     this.ctx.beginPath();
     this.ctx.arc(x, y, radius, 0, Math.PI * 2);

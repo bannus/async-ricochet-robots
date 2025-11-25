@@ -19,6 +19,12 @@ header {
   box-shadow: 0 2px 4px var(--color-shadow);
 }
 
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 header h1 {
   margin-bottom: var(--spacing-sm);
 }
@@ -28,7 +34,7 @@ header h1 {
   gap: var(--spacing-lg);
   flex-wrap: wrap;
   font-size: var(--font-size-sm);
-  color: #7F8C8D;
+  color: var(--color-text-muted);
 }
 
 #game-info span {
@@ -101,7 +107,7 @@ header h1 {
   border-radius: var(--border-radius-sm);
   display: block;
   margin: 0 auto var(--spacing-lg);
-  background: white;
+  background: var(--color-card);
   box-shadow: 0 2px 8px var(--color-shadow);
   cursor: default;
   transition: box-shadow var(--transition-speed);
@@ -175,7 +181,7 @@ header h1 {
 }
 
 .move-controls button:hover:not(:disabled) {
-  background: #ECF0F1;
+  background: var(--color-secondary-bg);
 }
 
 /* Solution info */
@@ -201,7 +207,7 @@ header h1 {
   overflow-y: auto;
   margin-bottom: var(--spacing-md);
   padding: var(--spacing-md);
-  background: #F8F9FA;
+  background: var(--color-secondary-bg);
   border-radius: var(--border-radius-sm);
 }
 
@@ -253,11 +259,11 @@ header h1 {
 }
 
 #leaderboard th {
-  background: #F8F9FA;
+  background: var(--color-secondary-bg);
   font-weight: 600;
   font-size: var(--font-size-sm);
   text-transform: uppercase;
-  color: #7F8C8D;
+  color: var(--color-text-muted);
 }
 
 /* Narrow specific columns */
@@ -275,13 +281,13 @@ header h1 {
 
 /* Gray out tie indicators */
 .tie-indicator {
-  color: #95A5A6;
+  color: var(--color-text-muted);
   font-weight: normal;
 }
 
 /* Enhanced row hover effect */
 #leaderboard tbody tr:hover {
-  background: #E8F4F8;
+  background: var(--color-border);
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
@@ -348,6 +354,11 @@ header h1 {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   text-align: center;
+  position: relative;
+}
+
+[data-theme="dark"] #no-game-screen {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
 }
 
 .welcome-container {
@@ -392,7 +403,7 @@ header h1 {
 }
 
 .modal-content {
-  background-color: white;
+  background-color: var(--color-card);
   padding: var(--spacing-xl);
   border-radius: var(--border-radius);
   width: 90%;
@@ -429,7 +440,7 @@ header h1 {
   top: var(--spacing-lg);
   font-size: 32px;
   font-weight: bold;
-  color: #aaa;
+  color: var(--color-text-muted);
   cursor: pointer;
   line-height: 1;
   transition: color var(--transition-speed);
@@ -561,7 +572,8 @@ header h1 {
   border-radius: var(--border-radius-sm);
   font-family: 'Courier New', monospace;
   font-size: var(--font-size-sm);
-  background: #F8F9FA;
+  background: var(--color-secondary-bg);
+  color: var(--color-text);
 }
 
 /* Host Controls */
@@ -594,7 +606,7 @@ header h1 {
 }
 
 .stat-card {
-  background: white;
+  background: var(--color-card);
   padding: var(--spacing-lg);
   border-radius: var(--border-radius-sm);
   text-align: center;
@@ -605,7 +617,7 @@ header h1 {
 .stat-label {
   display: block;
   font-size: var(--font-size-sm);
-  color: #7F8C8D;
+  color: var(--color-text-muted);
   margin-bottom: var(--spacing-xs);
   text-transform: uppercase;
   font-weight: 600;
@@ -630,7 +642,7 @@ header h1 {
   gap: var(--spacing-sm);
   align-items: center;
   flex-wrap: wrap;
-  background: white;
+  background: var(--color-card);
   padding: var(--spacing-md);
   border-radius: var(--border-radius-sm);
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
@@ -650,7 +662,7 @@ header h1 {
 }
 
 .host-links {
-  background: white;
+  background: var(--color-card);
   padding: var(--spacing-lg);
   border-radius: var(--border-radius-sm);
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
