@@ -11,12 +11,15 @@
   --color-blue: #3498DB;
   --color-multi: #9B59B6;
   
-  /* UI colors */
+  /* UI colors - Light mode defaults */
   --color-bg: #ECF0F1;
   --color-card: #FFFFFF;
   --color-text: #2C3E50;
+  --color-text-muted: #7F8C8D;
   --color-border: #BDC3C7;
   --color-shadow: rgba(0, 0, 0, 0.1);
+  --color-input-bg: #FFFFFF;
+  --color-secondary-bg: #F8F9FA;
   
   /* Spacing */
   --spacing-xs: 4px;
@@ -39,6 +42,18 @@
   
   /* Transitions */
   --transition-speed: 0.2s;
+}
+
+/* Dark mode */
+[data-theme="dark"] {
+  --color-bg: #1a1a2e;
+  --color-card: #16213e;
+  --color-text: #e8e8e8;
+  --color-text-muted: #a0a0a0;
+  --color-border: #3a3a5a;
+  --color-shadow: rgba(0, 0, 0, 0.3);
+  --color-input-bg: #1f2940;
+  --color-secondary-bg: #1f2940;
 }
 
 /* Reset */
@@ -133,9 +148,9 @@ input, select, textarea {
   padding: var(--spacing-sm) var(--spacing-md);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-sm);
-  background: white;
+  background: var(--color-input-bg);
   color: var(--color-text);
-  transition: border-color var(--transition-speed);
+  transition: border-color var(--transition-speed), background-color var(--transition-speed);
 }
 
 input:focus, select:focus, textarea:focus {
@@ -242,7 +257,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .game-history-item {
-  background: #F8F9FA;
+  background: var(--color-secondary-bg);
   border-radius: var(--border-radius-sm);
   padding: var(--spacing-md);
   cursor: pointer;
@@ -254,7 +269,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .game-history-item:hover {
-  background: #E8F4F8;
+  background: var(--color-border);
   transform: translateY(-1px);
   box-shadow: 0 2px 8px var(--color-shadow);
 }
@@ -279,7 +294,7 @@ input:focus, select:focus, textarea:focus {
 
 .game-history-time {
   font-size: var(--font-size-sm);
-  color: #95A5A6;
+  color: var(--color-text-muted);
 }
 
 .game-history-delete {
@@ -289,7 +304,7 @@ input:focus, select:focus, textarea:focus {
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #95A5A6;
+  color: var(--color-text-muted);
   font-size: 1.25rem;
   padding: var(--spacing-xs);
   cursor: pointer;
@@ -316,7 +331,7 @@ input:focus, select:focus, textarea:focus {
 
 .game-history-empty {
   text-align: center;
-  color: #95A5A6;
+  color: var(--color-text-muted);
   font-style: italic;
   padding: var(--spacing-lg);
 }
@@ -341,4 +356,39 @@ input:focus, select:focus, textarea:focus {
     height: 44px;
     font-size: 1.5rem;
   }
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: 1.5rem;
+  transition: all var(--transition-speed);
+  color: var(--color-text);
+}
+
+.theme-toggle:hover {
+  background: var(--color-border);
+  transform: scale(1.1);
+  box-shadow: none;
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 2px;
+}
+
+/* Landing page theme toggle - positioned in corner */
+.theme-toggle-landing {
+  position: absolute;
+  top: var(--spacing-lg);
+  right: var(--spacing-lg);
+  color: white;
+}
+
+.theme-toggle-landing:hover {
+  background: rgba(255, 255, 255, 0.2);
 }

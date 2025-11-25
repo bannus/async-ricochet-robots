@@ -8,12 +8,26 @@
   <link rel="stylesheet" href="css/shared.css">
   <link rel="stylesheet" href="css/game.css">
   
+  <!-- Prevent flash of wrong theme -->
+  <script>
+    (function() {
+      var theme = localStorage.getItem('theme');
+      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (theme === 'dark' || (!theme && prefersDark)) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
+  
   <!-- Hammer.js for touch/gesture support (local copy) -->
   <script src="assets/hammer.min.js"></script>
 </head>
 <body>
   <!-- No Game Screen (shown when no ?game parameter) -->
   <div id="no-game-screen" style="display: none;">
+    <button id="theme-toggle-landing" class="theme-toggle theme-toggle-landing" aria-label="Toggle dark mode" title="Toggle dark mode">
+      🌙
+    </button>
     <div class="welcome-container">
       <h1>🤖 Async Ricochet Robots</h1>
       <p class="tagline">A collaborative puzzle game where robots slide until they hit walls</p>
@@ -86,7 +100,12 @@
   <div class="container">
     <!-- Header -->
     <header>
-      <h1>🤖 Async Ricochet Robots</h1>
+      <div class="header-row">
+        <h1>🤖 Async Ricochet Robots</h1>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+          🌙
+        </button>
+      </div>
       <div id="game-info">
         <span id="game-name"></span>
         <span id="round-number"></span>

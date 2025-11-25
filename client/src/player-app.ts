@@ -14,6 +14,10 @@ import { TimerManager } from './timer-manager.js';
 import { LeaderboardManager } from './leaderboard-manager.js';
 import { ReplayModeManager } from './replay-mode-manager.js';
 import { showNotification, showError, showWarning, showSuccess } from './notifications.js';
+import { ThemeToggle, initializeTheme } from './theme-toggle.js';
+
+// Initialize theme immediately to prevent flash
+initializeTheme();
 
 export class PlayerApp {
   private apiClient!: ApiClient;
@@ -21,6 +25,7 @@ export class PlayerApp {
   private controller!: GameController;
   private createGameManager?: CreateGameManager;
   private hostManager?: HostManager;
+  private themeToggle?: ThemeToggle;
   
   // Manager instances
   private uiState!: UIStateManager;
@@ -53,6 +58,9 @@ export class PlayerApp {
   }
 
   constructor() {
+    // Initialize theme toggle
+    this.themeToggle = new ThemeToggle();
+    
     // Get gameId from URL parameters
     const params = new URLSearchParams(window.location.search);
     const gameId = params.get('game');
