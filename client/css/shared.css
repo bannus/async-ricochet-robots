@@ -20,6 +20,7 @@
   --color-shadow: rgba(0, 0, 0, 0.1);
   --color-input-bg: #FFFFFF;
   --color-secondary-bg: #F8F9FA;
+  --color-highlight: #FFF9C4;
   
   /* Game board colors - Light mode */
   --color-grid-line: #ECF0F1;
@@ -58,6 +59,7 @@
   --color-shadow: rgba(0, 0, 0, 0.3);
   --color-input-bg: #1f2940;
   --color-secondary-bg: #1f2940;
+  --color-highlight: #4a4a2e;
   
   /* Game board colors - Dark mode */
   --color-grid-line: #2a2a4a;
