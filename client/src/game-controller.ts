@@ -67,9 +67,11 @@ export class GameController {
    */
   private setupKeyboardControls(): void {
     document.addEventListener('keydown', (e) => {
-      // Ignore keyboard events when an input or textarea is focused
+      // Ignore keyboard events when an input, textarea, or contenteditable element is focused
       const activeElement = document.activeElement;
-      if (activeElement instanceof HTMLInputElement || activeElement instanceof HTMLTextAreaElement) {
+      if (activeElement instanceof HTMLInputElement || 
+          activeElement instanceof HTMLTextAreaElement ||
+          (activeElement as HTMLElement)?.isContentEditable) {
         return;
       }
       
