@@ -67,6 +67,12 @@ export class GameController {
    */
   private setupKeyboardControls(): void {
     document.addEventListener('keydown', (e) => {
+      // Ignore keyboard events when an input or textarea is focused
+      const activeElement = document.activeElement;
+      if (activeElement instanceof HTMLInputElement || activeElement instanceof HTMLTextAreaElement) {
+        return;
+      }
+      
       // Robot selection: R, Y, G, B keys
       const robotKeys: { [key: string]: string } = {
         'r': 'red',
