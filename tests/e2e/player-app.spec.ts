@@ -250,4 +250,53 @@ test.describe('Player App - Main Flows', () => {
     // Verify canvas was resized (size should have changed)
     expect(newBox?.width).not.toBe(initialBox?.width);
   });
+  
+  test('keyboard controls do not trigger when input field is focused', async ({ page }) => {
+    // Setup mocks
+    await setupActiveGameMocks(page);
+    
+    // Navigate to game
+    await page.goto('/?game=game_test');
+    await page.waitForLoadState('networkidle');
+    
+    // Wait for game board to be ready
+    await page.waitForSelector('#game-board');
+    
+    // Verify no robot is selected initially
+    const robotSelectors = page.locator('.robot-selector.selected');
+    await expect(robotSelectors).toHaveCount(0);
+    
+    // Press 'r' key - should select red robot
+    await page.keyboard.press('r');
+    
+    // Verify red robot is selected
+    const redSelector = page.locator('.robot-selector[data-robot="red"]');
+    await expect(redSelector).toHaveClass(/selected/);
+    
+    // Now focus on the player name input field
+    await page.locator('#player-name').focus();
+    
+    // Type 'y' in the input field - should NOT select yellow robot
+    await page.keyboard.type('y');
+    
+    // Verify the input field has 'y' typed
+    await expect(page.locator('#player-name')).toHaveValue('y');
+    
+    // Verify red robot is STILL selected (not yellow)
+    await expect(redSelector).toHaveClass(/selected/);
+    const yellowSelector = page.locator('.robot-selector[data-robot="yellow"]');
+    await expect(yellowSelector).not.toHaveClass(/selected/);
+    
+    // Type more text to verify arrow keys don't trigger robot movement
+    await page.keyboard.type('test');
+    await expect(page.locator('#player-name')).toHaveValue('ytest');
+    
+    // Press arrow key - should move cursor, not robot
+    await page.keyboard.press('ArrowLeft');
+    
+    // Verify red robot is still selected and move count is still 0
+    await expect(redSelector).toHaveClass(/selected/);
+    const moveCount = page.locator('#move-count');
+    await expect(moveCount).toHaveText('0');
+  });
 });
