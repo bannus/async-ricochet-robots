@@ -36,7 +36,7 @@ export class PlayerApp {
   private gameId: string = '';
   private currentRound: any = null;
   private pollingInterval: number | null = null;
-  private currentRoundStatus: string = '';
+  private currentRoundStatus: string | null = null;
 
   /**
    * Update goal description with colored robot name
@@ -296,10 +296,12 @@ export class PlayerApp {
     // Detect if we need to reload the puzzle:
     // - New round (different roundId)
     // - Status change (e.g., pending→active or completed→active)
+    // - First load (currentRoundStatus is null)
     // This prevents resetting player's progress during polling when nothing changed
     const isNewRound = this.controller.roundId !== data.roundId;
-    const statusChanged = this.currentRoundStatus !== data.status;
-    const shouldReloadPuzzle = isNewRound || statusChanged;
+    const isFirstLoad = this.currentRoundStatus === null;
+    const statusChanged = !isFirstLoad && this.currentRoundStatus !== data.status;
+    const shouldReloadPuzzle = isNewRound || statusChanged || isFirstLoad;
     
     // Update tracked status
     this.currentRoundStatus = data.status;
