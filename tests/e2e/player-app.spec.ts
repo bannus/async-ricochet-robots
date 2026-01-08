@@ -355,12 +355,11 @@ test.describe('Player App - Main Flows', () => {
     await page.reload();
     await page.waitForLoadState('networkidle');
     
-    // Wait a bit for the board to re-render
-    await page.waitForTimeout(500);
+    // Wait for the goal description to update (indicating the UI has processed the status change)
+    await expect(goalDesc).toContainText('robot', { timeout: 5000 });
     
     // Verify we're now in active state
     await expect(goalDesc).not.toContainText('Waiting for host');
-    await expect(goalDesc).toContainText('robot'); // Should show actual goal description
     
     // Verify status message is cleared (no longer says preview mode)
     await expect(goalStatus).not.toContainText('Preview Mode');
