@@ -36,6 +36,7 @@ export class PlayerApp {
   private gameId: string = '';
   private currentRound: any = null;
   private pollingInterval: number | null = null;
+  private currentRoundStatus: string | null = null;
 
   /**
    * Update goal description with colored robot name
@@ -292,17 +293,26 @@ export class PlayerApp {
     // Update header
     this.uiState.updateHeader(data.gameName || 'Ricochet Robots', data.roundNumber || 1);
     
-    // Only load puzzle if it's a new round (or first load)
-    // This prevents resetting player's progress during polling
+    // Detect if we need to reload the puzzle:
+    // - New round (different roundId)
+    // - Status change (e.g., pending→active or completed→active)
+    // - First load (currentRoundStatus is null)
+    // This prevents resetting player's progress during polling when nothing changed
     const isNewRound = this.controller.roundId !== data.roundId;
+    const isFirstLoad = this.currentRoundStatus === null;
+    const statusChanged = !isFirstLoad && this.currentRoundStatus !== data.status;
+    const shouldReloadPuzzle = isNewRound || statusChanged || isFirstLoad;
+    
+    // Update tracked status
+    this.currentRoundStatus = data.status;
     
     // Handle different round statuses
     if (data.status === 'pending') {
-      this.handlePendingRound(data, isNewRound);
+      this.handlePendingRound(data, shouldReloadPuzzle);
     } else if (data.status === 'completed') {
-      this.handleCompletedRound(data, isNewRound);
+      this.handleCompletedRound(data, shouldReloadPuzzle);
     } else {
-      this.handleActiveRound(data, isNewRound);
+      this.handleActiveRound(data, shouldReloadPuzzle);
     }
     
     // Start timer countdown
@@ -312,12 +322,12 @@ export class PlayerApp {
   /**
    * Handle pending round state
    */
-  private handlePendingRound(data: any, isNewRound: boolean): void {
+  private handlePendingRound(data: any, shouldReloadPuzzle: boolean): void {
     if (this.hostManager) {
       // HOST VIEW: Show goal for preview
       this.updateGoalDescription(data.puzzle.goalColor);
       
-      if (isNewRound) {
+      if (shouldReloadPuzzle) {
         // Load puzzle with goal visible for host
         this.controller.gameId = this.gameId;
         this.controller.roundId = data.roundId;
@@ -333,7 +343,7 @@ export class PlayerApp {
       // PLAYER VIEW: Hide goal
       this.uiState.updateGoalDescription('Waiting for host...');
       
-      if (isNewRound) {
+      if (shouldReloadPuzzle) {
         // Load puzzle WITHOUT goal visible for players
         this.controller.gameId = this.gameId;
         this.controller.roundId = data.roundId;
@@ -357,14 +367,14 @@ export class PlayerApp {
   /**
    * Handle completed round state
    */
-  private handleCompletedRound(data: any, isNewRound: boolean): void {
+  private handleCompletedRound(data: any, shouldReloadPuzzle: boolean): void {
     // Update goal description
     this.updateGoalDescription(data.puzzle.goalColor);
     
     // Add class to hide goal description when round ended
     this.uiState.setRoundEnded(true);
     
-    if (isNewRound) {
+    if (shouldReloadPuzzle) {
       // Load puzzle into controller with goal visible
       this.controller.gameId = this.gameId;
       this.controller.roundId = data.roundId;
@@ -387,14 +397,14 @@ export class PlayerApp {
   /**
    * Handle active round state
    */
-  private handleActiveRound(data: any, isNewRound: boolean): void {
+  private handleActiveRound(data: any, shouldReloadPuzzle: boolean): void {
     // Update goal description
     this.updateGoalDescription(data.puzzle.goalColor);
     
     // Remove round-ended class if it was previously set
     this.uiState.setRoundEnded(false);
     
-    if (isNewRound) {
+    if (shouldReloadPuzzle) {
       // Load puzzle into controller with goal visible
       this.controller.gameId = this.gameId;
       this.controller.roundId = data.roundId;

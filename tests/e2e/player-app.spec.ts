@@ -299,4 +299,91 @@ test.describe('Player App - Main Flows', () => {
     const moveCount = page.locator('#move-count');
     await expect(moveCount).toHaveText('0');
   });
+  
+  test('star appears when round transitions from pending to active (regression test)', async ({ page }) => {
+    // Regression test for: "New game that is generated while user has webpage open does not display star until manual refresh"
+    // This tests the scenario where:
+    // 1. Player has site open with a pending round (admin has generated but not published)
+    // 2. Admin publishes the round (transitions from pending to active)
+    // 3. Page is reloaded (simulating user action or polling with page refresh)
+    // Expected: The star (goal) should appear correctly
+    //
+    // NOTE: This test uses page.reload() which doesn't perfectly simulate the original bug
+    // (which occurred during API polling without page reload). However, it still provides value by:
+    // - Documenting expected behavior for pending→active transitions
+    // - Verifying the UI correctly displays the star after status changes
+    // - Preventing regressions in the overall reload/render logic
+    
+    const { mockEmptyLeaderboard } = await import('./fixtures/mock-api');
+    const { mockPendingRoundResponse, mockActiveRoundResponse } = await import('./fixtures/mock-data');
+    
+    // Start with pending round state
+    let roundState = 'pending';
+    
+    // Setup dynamic route handler that changes state
+    await page.route('**/api/getCurrentRound*', async route => {
+      const response = roundState === 'pending' 
+        ? mockPendingRoundResponse('game_test')
+        : mockActiveRoundResponse('game_test');
+      
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(response)
+      });
+    });
+    
+    await mockEmptyLeaderboard(page);
+    
+    // Navigate to game as a non-host player
+    await page.goto('/?game=game_test');
+    await page.waitForLoadState('networkidle');
+    
+    // Wait for canvas to be rendered
+    await page.waitForSelector('#game-board');
+    
+    // Verify we're in pending state (no star visible for non-host players)
+    const goalDesc = page.locator('#goal-description');
+    await expect(goalDesc).toContainText('Waiting for host');
+    
+    // Verify status message says preview mode
+    const goalStatus = page.locator('#goal-status');
+    await expect(goalStatus).toContainText('Preview Mode');
+    
+    // Verify controls are disabled
+    await expect(page.locator('#submit-btn')).toBeDisabled();
+    
+    // Now simulate the admin publishing the round by changing the mock state
+    roundState = 'active';
+    
+    // Reload the page (simulating user refresh or similar action)
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+    
+    // Wait for the goal description to update (indicating the UI has processed the status change)
+    await expect(goalDesc).toContainText('robot', { timeout: 5000 });
+    
+    // Verify we're now in active state
+    await expect(goalDesc).not.toContainText('Waiting for host');
+    
+    // Verify status message is cleared (no longer says preview mode)
+    await expect(goalStatus).not.toContainText('Preview Mode');
+    
+    // Verify controls are now enabled
+    await expect(page.locator('#submit-btn')).toBeEnabled();
+    
+    // Most importantly: Verify the canvas was redrawn
+    // The canvas should be visible and have proper dimensions
+    const canvas = page.locator('#game-board');
+    await expect(canvas).toBeVisible();
+    
+    const canvasBox = await canvas.boundingBox();
+    expect(canvasBox).toBeTruthy();
+    expect(canvasBox!.width).toBeGreaterThan(0);
+    expect(canvasBox!.height).toBeGreaterThan(0);
+    
+    // Additional check: Verify robot selectors are visible and enabled
+    await expect(page.locator('.robot-selectors')).toBeVisible();
+    await expect(page.locator('.robot-selector[data-robot="red"]')).toBeEnabled();
+  });
 });
