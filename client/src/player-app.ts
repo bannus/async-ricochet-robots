@@ -16,6 +16,15 @@ import { ReplayModeManager } from './replay-mode-manager.js';
 import { showNotification, showError, showWarning, showSuccess } from './notifications.js';
 import { ThemeToggle, initializeTheme } from './theme-toggle.js';
 
+// Declare global window property for configurable polling interval (used in E2E tests)
+declare global {
+  interface Window {
+    __POLLING_INTERVAL_MS__?: number;
+  }
+}
+
+const DEFAULT_POLLING_INTERVAL = 20000;
+
 // Initialize theme immediately to prevent flash
 initializeTheme();
 
@@ -490,8 +499,8 @@ export class PlayerApp {
    * Start polling for updates
    */
   private startPolling(): void {
-    // Poll every 20 seconds
-    console.log("Starting polling for game updates...");
+    const pollingInterval = window.__POLLING_INTERVAL_MS__ ?? DEFAULT_POLLING_INTERVAL;
+    console.log(`Starting polling for game updates... (interval: ${pollingInterval}ms)`);
     this.pollingInterval = window.setInterval(async () => {
       const oldRoundId = this.currentRound?.roundId;
       console.log("Loading current round....");
@@ -503,7 +512,7 @@ export class PlayerApp {
         // New round started!
         showNotification('New round started!');
       }
-    }, 20000);
+    }, pollingInterval);
   }
 
   /**
